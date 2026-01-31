@@ -1,0 +1,41 @@
+[
+  {
+    "id": "news-1",
+    "slug": "encontro-nacional-de-carros-antigos-2024",
+    "title": "Encontro Nacional de Carros Antigos 2024 supera expectativas",
+    "excerpt": "O maior evento de carros antigos do Brasil reuniu mais de 500 veículos em São Paulo, com destaque para modelos raros e restaurações impecáveis.",
+    "content": "O Encontro Nacional de Carros Antigos 2024, realizado no último fim de semana em São Paulo, superou todas as expectativas com a presença de mais de 500 veículos clássicos de todo o país. O evento, que acontece anualmente, consolidou-se como o principal ponto de encontro para colecionadores e entusiastas de automóveis antigos.",
+    "category": "eventos",
+    "coverImage": "/placeholders/banner.svg",
+    "author": "Redação AutoGarageShow",
+    "status": "published",
+    "createdAt": "2024-01-15T10:00:00.000Z",
+    "updatedAt": "2024-01-15T10:00:00.000Z"
+  },
+  {
+    "id": "news-2",
+    "slug": "dicas-como-manter-fusca-em-perfeitas-condicoes",
+    "title": "5 dicas para manter seu Fusca em perfeitas condições",
+    "excerpt": "Aprenda como cuidar do seu Fusca para garantir que ele continue rodando por muitos anos com a qualidade original.",
+    "content": "O Fusca é um dos carros mais icônicos do Brasil e manter suas condições originais requer cuidados especiais. Separamos 5 dicas essenciais para garantir que seu Fusca continue rodando por muitos anos.",
+    "category": "dicas",
+    "coverImage": "/placeholders/car.svg",
+    "author": "Equipe AutoGarageShow",
+    "status": "published",
+    "createdAt": "2024-01-10T14:30:00.000Z",
+    "updatedAt": "2024-01-10T14:30:00.000Z"
+  },
+  {
+    "id": "news-3",
+    "slug": "mercado-de-classificados-cresce-30",
+    "title": "Mercado de carros antigos cresce 30% em 2023",
+    "excerpt": "Estudo mostra que o mercado de carros clássicos no Brasil registrou crescimento significativo no último ano, impulsionado por novos colecionadores.",
+    "content": "O mercado de carros antigos no Brasil registrou um crescimento impressionante de 30% em 2023, segundo estudo recente da Associação Brasileira de Veículos Antigos. O aumento é atribuído à entrada de novos colecionadores e à valorização de modelos clássicos.",
+    "category": "classificados",
+    "coverImage": "/placeholders/event.svg",
+    "author": "Redação AutoGarageShow",
+    "status": "published",
+    "createdAt": "2024-01-05T09:15:00.000Z",
+    "updatedAt": "2024-01-05T09:15:00.000Z"
+  }
+]

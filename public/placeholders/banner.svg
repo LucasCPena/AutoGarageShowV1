@@ -1,0 +1,11 @@
+<svg width="1400" height="320" viewBox="0 0 1400 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Banner (placeholder)">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3f66ff" />
+      <stop offset="100%" stop-color="#1f2c89" />
+    </linearGradient>
+  </defs>
+  <rect width="1400" height="320" fill="url(#g)" />
+  <text x="80" y="150" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial" font-size="54" fill="#ffffff" font-weight="800">Espaço para banner</text>
+  <text x="80" y="220" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial" font-size="26" fill="#dbeafe">Configurável pelo painel administrativo</text>
+</svg>

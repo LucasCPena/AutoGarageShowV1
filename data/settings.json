@@ -1,0 +1,22 @@
+{
+  "listings": {
+    "maxYearOffset": 10,
+    "maxImages": 10,
+    "freeListingsPerCPF": 4,
+    "freeListingsPerCNPJ": 20,
+    "autoInactiveMonths": 4,
+    "highlightOptions": [7, 14, 21, 30]
+  },
+  "events": {
+    "requireApproval": true,
+    "maxImageSize": "5MB",
+    "allowedImageTypes": ["jpg", "jpeg", "png", "webp"]
+  },
+  "banners": {
+    "sections": ["home", "events", "listings", "news", "about"]
+  },
+  "comments": {
+    "requireApproval": true,
+    "maxLength": 1000
+  }
+}

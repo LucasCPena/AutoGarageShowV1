@@ -1,0 +1,38 @@
+[
+  {
+    "id": "event-1",
+    "slug": "encontro-classicos-2024",
+    "title": "Encontro de Carros Clássicos 2024",
+    "description": "O maior encontro de carros clássicos da região, com exposição, premiação e muito mais!",
+    "city": "São Paulo",
+    "state": "SP",
+    "location": "Autódromo de Interlagos",
+    "startAt": "2026-02-15T09:00:00.000Z",
+    "endAt": "2026-02-15T18:00:00.000Z",
+    "status": "approved",
+    "recurrence": { "type": "single" },
+    "websiteUrl": "https://exemplo.com",
+    "coverImage": "/placeholders/event.svg",
+    "images": ["/placeholders/event.svg"],
+    "createdBy": "admin-default",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "event-2", 
+    "slug": "meet-tuning-carros",
+    "title": "Meet de Tuning e Carros Modificados",
+    "description": "Reunião dos melhores carros tuning da cidade, som, performance e estilo!",
+    "city": "Rio de Janeiro",
+    "state": "RJ",
+    "location": "Parque Olímpico",
+    "startAt": "2026-02-20T14:00:00.000Z",
+    "status": "approved",
+    "recurrence": { "type": "single" },
+    "coverImage": "/placeholders/event.svg",
+    "images": ["/placeholders/event.svg"],
+    "createdBy": "user-default",
+    "createdAt": "2024-01-02T00:00:00.000Z",
+    "updatedAt": "2024-01-02T00:00:00.000Z"
+  }
+]

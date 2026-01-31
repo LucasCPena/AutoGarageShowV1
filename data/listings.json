@@ -1,0 +1,71 @@
+[
+  {
+    "id": "listing-1",
+    "slug": "volkswagen-fusca-1972-restaurado",
+    "title": "Volkswagen Fusca 1972",
+    "description": "Fusca 1972 completamente restaurado, motor 1600 com dupla carburação, pintura original, interior novo. Documento em dia.",
+    "make": "Volkswagen",
+    "model": "Fusca",
+    "modelYear": 1972,
+    "manufactureYear": 1972,
+    "mileage": 50000,
+    "price": 45000,
+    "images": [
+      "/placeholders/car.svg"
+    ],
+    "contact": {
+      "name": "João Silva",
+      "email": "joao@email.com",
+      "phone": "(11) 98765-4321"
+    },
+    "specifications": {
+      "singleOwner": true,
+      "blackPlate": true,
+      "showPlate": true,
+      "auctionVehicle": false,
+      "ipvaPaid": true,
+      "vehicleStatus": "paid"
+    },
+    "status": "active",
+    "featured": false,
+    "createdBy": "user-default",
+    "document": "12345678909",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-01-30T03:04:15.623Z"
+  },
+  {
+    "id": "listing-2",
+    "slug": "chevrolet-opala-1978",
+    "title": "Chevrolet Opala 1978",
+    "description": "Opala 1978 4 portas, motor 250-S, câmbio manual, direção hidráulica. Carro de colecionador, muito bem conservado.",
+    "make": "Chevrolet",
+    "model": "Opala",
+    "modelYear": 1978,
+    "manufactureYear": 1978,
+    "mileage": 80000,
+    "price": 65000,
+    "images": [
+      "/placeholders/car.svg"
+    ],
+    "contact": {
+      "name": "Maria Santos",
+      "email": "maria@email.com",
+      "phone": "(21) 91234-5678"
+    },
+    "specifications": {
+      "singleOwner": false,
+      "blackPlate": false,
+      "showPlate": false,
+      "auctionVehicle": false,
+      "ipvaPaid": true,
+      "vehicleStatus": "paid"
+    },
+    "status": "active",
+    "featured": true,
+    "featuredUntil": "2024-12-31T23:59:59.000Z",
+    "createdBy": "user-default",
+    "document": "12345678909",
+    "createdAt": "2024-01-02T00:00:00.000Z",
+    "updatedAt": "2026-01-30T03:04:06.440Z"
+  }
+]

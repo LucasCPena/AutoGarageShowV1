@@ -1,0 +1,19 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Foto do veículo (placeholder)">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f5f8ff" />
+      <stop offset="100%" stop-color="#e9efff" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#g)" />
+  <g transform="translate(150, 350)">
+    <rect x="0" y="0" width="900" height="200" rx="60" fill="#1f2c89" opacity="0.12" />
+    <path d="M120 120 C 170 40, 250 20, 360 20 L 580 20 C 690 20, 770 40, 820 120" fill="none" stroke="#1f2c89" stroke-width="14" stroke-linecap="round" />
+    <path d="M110 120 L 90 170" fill="none" stroke="#1f2c89" stroke-width="14" stroke-linecap="round" />
+    <path d="M830 120 L 850 170" fill="none" stroke="#1f2c89" stroke-width="14" stroke-linecap="round" />
+    <circle cx="240" cy="190" r="44" fill="#0f172a" opacity="0.75" />
+    <circle cx="700" cy="190" r="44" fill="#0f172a" opacity="0.75" />
+  </g>
+  <text x="90" y="120" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial" font-size="48" fill="#0f172a" font-weight="700">Classificados 10+ anos</text>
+  <text x="90" y="190" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial" font-size="26" fill="#334155">Imagem placeholder (no sistema: WEBP + versões 480/960/1600)</text>
+</svg>

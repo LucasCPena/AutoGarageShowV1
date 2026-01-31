@@ -1,0 +1,24 @@
+[
+  {
+    "id": "admin-default",
+    "name": "Administrador",
+    "email": "admin@teste.com",
+    "password": "admin123",
+    "role": "admin",
+    "document": "12345678901234",
+    "phone": "(11) 98765-4321",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "user-default",
+    "name": "Usuário Teste",
+    "email": "user@teste.com", 
+    "password": "user123",
+    "role": "user",
+    "document": "12345678909",
+    "phone": "(21) 91234-5678",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+]

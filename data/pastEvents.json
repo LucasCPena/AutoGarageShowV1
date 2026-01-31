@@ -1,0 +1,16 @@
+[
+  {
+    "eventId": "event-1",
+    "slug": "encontro-de-carros-clssicos-2024",
+    "title": "Encontro de Carros Clássicos 2024",
+    "city": "São Paulo",
+    "state": "SP",
+    "date": "2024-03-15T09:00:00.000Z",
+    "images": [],
+    "description": "O maior encontro de carros clássicos da região, com exposição, premiação e muito mais!",
+    "attendance": 0,
+    "updatedAt": "2026-01-30T03:17:37.577Z",
+    "id": "8696e00a-12f9-40bf-b4df-a24fc307a016",
+    "createdAt": "2026-01-30T03:17:37.579Z"
+  }
+]
