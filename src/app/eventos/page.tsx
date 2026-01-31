@@ -66,8 +66,9 @@ export default function EventsPage() {
 
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
                   {event.recurrence.type === "monthly"
-                    ? event.recurrence.patternLabel
-                    : "Evento único"}
+  ? `Recorrente • Dia ${event.recurrence.dayOfMonth} de cada mês`
+  : "Evento único"}
+
                 </span>
               </div>
             </article>
