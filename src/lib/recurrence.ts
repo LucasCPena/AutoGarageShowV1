@@ -66,11 +66,10 @@ function nthWeekdayOfMonth(
 
 export function generateMonthlyOccurrences(
   startAtIso: string,
-  patternLabel: string,
+  dayOfMonth: number,
   months: number
 ) {
   const start = new Date(startAtIso);
-  const pattern = parseMonthlyPattern(patternLabel);
 
   const hour = start.getHours();
   const minute = start.getMinutes();
@@ -82,18 +81,21 @@ export function generateMonthlyOccurrences(
     const year = start.getFullYear() + Math.floor(monthIndex / 12);
     const month = ((monthIndex % 12) + 12) % 12;
 
-    if (!pattern) continue;
+    const date = new Date(
+      year,
+      month,
+      dayOfMonth,
+      hour,
+      minute,
+      0,
+      0
+    );
 
-const date = nthWeekdayOfMonth(
-  year,
-  month,
-  pattern.weekday,
-  pattern.nth,
-  hour,
-  minute
-);
-
+    if (!isNaN(date.getTime())) {
+      occurrences.push(date.toISOString());
+    }
   }
 
   return occurrences;
 }
+
