@@ -82,11 +82,17 @@ export function generateMonthlyOccurrences(
     const year = start.getFullYear() + Math.floor(monthIndex / 12);
     const month = ((monthIndex % 12) + 12) % 12;
 
-    const date = pattern
-      ? nthWeekdayOfMonth(year, month, pattern.weekday, pattern.nth, hour, minute)
-      : new Date(year, month, start.getDate(), hour, minute, 0, 0);
+    if (!pattern) continue;
 
-    if (date) occurrences.push(date.toISOString());
+const date = nthWeekdayOfMonth(
+  year,
+  month,
+  pattern.weekday,
+  pattern.nth,
+  hour,
+  minute
+);
+
   }
 
   return occurrences;
