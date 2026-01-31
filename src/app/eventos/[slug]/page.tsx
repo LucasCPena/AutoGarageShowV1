@@ -51,14 +51,14 @@ export default function EventDetailPage({ params }: Props) {
     notFound();
   }
 
-  const occurrences =
-    event.recurrence.type === "monthly"
-      ? generateMonthlyOccurrences(
-          event.startAt,
-          event.recurrence.patternLabel,
-          event.recurrence.generateMonths
-        )
-      : [event.startAt];
+ const occurrences =
+  event.recurrence.type === "monthly"
+    ? generateMonthlyOccurrences(
+        event.startAt,
+        event.recurrence.dayOfMonth,
+        event.recurrence.generateMonths
+      )
+    : [event.startAt];
 
   const futureOccurrences = occurrences.filter(
     (iso) => new Date(iso).getTime() >= Date.now()
@@ -111,7 +111,10 @@ export default function EventDetailPage({ params }: Props) {
               {event.recurrence.type === "monthly" ? (
                 <>
                   <p className="mt-2 text-sm text-slate-600">
-                    Evento recorrente: <strong>{event.recurrence.patternLabel}</strong>.
+                    Evento recorrente: <strong>Todo dia {event.recurrence.dayOfMonth}</strong>
+
+
+
                     Datas geradas automaticamente por até {event.recurrence.generateMonths} meses.
                   </p>
 
