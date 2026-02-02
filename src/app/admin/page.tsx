@@ -26,13 +26,15 @@ export default function AdminPage() {
   useEffect(() => {
     if (!user || !mounted) return;
 
-    const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+    const authHeaders: HeadersInit | undefined = token
+      ? { Authorization: `Bearer ${token}` }
+      : undefined;
 
-    fetch("/api/listings", { headers: { ...authHeaders } })
+    fetch("/api/listings", { headers: authHeaders })
       .then((res) => res.json())
       .then((data) => setListings(data.listings || []));
 
-    fetch("/api/events", { headers: { ...authHeaders } })
+    fetch("/api/events", { headers: authHeaders })
       .then((res) => res.json())
       .then((data) => setEvents(data.events || []))
       .finally(() => setLoading(false));
