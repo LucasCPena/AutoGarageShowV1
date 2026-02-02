@@ -165,7 +165,7 @@ export default function EventSubmissionForm() {
   return (
     <form onSubmit={onSubmit} className="grid gap-6">
       {message ? (
-        <Notice title={message.type === "success" ? "Envio concluído" : "Erro"} variant={message.type}>
+        <Notice title={message.type === "success" ? "Envio concluído" : "Erro"} variant={message.type === "success" ? "success" : "warning"}>
           {message.text}
         </Notice>
       ) : (
