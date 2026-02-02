@@ -1,4 +1,5 @@
-import type { Event, Listing, NewsArticle } from "@/lib/mockData";
+import type { Event } from "@/lib/database";
+import type { Listing, NewsArticle } from "@/lib/mockData";
 
 const siteUrl = "https://autogarageshow.com.br";
 

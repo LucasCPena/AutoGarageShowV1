@@ -1,11 +1,13 @@
 import type { MetadataRoute } from "next";
 
-import { events, listings, news, pastEvents } from "@/lib/mockData";
+import { db } from "@/lib/database";
+import { listings, news, pastEvents } from "@/lib/mockData";
 
 const baseUrl = "https://autogarageshow.com.br";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
+  const events = await db.events.getAll();
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${baseUrl}/`, lastModified: now, changeFrequency: "daily", priority: 1 },

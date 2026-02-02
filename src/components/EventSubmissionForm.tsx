@@ -5,27 +5,150 @@ import { useMemo, useState } from "react";
 
 import Image from "next/image";
 import Notice from "@/components/Notice";
+import { useAuth } from "@/lib/useAuth";
 
 type RecurrenceType = "single" | "weekly" | "monthly" | "annual" | "specific";
 
 const weekDays = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
+type MessageState = { type: "success" | "error"; text: string } | null;
+
 export default function EventSubmissionForm() {
-  const [submitted, setSubmitted] = useState(false);
+  const { token, user } = useAuth();
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>("single");
   const [isMultiDay, setIsMultiDay] = useState(false);
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+  const [message, setMessage] = useState<MessageState>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const successMessage = useMemo(
+  const infoMessage = useMemo(
     () =>
-      "Protótipo: envio simulado. No sistema final, o evento ficará pendente até aprovação manual e validação de e-mail.",
+      "Envie seu encontro. Se você for admin, o evento é publicado na hora; caso contrário, vai para aprovação manual.",
     []
   );
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  function buildRecurrence(form: FormData) {
+    const toNumber = (value: FormDataEntryValue | null, fallback: number) => {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : fallback;
+    };
+
+    switch (recurrenceType) {
+      case "weekly":
+        return {
+          type: "weekly" as const,
+          dayOfWeek: toNumber(form.get("weeklyDay"), 0),
+          generateWeeks: toNumber(form.get("occurrences"), 12)
+        };
+      case "monthly":
+        return {
+          type: "monthly" as const,
+          dayOfMonth: toNumber(form.get("monthlyDay"), 1),
+          generateMonths: toNumber(form.get("occurrences"), 12)
+        };
+      case "annual":
+        return {
+          type: "annual" as const,
+          month: toNumber(form.get("annualMonth"), 1),
+          day: toNumber(form.get("annualDay"), 1),
+          generateYears: toNumber(form.get("occurrences"), 5)
+        };
+      case "specific":
+        return {
+          type: "specific" as const,
+          dates: (form.get("specificDates")?.toString() || "")
+            .split(/\r?\n/)
+            .map((d) => d.trim())
+            .filter(Boolean)
+        };
+      default:
+        return { type: "single" as const };
+    }
+  }
+
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setSubmitted(true);
+    setSubmitting(true);
+    setMessage(null);
+
+    const formElement = e.currentTarget;
+    // React recicla o evento; capturamos o form antes de qualquer await
+    const form = new FormData(formElement);
+
+    try {
+      const title = form.get("title")?.toString().trim();
+      const description = form.get("description")?.toString().trim();
+      const city = form.get("city")?.toString().trim();
+      const state = form.get("state")?.toString().trim();
+      const location = form.get("location")?.toString().trim();
+      const startDate = form.get("startDate")?.toString();
+      const startTime = form.get("startTime")?.toString() || "00:00";
+
+      if (!title || !description || !city || !state || !location || !startDate) {
+        throw new Error("Preencha todos os campos obrigatórios.");
+      }
+
+      const startAt = new Date(`${startDate}T${startTime}`);
+      if (Number.isNaN(startAt.getTime())) {
+        throw new Error("Data ou horário de início inválidos.");
+      }
+
+      let endAt: string | undefined;
+      if (isMultiDay) {
+        const endDate = form.get("endDate")?.toString();
+        const endTime = form.get("endTime")?.toString() || startTime;
+        if (endDate) {
+          const end = new Date(`${endDate}T${endTime}`);
+          if (Number.isNaN(end.getTime())) {
+            throw new Error("Data ou horário de término inválidos.");
+          }
+          endAt = end.toISOString();
+        }
+      }
+
+      const recurrence = buildRecurrence(form);
+      const payload = {
+        title,
+        description,
+        city,
+        state,
+        location,
+        startAt: startAt.toISOString(),
+        endAt,
+        websiteUrl: form.get("websiteUrl")?.toString().trim() || undefined,
+        recurrence,
+        coverImage: coverImagePreview || undefined
+      };
+
+      const response = await fetch("/api/events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao enviar evento.");
+      }
+
+      setMessage({ type: "success", text: data.message || "Evento enviado com sucesso." });
+      formElement.reset();
+      setRecurrenceType("single");
+      setIsMultiDay(false);
+      setCoverImagePreview(null);
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Erro ao enviar evento."
+      });
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function onCoverImageChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -41,13 +164,13 @@ export default function EventSubmissionForm() {
 
   return (
     <form onSubmit={onSubmit} className="grid gap-6">
-      {submitted ? (
-        <Notice title="Envio concluído" variant="success">
-          {successMessage}
+      {message ? (
+        <Notice title={message.type === "success" ? "Envio concluído" : "Erro"} variant={message.type}>
+          {message.text}
         </Notice>
       ) : (
-        <Notice title="Regras (planejado)" variant="info">
-          Envio gratuito. Eventos aprovados geram URL amigável. No calendário público, aparecem apenas eventos aprovados dos próximos 21 dias.
+        <Notice title="Regras" variant="info">
+          {infoMessage}
         </Notice>
       )}
 
@@ -56,6 +179,7 @@ export default function EventSubmissionForm() {
           <span className="text-sm font-semibold text-slate-900">Título do evento</span>
           <input
             required
+            name="title"
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="Ex.: Encontro de Clássicos"
           />
@@ -64,6 +188,7 @@ export default function EventSubmissionForm() {
         <label className="grid gap-1">
           <span className="text-sm font-semibold text-slate-900">URL do organizador (opcional)</span>
           <input
+            name="websiteUrl"
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="https://..."
             type="url"
@@ -74,6 +199,7 @@ export default function EventSubmissionForm() {
           <span className="text-sm font-semibold text-slate-900">Cidade</span>
           <input
             required
+            name="city"
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="Cidade"
           />
@@ -83,6 +209,7 @@ export default function EventSubmissionForm() {
           <span className="text-sm font-semibold text-slate-900">UF</span>
           <input
             required
+            name="state"
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="SP"
             maxLength={2}
@@ -93,6 +220,7 @@ export default function EventSubmissionForm() {
           <span className="text-sm font-semibold text-slate-900">Local</span>
           <input
             required
+            name="location"
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="Nome do local / endereço"
           />
@@ -102,6 +230,7 @@ export default function EventSubmissionForm() {
           <span className="text-sm font-semibold text-slate-900">Data de início</span>
           <input
             required
+            name="startDate"
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             type="date"
           />
@@ -111,6 +240,7 @@ export default function EventSubmissionForm() {
           <span className="text-sm font-semibold text-slate-900">Horário de início</span>
           <input
             required
+            name="startTime"
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             type="time"
           />
@@ -135,6 +265,7 @@ export default function EventSubmissionForm() {
               <span className="text-sm font-semibold text-slate-900">Data de término</span>
               <input
                 required
+                name="endDate"
                 className="h-11 rounded-md border border-slate-300 px-3 text-sm"
                 type="date"
               />
@@ -144,6 +275,7 @@ export default function EventSubmissionForm() {
               <span className="text-sm font-semibold text-slate-900">Horário de término</span>
               <input
                 required
+                name="endTime"
                 className="h-11 rounded-md border border-slate-300 px-3 text-sm"
                 type="time"
               />
@@ -156,6 +288,7 @@ export default function EventSubmissionForm() {
           <select
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             value={recurrenceType}
+            name="recurrenceType"
             onChange={(e) => setRecurrenceType(e.target.value as RecurrenceType)}
           >
             <option value="single">Evento único</option>
@@ -169,7 +302,7 @@ export default function EventSubmissionForm() {
         {recurrenceType === "weekly" && (
           <label className="grid gap-1">
             <span className="text-sm font-semibold text-slate-900">Dia da semana</span>
-            <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required>
+            <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="weeklyDay">
               {weekDays.map((day, i) => (
                 <option key={day} value={i}>
                   {day}
@@ -182,7 +315,7 @@ export default function EventSubmissionForm() {
         {recurrenceType === "monthly" && (
           <label className="grid gap-1">
             <span className="text-sm font-semibold text-slate-900">Dia do mês</span>
-            <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required>
+            <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="monthlyDay">
               {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
                 <option key={day} value={day}>
                   Dia {day}
@@ -196,7 +329,7 @@ export default function EventSubmissionForm() {
           <>
             <label className="grid gap-1">
               <span className="text-sm font-semibold text-slate-900">Mês</span>
-              <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required>
+              <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="annualMonth">
                 {months.map((month, i) => (
                   <option key={month} value={i + 1}>
                     {month}
@@ -207,7 +340,7 @@ export default function EventSubmissionForm() {
 
             <label className="grid gap-1">
               <span className="text-sm font-semibold text-slate-900">Dia</span>
-              <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required>
+              <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="annualDay">
                 {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
                   <option key={day} value={day}>
                     {day}
@@ -220,9 +353,10 @@ export default function EventSubmissionForm() {
 
         {recurrenceType === "specific" && (
           <label className="grid gap-1 md:col-span-2">
-            <span className="text-sm font-semibold text-slate-900">Datas específicas (uma por linha, formato AAAA-MM-DD)</span>
+            <span className="text-sm font-semibold text-slate-900">Datas específicas (uma por linha, AAAA-MM-DD)</span>
             <textarea
               required
+              name="specificDates"
               className="min-h-24 rounded-md border border-slate-300 px-3 py-2 text-sm font-mono"
               placeholder="2026-03-15&#10;2026-04-20&#10;2026-05-10"
             />
@@ -234,6 +368,7 @@ export default function EventSubmissionForm() {
             <span className="text-sm font-semibold text-slate-900">Quantas ocorrências gerar?</span>
             <input
               required
+              name="occurrences"
               type="number"
               min="1"
               max="52"
@@ -248,6 +383,7 @@ export default function EventSubmissionForm() {
           <input
             type="file"
             accept="image/*"
+            name="coverImage"
             onChange={onCoverImageChange}
             className="h-11 rounded-md border border-slate-300 px-3 text-sm file:mr-4 file:rounded file:border-0 file:bg-slate-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-700 hover:file:bg-slate-100"
           />
@@ -262,6 +398,7 @@ export default function EventSubmissionForm() {
           <span className="text-sm font-semibold text-slate-900">Descrição</span>
           <textarea
             required
+            name="description"
             className="min-h-32 rounded-md border border-slate-300 px-3 py-2 text-sm"
             placeholder="Conte detalhes do evento, regras, clubes convidados etc."
           />
@@ -270,9 +407,14 @@ export default function EventSubmissionForm() {
 
       <button
         type="submit"
-        className="inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700"
+        disabled={submitting}
+        className="inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-70"
       >
-        Enviar para aprovação
+        {submitting
+          ? "Enviando..."
+          : user?.role === "admin"
+            ? "Publicar (admin)"
+            : "Enviar para aprovação"}
       </button>
     </form>
   );

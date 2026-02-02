@@ -10,16 +10,20 @@
     "startAt": "2026-02-15T09:00:00.000Z",
     "endAt": "2026-02-15T18:00:00.000Z",
     "status": "approved",
-    "recurrence": { "type": "single" },
+    "recurrence": {
+      "type": "single"
+    },
     "websiteUrl": "https://exemplo.com",
     "coverImage": "/placeholders/event.svg",
-    "images": ["/placeholders/event.svg"],
+    "images": [
+      "/placeholders/event.svg"
+    ],
     "createdBy": "admin-default",
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2024-01-01T00:00:00.000Z"
   },
   {
-    "id": "event-2", 
+    "id": "event-2",
     "slug": "meet-tuning-carros",
     "title": "Meet de Tuning e Carros Modificados",
     "description": "Reunião dos melhores carros tuning da cidade, som, performance e estilo!",
@@ -28,11 +32,91 @@
     "location": "Parque Olímpico",
     "startAt": "2026-02-20T14:00:00.000Z",
     "status": "approved",
-    "recurrence": { "type": "single" },
+    "recurrence": {
+      "type": "single"
+    },
     "coverImage": "/placeholders/event.svg",
-    "images": ["/placeholders/event.svg"],
+    "images": [
+      "/placeholders/event.svg"
+    ],
     "createdBy": "user-default",
     "createdAt": "2024-01-02T00:00:00.000Z",
     "updatedAt": "2024-01-02T00:00:00.000Z"
+  },
+  {
+    "title": "Testge",
+    "description": "teste",
+    "city": "Teste",
+    "state": "Te",
+    "location": "TEste",
+    "startAt": "2026-02-02T23:14:00.000Z",
+    "recurrence": {
+      "type": "monthly",
+      "dayOfMonth": 1,
+      "generateMonths": 12
+    },
+    "slug": "testge",
+    "status": "approved",
+    "createdBy": "admin-default",
+    "images": [],
+    "id": "3c75f179-5bd0-41b3-ba96-3d355d93cf2d",
+    "createdAt": "2026-02-02T23:12:27.407Z",
+    "updatedAt": "2026-02-02T23:12:27.407Z"
+  },
+  {
+    "title": "Testge",
+    "description": "teste",
+    "city": "Teste",
+    "state": "Te",
+    "location": "TEste",
+    "startAt": "2026-02-02T23:14:00.000Z",
+    "recurrence": {
+      "type": "monthly",
+      "dayOfMonth": 1,
+      "generateMonths": 12
+    },
+    "slug": "testge-cc748e",
+    "status": "approved",
+    "createdBy": "admin-default",
+    "images": [],
+    "id": "a4985bec-b55a-4790-a401-ad0b62a1ea79",
+    "createdAt": "2026-02-02T23:18:13.649Z",
+    "updatedAt": "2026-02-02T23:18:13.650Z"
+  },
+  {
+    "title": "dsadsa",
+    "description": "dsadas",
+    "city": "dsadsa",
+    "state": "ds",
+    "location": "dsadsa",
+    "startAt": "2026-02-02T23:20:00.000Z",
+    "recurrence": {
+      "type": "single"
+    },
+    "slug": "dsadsa",
+    "status": "completed",
+    "createdBy": "admin-default",
+    "images": [],
+    "id": "76e08b7b-17f4-4c8a-a5cd-627234cdc548",
+    "createdAt": "2026-02-02T23:20:14.968Z",
+    "updatedAt": "2026-02-02T23:21:01.911Z"
+  },
+  {
+    "title": "Evento Teste",
+    "description": "Evento Teste",
+    "city": "Evento Teste",
+    "state": "Ev",
+    "location": "Evento Teste",
+    "startAt": "2026-02-20T00:00:00.000Z",
+    "recurrence": {
+      "type": "single"
+    },
+    "slug": "evento-teste",
+    "status": "approved",
+    "createdBy": "admin-default",
+    "images": [],
+    "id": "a5b91ebb-0804-421d-81c8-83cf4a9ee5e6",
+    "createdAt": "2026-02-02T23:21:28.719Z",
+    "updatedAt": "2026-02-02T23:21:28.719Z"
   }
 ]

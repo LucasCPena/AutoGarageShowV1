@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     
     // Adicionar eventos que já passaram da data
     for (const event of events) {
-      if (event.status === 'approved' && new Date(event.startAt) < now) {
+      if ((event.status === 'approved' || event.status === 'completed') && new Date(event.startAt) < now) {
         // Verificar se já existe em pastEvents
         const exists = pastEvents.find(pe => pe.eventId === event.id);
         if (!exists) {

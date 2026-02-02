@@ -1,16 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database';
+import { getUserFromToken } from '@/lib/auth-middleware';
+
+function slugify(input: string) {
+  return input
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
+    const user = getUserFromToken(request);
     
     let events = await db.events.getAll();
     
-    // Filtrar por status se especificado
-    if (status) {
-      events = events.filter(event => event.status === status);
+    // Admin enxerga tudo e pode filtrar por status; público vê apenas aprovados
+    if (user?.role === 'admin') {
+      if (status) {
+        events = events.filter(event => event.status === status);
+      }
+    } else {
+      events = events.filter(event => event.status === 'approved');
     }
     
     // Ordenar por data de criação (mais recentes primeiro)
@@ -28,7 +41,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = getUserFromToken(request);
     const eventData = await request.json();
+    const settings = await db.settings.get();
     
     // Validar campos obrigatórios
     const requiredFields = ['title', 'description', 'city', 'state', 'location', 'startAt'];
@@ -41,30 +56,43 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Criar slug a partir do título
-    const slug = eventData.title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
-    
-    // Verificar se slug já existe
-    const existingEvent = await db.events.findBySlug(slug);
-    if (existingEvent) {
+    // Validar data
+    const startDate = new Date(eventData.startAt);
+    if (Number.isNaN(startDate.getTime())) {
       return NextResponse.json(
-        { error: 'Já existe um evento com este título' },
-        { status: 409 }
+        { error: 'Data de início inválida' },
+        { status: 400 }
       );
     }
+    
+    // Criar slug a partir do título e garantir unicidade
+    let slug = slugify(eventData.title);
+    const existingEvent = await db.events.findBySlug(slug);
+    if (existingEvent) {
+      slug = `${slug}-${crypto.randomUUID().slice(0, 6)}`;
+    }
+    
+    const requireApproval = settings?.events?.requireApproval ?? true;
+    const shouldAutoApprove = user?.role === 'admin' || requireApproval === false;
+    const status: 'approved' | 'pending' = shouldAutoApprove ? 'approved' : 'pending';
     
     const event = await db.events.create({
       ...eventData,
       slug,
-      status: 'pending', // Eventos começam como pendentes
-      recurrence: eventData.recurrence || { type: 'single' }
+      status,
+      recurrence: eventData.recurrence || { type: 'single' },
+      createdBy: user?.id || 'anonymous',
+      images: eventData.images || [],
+      coverImage: eventData.coverImage || eventData.images?.[0]
     });
     
     return NextResponse.json(
-      { event, message: 'Evento criado com sucesso' },
+      { 
+        event, 
+        message: shouldAutoApprove 
+          ? 'Evento criado e aprovado automaticamente (admin ou aprovação desativada).' 
+          : 'Evento criado e enviado para aprovação.' 
+      },
       { status: 201 }
     );
   } catch (error) {

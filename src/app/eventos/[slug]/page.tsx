@@ -6,7 +6,7 @@ import Container from "@/components/Container";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { formatDateLong, formatTime } from "@/lib/date";
-import { events } from "@/lib/mockData";
+import { db } from "@/lib/database";
 import { generateMonthlyOccurrences } from "@/lib/recurrence";
 import { eventJsonLd } from "@/lib/schema";
 
@@ -16,15 +16,17 @@ type Props = {
   };
 };
 
+export const dynamic = "force-dynamic";
+
 function toMetaDescription(text: string) {
   const clean = text.replace(/\s+/g, " ").trim();
   return clean.length > 160 ? `${clean.slice(0, 157)}...` : clean;
 }
 
-export function generateMetadata({ params }: Props): Metadata {
-  const event = events.find((e) => e.slug === params.slug && e.status === "approved");
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const event = await db.events.findBySlug(params.slug);
 
-  if (!event) {
+  if (!event || event.status !== "approved") {
     return {
       title: "Evento",
       description: "Evento não encontrado."
@@ -44,21 +46,21 @@ export function generateMetadata({ params }: Props): Metadata {
   };
 }
 
-export default function EventDetailPage({ params }: Props) {
-  const event = events.find((e) => e.slug === params.slug);
+export default async function EventDetailPage({ params }: Props) {
+  const event = await db.events.findBySlug(params.slug);
 
   if (!event || event.status !== "approved") {
-    notFound();
+    return notFound();
   }
 
- const occurrences =
-  event.recurrence.type === "monthly"
-    ? generateMonthlyOccurrences(
-        event.startAt,
-        event.recurrence.dayOfMonth,
-        event.recurrence.generateMonths
-      )
-    : [event.startAt];
+  const occurrences =
+    event.recurrence.type === "monthly"
+      ? generateMonthlyOccurrences(
+          event.startAt,
+          event.recurrence.dayOfMonth ?? new Date(event.startAt).getDate(),
+          event.recurrence.generateMonths ?? 12
+        )
+      : [event.startAt];
 
   const futureOccurrences = occurrences.filter(
     (iso) => new Date(iso).getTime() >= Date.now()
@@ -112,10 +114,8 @@ export default function EventDetailPage({ params }: Props) {
                 <>
                   <p className="mt-2 text-sm text-slate-600">
                     Evento recorrente: <strong>Todo dia {event.recurrence.dayOfMonth}</strong>
-
-
-
-                    Datas geradas automaticamente por até {event.recurrence.generateMonths} meses.
+                    <br />
+                    Datas geradas automaticamente por até {event.recurrence.generateMonths ?? 12} meses.
                   </p>
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">

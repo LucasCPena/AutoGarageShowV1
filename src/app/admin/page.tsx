@@ -1,19 +1,21 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 
+import AdminEventsPanel from "@/components/AdminEventsPanel";
 import AdminListingsPanel from "@/components/AdminListingsPanel";
 import AdminSettingsPanel from "@/components/AdminSettingsPanel";
 import Container from "@/components/Container";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { useAuth } from "@/lib/useAuth";
+import type { Event } from "@/lib/database";
 import type { Listing } from "@/lib/mockData";
 
 export default function AdminPage() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
 
@@ -24,25 +26,17 @@ export default function AdminPage() {
   useEffect(() => {
     if (!user || !mounted) return;
 
-    // Buscar listings da API
-    fetch('/api/listings', {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    })
-      .then(res => res.json())
-      .then(data => setListings(data.listings || []));
+    const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 
-    // Buscar eventos da API
-    fetch('/api/events', {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    })
-      .then(res => res.json())
-      .then(data => setEvents(data.events || []))
+    fetch("/api/listings", { headers: { ...authHeaders } })
+      .then((res) => res.json())
+      .then((data) => setListings(data.listings || []));
+
+    fetch("/api/events", { headers: { ...authHeaders } })
+      .then((res) => res.json())
+      .then((data) => setEvents(data.events || []))
       .finally(() => setLoading(false));
-  }, [user, mounted]);
+  }, [user, token, mounted]);
 
   const pendingEvents = events.filter((e) => e.status === "pending");
   const pendingListings = listings.filter((l) => l.status === "pending");
@@ -61,13 +55,13 @@ export default function AdminPage() {
         <Notice title="Acesso Restrito" variant="warning">
           Você precisa estar logado como administrador para acessar esta página.
         </Notice>
-        <div className="mt-4 p-4 bg-gray-100 rounded-lg">
-          <h3 className="font-semibold mb-2">Debug Info:</h3>
-          <p>Token: {localStorage.getItem('token') ? 'Presente' : 'Ausente'}</p>
-          <p>User: {user ? JSON.stringify(user) : 'Nulo'}</p>
-          <button 
-            onClick={() => console.log('Storage:', localStorage.getItem('ags.auth.v1'))}
-            className="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm"
+        <div className="mt-4 rounded-lg bg-gray-100 p-4">
+          <h3 className="mb-2 font-semibold">Debug Info:</h3>
+          <p>Token: {token ? "Presente" : "Ausente"}</p>
+          <p>User: {user ? JSON.stringify(user) : "Nulo"}</p>
+          <button
+            onClick={() => console.log("Storage:", localStorage.getItem("ags.auth.v1"))}
+            className="mt-2 rounded bg-blue-500 px-3 py-1 text-sm text-white"
           >
             Ver Storage
           </button>
@@ -86,10 +80,7 @@ export default function AdminPage() {
 
   return (
     <>
-      <PageIntro
-        title="Admin"
-        subtitle="Painel administrativo com dados reais do backend."
-      />
+      <PageIntro title="Admin" subtitle="Painel administrativo com dados reais do backend." />
 
       <Container className="py-10">
         <Notice title="Atenção" variant="info">
@@ -107,16 +98,24 @@ export default function AdminPage() {
         <div className="mt-10 grid gap-6 lg:grid-cols-3">
           <div className="rounded-2xl border border-slate-200 bg-white p-6">
             <div className="text-sm font-semibold text-slate-900">Pendências</div>
-            <dl className="mt-4 grid gap-4 text-sm">
-              <div className="flex items-center justify-between">
-                <dt className="text-slate-600">Anúncios para aprovar</dt>
-                <dd className="font-semibold text-slate-900">{pendingListings.length}</dd>
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2 text-sm">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="text-xs font-semibold text-slate-600">Anúncios para aprovar</div>
+                <div className="mt-2 text-3xl font-bold text-slate-900">{pendingListings.length}</div>
               </div>
-            </dl>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="text-xs font-semibold text-slate-600">Eventos para aprovar</div>
+                <div className="mt-2 text-3xl font-bold text-slate-900">{pendingEvents.length}</div>
+              </div>
+            </div>
           </div>
         </div>
+      </Container>
 
+      <Container className="py-10">
+        <AdminEventsPanel events={events} token={token} />
       </Container>
     </>
   );
 }
+

@@ -5,7 +5,7 @@ import Container from "@/components/Container";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { formatDateLong, formatTime, isWithinNextDays } from "@/lib/date";
-import { events } from "@/lib/mockData";
+import { db, Event } from "@/lib/database";
 
 export const metadata: Metadata = {
   title: "Eventos",
@@ -13,12 +13,15 @@ export const metadata: Metadata = {
     "Calendário público com eventos aprovados de carros antigos. Exibe apenas os próximos 21 dias."
 };
 
+export const dynamic = "force-dynamic";
+
 function byStartAtAsc(a: { startAt: string }, b: { startAt: string }) {
   return new Date(a.startAt).getTime() - new Date(b.startAt).getTime();
 }
 
-export default function EventsPage() {
-  const upcoming = events
+export default async function EventsPage() {
+  const allEvents: Event[] = await db.events.getAll();
+  const upcoming = allEvents
     .filter((e) => e.status === "approved")
     .filter((e) => isWithinNextDays(e.startAt, 21))
     .sort(byStartAtAsc);
@@ -39,7 +42,8 @@ export default function EventsPage() {
 
       <Container className="py-10">
         <Notice title="Como funciona" variant="info">
-          Eventos enviados passam por aprovação manual. Apenas eventos aprovados geram URL pública amigável. Eventos recorrentes podem gerar datas automaticamente por até 12 meses.
+          Eventos enviados passam por aprovação manual. Apenas eventos aprovados geram URL pública amigável. Eventos
+          recorrentes podem gerar datas automaticamente por até 12 meses.
         </Notice>
 
         <div className="mt-8 grid gap-3">
@@ -66,9 +70,10 @@ export default function EventsPage() {
 
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
                   {event.recurrence.type === "monthly"
-  ? `Recorrente • Dia ${event.recurrence.dayOfMonth} de cada mês`
-  : "Evento único"}
-
+                    ? `Recorrente • Dia ${event.recurrence.dayOfMonth} de cada mês`
+                    : event.recurrence.type === "weekly"
+                      ? "Recorrente semanal"
+                      : "Evento único"}
                 </span>
               </div>
             </article>
