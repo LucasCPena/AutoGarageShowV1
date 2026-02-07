@@ -8,6 +8,7 @@ import Container from "@/components/Container";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { formatDateLong } from "@/lib/date";
+import { useAuth } from "@/lib/useAuth";
 
 interface News {
   id: string;
@@ -27,6 +28,7 @@ function byPublishedAtDesc(a: News, b: News) {
 }
 
 export default function NewsPage() {
+  const { user, isLoading: authLoading } = useAuth();
   const [news, setNews] = useState<News[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +75,17 @@ export default function NewsPage() {
       />
 
       <Container className="py-10">
+        {authLoading ? null : user?.role === "admin" ? (
+          <div className="mb-6 flex justify-end">
+            <Link
+              href="/admin#admin-news-panel"
+              className="inline-flex h-10 items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700"
+            >
+              Criar noticia
+            </Link>
+          </div>
+        ) : null}
+
         <div className="mt-8 grid gap-4 lg:grid-cols-2">
           {items.map((article) => (
             <Link

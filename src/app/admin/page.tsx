@@ -7,6 +7,7 @@ import AdminListingsPanel from "@/components/AdminListingsPanel";
 import AdminSettingsPanel from "@/components/AdminSettingsPanel";
 import AdminCatalogPanel from "@/components/AdminCatalogPanel";
 import AdminBannersPanel from "@/components/AdminBannersPanel";
+import AdminNewsPanel from "@/components/AdminNewsPanel";
 import Container from "@/components/Container";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
@@ -73,6 +74,16 @@ export default function AdminPage() {
     );
   }
 
+  if (user.role !== "admin") {
+    return (
+      <Container className="py-10">
+        <Notice title="Acesso Restrito" variant="warning">
+          Esta area e exclusiva para administradores.
+        </Notice>
+      </Container>
+    );
+  }
+
   if (loading) {
     return (
       <Container className="py-10">
@@ -100,6 +111,10 @@ export default function AdminPage() {
 
         <div className="mt-10">
           <AdminBannersPanel token={token} />
+        </div>
+
+        <div className="mt-10">
+          <AdminNewsPanel token={token} />
         </div>
 
         <div className="mt-10">
