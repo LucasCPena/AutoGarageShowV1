@@ -110,7 +110,21 @@ export default function AdminPage() {
         </div>
 
         <div className="mt-10">
-          <AdminBannersPanel token={token} />
+          <AdminBannersPanel
+            token={token}
+            fixedSection="home"
+            title="Banners Topo Home"
+            description="Gestao dos banners exibidos no topo da home."
+          />
+        </div>
+
+        <div className="mt-10">
+          <AdminBannersPanel
+            token={token}
+            fixedSection="listings"
+            title="Banners Anuncios"
+            description="Gestao dos banners da area de classificados."
+          />
         </div>
 
         <div className="mt-10">
@@ -144,6 +158,13 @@ export default function AdminPage() {
 
       <Container className="py-10">
         <AdminEventsPanel events={events} token={token} />
+
+        <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-6">
+          <div className="text-sm font-semibold text-slate-900">Adsense</div>
+          <div className="mt-1 text-sm text-slate-600">
+            Espaco reservado para configuracao dos blocos de anuncios (em breve).
+          </div>
+        </div>
       </Container>
     </>
   );

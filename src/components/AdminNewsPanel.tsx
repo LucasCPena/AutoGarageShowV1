@@ -39,6 +39,7 @@ export default function AdminNewsPanel({ token }: Props) {
   const [items, setItems] = useState<News[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [message, setMessage] = useState<Message>(null);
   const [form, setForm] = useState<NewsFormState>(EMPTY_FORM);
@@ -82,6 +83,43 @@ export default function AdminNewsPanel({ token }: Props) {
   function resetForm() {
     setEditingId(null);
     setForm(EMPTY_FORM);
+  }
+
+  async function handleImageUpload(file: File) {
+    setUploadingImage(true);
+    setMessage(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", "news");
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: authHeaders(),
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Erro ao fazer upload da imagem.");
+      }
+
+      setForm((current) => ({ ...current, coverImage: data.url || "" }));
+      setMessage({ type: "success", text: "Imagem enviada com sucesso." });
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Erro ao fazer upload da imagem."
+      });
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
+  async function handleImageFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    await handleImageUpload(file);
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -255,6 +293,20 @@ export default function AdminNewsPanel({ token }: Props) {
         </label>
 
         <label className="grid gap-1">
+          <span className="text-sm font-semibold text-slate-900">Imagem de capa (arquivo)</span>
+          <input
+            type="file"
+            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+            className="h-11 rounded-md border border-slate-300 px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-brand-100 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-brand-700"
+            disabled={busy || uploadingImage}
+            onChange={handleImageFileChange}
+          />
+          <span className="text-xs text-slate-500">
+            Aceita jpg, jpeg, png e webp (ate 5MB).
+          </span>
+        </label>
+
+        <label className="grid gap-1">
           <span className="text-sm font-semibold text-slate-900">Imagem de capa (URL)</span>
           <input
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
@@ -288,15 +340,21 @@ export default function AdminNewsPanel({ token }: Props) {
         <div className="md:col-span-2 flex flex-wrap gap-3">
           <button
             type="submit"
-            disabled={busy}
+            disabled={busy || uploadingImage}
             className="inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
           >
-            {busy ? "Salvando..." : editingId ? "Atualizar noticia" : "Criar noticia"}
+            {busy
+              ? "Salvando..."
+              : uploadingImage
+                ? "Enviando imagem..."
+                : editingId
+                  ? "Atualizar noticia"
+                  : "Criar noticia"}
           </button>
           {editingId ? (
             <button
               type="button"
-              disabled={busy}
+              disabled={busy || uploadingImage}
               onClick={resetForm}
               className="inline-flex h-11 items-center justify-center rounded-md border border-slate-300 px-5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
             >

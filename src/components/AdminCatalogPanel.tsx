@@ -211,7 +211,7 @@ export default function AdminCatalogPanel({ token }: Props) {
     <div className="rounded-2xl border border-slate-200 bg-white p-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="text-sm font-semibold text-slate-900">Marcas e Modelos</div>
+          <div className="text-sm font-semibold text-slate-900">Marcas e Modelos de veículos</div>
           <div className="mt-1 text-sm text-slate-600">
             Admin pode criar marcas e editar modelos usados nos classificados.
           </div>

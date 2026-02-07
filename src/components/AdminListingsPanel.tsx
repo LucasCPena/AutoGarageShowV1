@@ -539,7 +539,7 @@ export default function AdminListingsPanel({ listings, token, onListingsChange }
       
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="text-sm font-semibold text-slate-900">Classificados (gestão)</div>
+          <div className="text-sm font-semibold text-slate-900">Classificados</div>
           <div className="mt-1 text-sm text-slate-600">
             CRUD completo de anúncios: criar, editar, excluir e aprovar.
           </div>

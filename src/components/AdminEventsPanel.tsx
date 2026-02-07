@@ -71,6 +71,13 @@ export default function AdminEventsPanel({ events, token }: Props) {
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6">
+      <div className="mb-4">
+        <div className="text-sm font-semibold text-slate-900">Eventos</div>
+        <div className="mt-1 text-sm text-slate-600">
+          Aprovação, conclusão e remoção de eventos.
+        </div>
+      </div>
+
       {message ? (
         <div
           className={`mb-4 rounded-md border p-3 text-sm ${
