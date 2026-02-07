@@ -9,6 +9,8 @@ const useMysql =
   Boolean(process.env.MYSQL_HOST);
 
 const warnedFallbackOps = new Set<string>();
+const strictMysqlPrefixes = ["dbMysql.users."];
+const mysqlRequiredErrorCode = "MYSQL_REQUIRED_USERS";
 
 function getErrorCode(error: unknown) {
   if (typeof error === "object" && error && "code" in error) {
@@ -55,6 +57,28 @@ function warnFallback(path: string, error: unknown) {
   );
 }
 
+function requiresStrictMysql(path: string) {
+  return strictMysqlPrefixes.some((prefix) => path.startsWith(prefix));
+}
+
+function throwMysqlRequiredError(path: string, cause: unknown): never {
+  const error = new Error(
+    `MySQL obrigatorio para operacao de autenticacao (${path}).`
+  ) as Error & { code?: string; cause?: unknown };
+  error.code = mysqlRequiredErrorCode;
+  error.cause = cause;
+  throw error;
+}
+
+export function isMysqlRequiredUsersError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  if ("code" in error && (error as { code?: unknown }).code === mysqlRequiredErrorCode) {
+    return true;
+  }
+  if (!(error instanceof Error)) return false;
+  return error.message.toLowerCase().includes("mysql obrigatorio para operacao de autenticacao");
+}
+
 function withMysqlFallback<T extends Record<string, any>>(
   mysqlTarget: T,
   fileTarget: Record<string, any>,
@@ -75,6 +99,9 @@ function withMysqlFallback<T extends Record<string, any>>(
           } catch (error) {
             if (!isMysqlUnavailableError(error)) {
               throw error;
+            }
+            if (requiresStrictMysql(propPath)) {
+              throwMysqlRequiredError(propPath, error);
             }
             warnFallback(propPath, error);
             return await fileMethod(...args);
