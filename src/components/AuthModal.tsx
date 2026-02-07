@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 
 import Notice from "@/components/Notice";
@@ -14,6 +15,7 @@ type Props = {
 
 export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Props) {
   const { login, register } = useAuth();
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [mode, setMode] = useState<"login" | "register">(defaultMode);
   const [email, setEmail] = useState("");
@@ -37,6 +39,15 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Pr
 
   if (!isOpen) return null;
 
+  function finishSuccess() {
+    onClose();
+    setSubmitted(false);
+    setEmail("");
+    setPassword("");
+    setName("");
+    router.push("/");
+  }
+
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -51,11 +62,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Pr
       register(name, email, password)
         .then(() => {
           setTimeout(() => {
-            onClose();
-            setSubmitted(false);
-            setEmail("");
-            setPassword("");
-            setName("");
+            finishSuccess();
           }, 1000);
         })
         .catch((err) => {
@@ -68,11 +75,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Pr
         .then((user) => {
           console.log('Login successful:', user);
           setTimeout(() => {
-            onClose();
-            setSubmitted(false);
-            setEmail("");
-            setPassword("");
-            setName("");
+            finishSuccess();
           }, 1000);
         })
         .catch((err) => {
