@@ -11,8 +11,7 @@ import Container from "@/components/Container";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { useAuth } from "@/lib/useAuth";
-import type { Event } from "@/lib/database";
-import type { Listing } from "@/lib/mockData";
+import type { Event, Listing } from "@/lib/database";
 
 export default function AdminPage() {
   const { user, token } = useAuth();
@@ -104,7 +103,11 @@ export default function AdminPage() {
         </div>
 
         <div className="mt-10">
-          <AdminListingsPanel listings={listings} />
+          <AdminListingsPanel
+            listings={listings}
+            token={token}
+            onListingsChange={setListings}
+          />
         </div>
 
         <div className="mt-10 grid gap-6 lg:grid-cols-3">

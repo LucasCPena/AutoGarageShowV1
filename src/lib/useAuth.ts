@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 const STORAGE_KEY = "ags.auth.v1";
+const AUTH_EVENT = "ags-auth-update";
 
 type User = {
   id: string;
@@ -70,6 +71,7 @@ function writeToStorage(user: User | null, token: string | null) {
       console.log('Removendo do localStorage');
       window.localStorage.removeItem(STORAGE_KEY);
     }
+    window.dispatchEvent(new Event(AUTH_EVENT));
   } catch (error) {
     console.error('Erro ao salvar no localStorage:', error);
     return;
@@ -87,17 +89,24 @@ export function useAuth() {
   });
 
   useEffect(() => {
-    const { user, token } = readFromStorage();
-    setState({ user, token, isLoading: false });
+    const syncFromStorage = () => {
+      const { user, token } = readFromStorage();
+      setState({ user, token, isLoading: false });
+    };
+
+    syncFromStorage();
 
     function onStorage(e: StorageEvent) {
-      if (e.key !== STORAGE_KEY) return;
-      const updated = readFromStorage();
-      setState({ user: updated.user, token: updated.token, isLoading: false });
+      if (e.key && e.key !== STORAGE_KEY) return;
+      syncFromStorage();
     }
 
     window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    window.addEventListener(AUTH_EVENT, syncFromStorage);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(AUTH_EVENT, syncFromStorage);
+    };
   }, []);
 
   const login = useCallback(
