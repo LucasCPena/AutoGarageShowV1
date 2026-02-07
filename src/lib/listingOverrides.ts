@@ -1,5 +1,3 @@
-import type { Listing } from "@/lib/mockData";
-
 export type ListingOverride = {
   id: string;
   reactivatedAt?: string;
@@ -9,10 +7,20 @@ export type ListingOverride = {
 
 export type ListingOverrideMap = Record<string, ListingOverride | undefined>;
 
-export function applyListingOverride(listing: Listing, override?: ListingOverride): Listing {
+type OverrideableListing = {
+  id: string;
+  createdAt: string;
+  featured: boolean;
+  featuredUntil?: string;
+};
+
+export function applyListingOverride<T extends OverrideableListing>(
+  listing: T,
+  override?: ListingOverride
+): T {
   if (!override) return listing;
 
-  const next: Listing = {
+  const next: T = {
     ...listing
   };
 
@@ -33,9 +41,9 @@ export function applyListingOverride(listing: Listing, override?: ListingOverrid
   return next;
 }
 
-export function applyListingOverrides(
-  listings: Listing[],
+export function applyListingOverrides<T extends OverrideableListing>(
+  listings: T[],
   overrides: ListingOverrideMap
-): Listing[] {
+): T[] {
   return listings.map((listing) => applyListingOverride(listing, overrides[listing.id]));
 }
