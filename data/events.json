@@ -20,7 +20,9 @@
     ],
     "createdBy": "admin-default",
     "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z"
+    "updatedAt": "2024-01-01T00:00:00.000Z",
+    "contactName": "Equipe Auto Garage 1",
+    "contactDocument": "000.000.000-00"
   },
   {
     "id": "event-2",
@@ -41,7 +43,9 @@
     ],
     "createdBy": "user-default",
     "createdAt": "2024-01-02T00:00:00.000Z",
-    "updatedAt": "2024-01-02T00:00:00.000Z"
+    "updatedAt": "2024-01-02T00:00:00.000Z",
+    "contactName": "Equipe Auto Garage 2",
+    "contactDocument": "000.000.000-00"
   },
   {
     "title": "Testge",
@@ -61,7 +65,9 @@
     "images": [],
     "id": "3c75f179-5bd0-41b3-ba96-3d355d93cf2d",
     "createdAt": "2026-02-02T23:12:27.407Z",
-    "updatedAt": "2026-02-02T23:12:27.407Z"
+    "updatedAt": "2026-02-02T23:12:27.407Z",
+    "contactName": "Equipe Auto Garage 3",
+    "contactDocument": "000.000.000-00"
   },
   {
     "title": "Testge",
@@ -81,7 +87,9 @@
     "images": [],
     "id": "a4985bec-b55a-4790-a401-ad0b62a1ea79",
     "createdAt": "2026-02-02T23:18:13.649Z",
-    "updatedAt": "2026-02-02T23:18:13.650Z"
+    "updatedAt": "2026-02-02T23:18:13.650Z",
+    "contactName": "Equipe Auto Garage 4",
+    "contactDocument": "000.000.000-00"
   },
   {
     "title": "dsadsa",
@@ -99,7 +107,9 @@
     "images": [],
     "id": "76e08b7b-17f4-4c8a-a5cd-627234cdc548",
     "createdAt": "2026-02-02T23:20:14.968Z",
-    "updatedAt": "2026-02-02T23:21:01.911Z"
+    "updatedAt": "2026-02-02T23:21:01.911Z",
+    "contactName": "Equipe Auto Garage 5",
+    "contactDocument": "000.000.000-00"
   },
   {
     "title": "Evento Teste",
@@ -117,6 +127,54 @@
     "images": [],
     "id": "a5b91ebb-0804-421d-81c8-83cf4a9ee5e6",
     "createdAt": "2026-02-02T23:21:28.719Z",
-    "updatedAt": "2026-02-02T23:21:28.719Z"
+    "updatedAt": "2026-02-02T23:21:28.719Z",
+    "contactName": "Equipe Auto Garage 6",
+    "contactDocument": "000.000.000-00"
+  },
+  {
+    "title": "Festival Três Dias - Litoral",
+    "description": "Exemplo de evento com sexta, sábado e domingo consecutivos. Deve aparecer no calendário em todas as datas.",
+    "city": "Santos",
+    "state": "SP",
+    "location": "Praia do Gonzaga",
+    "contactName": "Equipe Auto Garage 7",
+    "contactDocument": "123.456.789-00",
+    "contactPhone": "(13) 99999-9999",
+    "startAt": "2026-02-13T13:00:00.000Z",
+    "endAt": "2026-02-15T18:00:00.000Z",
+    "recurrence": {
+      "type": "single"
+    },
+    "slug": "festival-tres-dias-litoral",
+    "status": "approved",
+    "createdBy": "admin-default",
+    "images": [],
+    "id": "multi-day-santos",
+    "createdAt": "2026-02-07T00:00:00.000Z",
+    "updatedAt": "2026-02-07T00:00:00.000Z"
+  },
+  {
+    "title": "Cars & Coffee 3º Domingo",
+    "description": "Recorrente em todo 3º domingo do mês, gerando datas automaticamente.",
+    "city": "Campinas",
+    "state": "SP",
+    "location": "Parque Portugal (Lagoa do Taquaral)",
+    "contactName": "Clube Auto Garage",
+    "contactDocument": "222.333.444-55",
+    "contactPhone": "(19) 98888-0000",
+    "startAt": "2026-02-16T09:00:00.000Z",
+    "recurrence": {
+      "type": "monthly_weekday",
+      "weekday": 0,
+      "nth": 3,
+      "generateMonths": 12
+    },
+    "slug": "cars-coffee-3o-domingo",
+    "status": "approved",
+    "createdBy": "admin-default",
+    "images": [],
+    "id": "cars-coffee-3o-domingo",
+    "createdAt": "2026-02-07T00:00:00.000Z",
+    "updatedAt": "2026-02-07T00:00:00.000Z"
   }
 ]

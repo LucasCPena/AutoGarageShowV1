@@ -69,7 +69,7 @@ export default function MultiMonthCalendar({ events, months = 3 }: Props) {
   const eventsByDay = useMemo(() => {
     const map = new Map<string, Event[]>();
     events.forEach((event) => {
-      const occurrences = generateEventOccurrences(event.startAt, event.recurrence);
+      const occurrences = generateEventOccurrences(event.startAt, event.recurrence, event.endAt);
       occurrences.forEach((occ) => {
         const occDate = new Date(occ);
         const key = formatDateShort(occDate);

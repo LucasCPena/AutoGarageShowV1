@@ -1,5 +1,5 @@
 import type { Event } from "@/lib/database";
-import type { Listing, NewsArticle } from "@/lib/mockData";
+import type { NewsArticle } from "@/lib/mockData";
 
 const siteUrl = "https://autogarageshow.com.br";
 
@@ -31,7 +31,20 @@ export function eventJsonLd(event: Event) {
   };
 }
 
-export function listingJsonLd(listing: Listing) {
+type ListingJsonLdInput = {
+  title: string;
+  make: string;
+  model: string;
+  year?: number;
+  modelYear?: number;
+  description: string;
+  images: string[];
+  price: number;
+  slug: string;
+};
+
+export function listingJsonLd(listing: ListingJsonLdInput) {
+  const yearValue = listing.year ?? listing.modelYear ?? new Date().getFullYear();
   return {
     "@context": "https://schema.org",
     "@type": "Car",
@@ -41,7 +54,7 @@ export function listingJsonLd(listing: Listing) {
       name: listing.make
     },
     model: listing.model,
-    vehicleModelDate: String(listing.year),
+    vehicleModelDate: String(yearValue),
     description: listing.description,
     image: listing.images.map((img) => absoluteUrl(img)),
     offers: {

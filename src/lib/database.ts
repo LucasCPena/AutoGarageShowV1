@@ -16,15 +16,17 @@ export interface User {
 }
 
 export interface EventRecurrence {
-  type: 'single' | 'weekly' | 'monthly' | 'annual' | 'specific';
+  type: 'single' | 'weekly' | 'monthly' | 'monthly_weekday' | 'annual' | 'specific';
   dayOfWeek?: number; // 0=Sunday..6=Saturday
   dayOfMonth?: number; // 1..31
+  weekday?: number; // 0..6 for monthly_weekday
+  nth?: number; // 1..5 for monthly_weekday
   month?: number; // 1..12
   day?: number; // 1..31
   generateWeeks?: number;
   generateMonths?: number;
   generateYears?: number;
-  dates?: string[]; // ISO dates
+  dates?: string[]; // ISO dates (start times)
 }
 
 export interface Event {
@@ -35,6 +37,10 @@ export interface Event {
   city: string;
   state: string;
   location: string;
+  contactName: string;
+  contactDocument: string;
+  contactPhone?: string;
+  contactEmail?: string;
   startAt: string;
   endAt?: string;
   status: 'pending' | 'approved' | 'completed';
@@ -146,6 +152,9 @@ export interface Settings {
   comments: {
     requireApproval: boolean;
     maxLength: number;
+  };
+  social?: {
+    links: { platform: string; url: string }[];
   };
 }
 
@@ -449,6 +458,51 @@ export const db = {
     getBrands: () => readSingleData<{ brands: VehicleBrand[] }>('vehicleCatalog.json').then(data => data?.brands || []),
     getModels: (brandId: string) => readSingleData<{ brands: VehicleBrand[] }>('vehicleCatalog.json').then(data => 
       data?.brands.find(b => b.id === brandId)?.models || []
-    )
+    ),
+    saveBrands: async (brands: VehicleBrand[]) => {
+      await writeSingleData('vehicleCatalog.json', { brands });
+      return brands;
+    },
+    upsertBrand: async (brand: VehicleBrand) => {
+      const data = await readSingleData<{ brands: VehicleBrand[] }>('vehicleCatalog.json') || { brands: [] as VehicleBrand[] };
+      const index = data.brands.findIndex((b) => b.id === brand.id);
+      if (index >= 0) {
+        data.brands[index] = {
+          ...data.brands[index],
+          ...brand,
+          models: brand.models ?? data.brands[index].models
+        };
+      } else {
+        data.brands.push({ ...brand, models: brand.models ?? [] });
+      }
+      await writeSingleData('vehicleCatalog.json', data);
+      return data.brands;
+    },
+    addModel: async (brandId: string, model: string) => {
+      const data = await readSingleData<{ brands: VehicleBrand[] }>('vehicleCatalog.json') || { brands: [] as VehicleBrand[] };
+      const brand = data.brands.find((b) => b.id === brandId);
+      if (!brand) return null;
+      const normalized = model.trim();
+      if (normalized && !brand.models.includes(normalized)) {
+        brand.models.push(normalized);
+        brand.models.sort((a, b) => a.localeCompare(b));
+        await writeSingleData('vehicleCatalog.json', data);
+      }
+      return brand.models;
+    },
+    removeModel: async (brandId: string, model: string) => {
+      const data = await readSingleData<{ brands: VehicleBrand[] }>('vehicleCatalog.json') || { brands: [] as VehicleBrand[] };
+      const brand = data.brands.find((b) => b.id === brandId);
+      if (!brand) return null;
+      brand.models = brand.models.filter((m) => m !== model);
+      await writeSingleData('vehicleCatalog.json', data);
+      return brand.models;
+    },
+    deleteBrand: async (brandId: string) => {
+      const data = await readSingleData<{ brands: VehicleBrand[] }>('vehicleCatalog.json') || { brands: [] as VehicleBrand[] };
+      const next = data.brands.filter((b) => b.id !== brandId);
+      await writeSingleData('vehicleCatalog.json', { brands: next });
+      return next;
+    }
   }
 };

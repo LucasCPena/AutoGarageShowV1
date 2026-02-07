@@ -7,7 +7,7 @@ import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { formatDateLong, formatTime } from "@/lib/date";
 import { db } from "@/lib/database";
-import { generateMonthlyOccurrences } from "@/lib/recurrence";
+import { formatRecurrence, generateEventOccurrences, getSpanDays } from "@/lib/eventRecurrence";
 import { eventJsonLd } from "@/lib/schema";
 
 type Props = {
@@ -53,18 +53,10 @@ export default async function EventDetailPage({ params }: Props) {
     return notFound();
   }
 
-  const occurrences =
-    event.recurrence.type === "monthly"
-      ? generateMonthlyOccurrences(
-          event.startAt,
-          event.recurrence.dayOfMonth ?? new Date(event.startAt).getDate(),
-          event.recurrence.generateMonths ?? 12
-        )
-      : [event.startAt];
-
-  const futureOccurrences = occurrences.filter(
-    (iso) => new Date(iso).getTime() >= Date.now()
-  );
+  const occurrences = generateEventOccurrences(event.startAt, event.recurrence, event.endAt);
+  const futureOccurrences = occurrences.filter((iso) => new Date(iso).getTime() >= Date.now());
+  const spanDays = getSpanDays(event.startAt, event.endAt);
+  const recurrenceLabel = formatRecurrence(event.recurrence, spanDays);
 
   return (
     <>
@@ -109,36 +101,25 @@ export default async function EventDetailPage({ params }: Props) {
 
             <section className="rounded-2xl border border-slate-200 bg-white p-6">
               <h2 className="text-lg font-semibold text-slate-900">Recorrência</h2>
+              <p className="mt-2 text-sm text-slate-600">
+                {recurrenceLabel}
+              </p>
 
-              {event.recurrence.type === "monthly" ? (
-                <>
-                  <p className="mt-2 text-sm text-slate-600">
-                    Evento recorrente: <strong>Todo dia {event.recurrence.dayOfMonth}</strong>
-                    <br />
-                    Datas geradas automaticamente por até {event.recurrence.generateMonths ?? 12} meses.
-                  </p>
-
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    {futureOccurrences.slice(0, 8).map((iso) => (
-                      <div
-                        key={iso}
-                        className="rounded-xl border border-slate-200 bg-slate-50 p-4"
-                      >
-                        <div className="text-sm font-semibold text-slate-900">
-                          {formatDateLong(iso)}
-                        </div>
-                        <div className="mt-1 text-sm text-slate-600">
-                          {formatTime(iso)}
-                        </div>
-                      </div>
-                    ))}
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {futureOccurrences.slice(0, 8).map((iso) => (
+                  <div
+                    key={iso}
+                    className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                  >
+                    <div className="text-sm font-semibold text-slate-900">
+                      {formatDateLong(iso)}
+                    </div>
+                    <div className="mt-1 text-sm text-slate-600">
+                      {formatTime(iso)}
+                    </div>
                   </div>
-                </>
-              ) : (
-                <p className="mt-2 text-sm text-slate-600">
-                  Evento único. (No sistema final, eventos recorrentes geram automaticamente próximas datas.)
-                </p>
-              )}
+                ))}
+              </div>
             </section>
           </div>
 
@@ -170,6 +151,34 @@ export default async function EventDetailPage({ params }: Props) {
                   {event.city}/{event.state}
                 </dd>
               </div>
+              <div>
+                <dt className="text-slate-500">Contato</dt>
+                <dd className="mt-1 font-semibold text-slate-900">
+                  {event.contactName}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">CPF / CNPJ</dt>
+                <dd className="mt-1 font-semibold text-slate-900">
+                  {event.contactDocument}
+                </dd>
+              </div>
+              {event.contactPhone ? (
+                <div>
+                  <dt className="text-slate-500">Telefone</dt>
+                  <dd className="mt-1 font-semibold text-slate-900">
+                    {event.contactPhone}
+                  </dd>
+                </div>
+              ) : null}
+              {event.contactEmail ? (
+                <div>
+                  <dt className="text-slate-500">E-mail</dt>
+                  <dd className="mt-1 font-semibold text-slate-900">
+                    {event.contactEmail}
+                  </dd>
+                </div>
+              ) : null}
             </dl>
 
             {event.websiteUrl ? (

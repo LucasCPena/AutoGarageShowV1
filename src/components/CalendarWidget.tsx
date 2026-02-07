@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import type { EventRecurrence } from "@/lib/database";
 import { formatDateShort } from "@/lib/date";
+import { generateEventOccurrences } from "@/lib/eventRecurrence";
 
 interface Event {
   id: string;
@@ -10,6 +12,8 @@ interface Event {
   city: string;
   state: string;
   startAt: string;
+  endAt?: string;
+  recurrence: EventRecurrence;
   status: string;
 }
 
@@ -22,6 +26,15 @@ export default function CalendarWidget({ events, onEventClick }: CalendarWidgetP
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
+  const eventsWithOccurrences = useMemo(
+    () =>
+      events.map((event) => ({
+        ...event,
+        occurrences: generateEventOccurrences(event.startAt, event.recurrence, event.endAt)
+      })),
+    [events]
+  );
+
   const getDaysInMonth = (date: Date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   };
@@ -31,10 +44,10 @@ export default function CalendarWidget({ events, onEventClick }: CalendarWidgetP
   };
 
   const getEventsForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
-    return events.filter(event => {
-      const eventDate = new Date(event.startAt).toISOString().split('T')[0];
-      return eventDate === dateStr && event.status === 'approved';
+    const dateStr = formatDateShort(date);
+    return eventsWithOccurrences.filter((event) => {
+      if (event.status !== "approved") return false;
+      return event.occurrences.some((occ) => formatDateShort(occ) === dateStr);
     });
   };
 
@@ -47,14 +60,12 @@ export default function CalendarWidget({ events, onEventClick }: CalendarWidgetP
     const firstDay = getFirstDayOfMonth(currentDate);
     const days = [];
 
-    // Empty cells for days before month starts
     for (let i = 0; i < firstDay; i++) {
       days.push(
         <div key={`empty-${i}`} className="h-8 border border-slate-100"></div>
       );
     }
 
-    // Days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
       const dayEvents = getEventsForDate(date);
@@ -87,7 +98,6 @@ export default function CalendarWidget({ events, onEventClick }: CalendarWidgetP
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4">
-      {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={() => navigateMonth(-1)}
@@ -108,9 +118,7 @@ export default function CalendarWidget({ events, onEventClick }: CalendarWidgetP
         </button>
       </div>
 
-      {/* Calendar Grid */}
       <div className="mb-4">
-        {/* Days of week */}
         <div className="grid grid-cols-7 gap-1 mb-2">
           {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
             <div key={day} className="text-xs font-semibold text-slate-600 text-center">
@@ -119,13 +127,11 @@ export default function CalendarWidget({ events, onEventClick }: CalendarWidgetP
           ))}
         </div>
         
-        {/* Calendar days */}
         <div className="grid grid-cols-7 gap-1">
           {renderCalendarDays()}
         </div>
       </div>
 
-      {/* Selected Date Events */}
       {selectedDate && selectedDateEvents.length > 0 && (
         <div className="border-t border-slate-200 pt-4">
           <h4 className="text-sm font-semibold text-slate-900 mb-2">
@@ -140,7 +146,7 @@ export default function CalendarWidget({ events, onEventClick }: CalendarWidgetP
               >
                 <div className="font-medium text-slate-900 text-sm">{event.title}</div>
                 <div className="text-xs text-slate-600">
-                  {event.city}/{event.state} • {formatDateShort(event.startAt)}
+                  {event.city}/{event.state} • {formatDateShort(selectedDate || event.startAt)}
                 </div>
               </div>
             ))}
@@ -148,7 +154,6 @@ export default function CalendarWidget({ events, onEventClick }: CalendarWidgetP
         </div>
       )}
 
-      {/* Legend */}
       <div className="border-t border-slate-200 pt-4 mt-4">
         <div className="flex items-center gap-4 text-xs">
           <div className="flex items-center gap-2">

@@ -1,1 +1,32 @@
-[]
+[
+  {
+    "id": "hero-1",
+    "title": "Encontro Nacional de Classicos",
+    "image": "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d",
+    "link": "/eventos",
+    "section": "home",
+    "position": 1,
+    "status": "active",
+    "startDate": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "hero-2",
+    "title": "Classificados premium com destaque",
+    "image": "https://images.unsplash.com/photo-1502877338535-766e1452684a",
+    "link": "/classificados",
+    "section": "home",
+    "position": 2,
+    "status": "active",
+    "startDate": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "hero-3",
+    "title": "Calendario: ate 3 datas por evento",
+    "image": "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d",
+    "link": "/eventos/calendario",
+    "section": "home",
+    "position": 3,
+    "status": "active",
+    "startDate": "2026-01-01T00:00:00.000Z"
+  }
+]

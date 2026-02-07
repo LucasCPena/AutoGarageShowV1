@@ -4,8 +4,10 @@ import Link from "next/link";
 import Container from "@/components/Container";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
-import { formatDateLong, formatTime, isWithinNextDays } from "@/lib/date";
+import { formatDateLong, formatTime } from "@/lib/date";
 import { db, Event } from "@/lib/database";
+import { formatRecurrence, generateEventOccurrences, getSpanDays } from "@/lib/eventRecurrence";
+import HeroSlider from "@/components/HeroSlider";
 
 export const metadata: Metadata = {
   title: "Eventos",
@@ -15,16 +17,25 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-function byStartAtAsc(a: { startAt: string }, b: { startAt: string }) {
-  return new Date(a.startAt).getTime() - new Date(b.startAt).getTime();
-}
-
 export default async function EventsPage() {
   const allEvents: Event[] = await db.events.getAll();
-  const upcoming = allEvents
-    .filter((e) => e.status === "approved")
-    .filter((e) => isWithinNextDays(e.startAt, 21))
-    .sort(byStartAtAsc);
+  const now = Date.now();
+  const limit = now + 21 * 24 * 60 * 60 * 1000;
+
+  const upcoming = (
+    allEvents
+      .filter((e) => e.status === "approved")
+      .map((event) => {
+        const occurrences = generateEventOccurrences(event.startAt, event.recurrence, event.endAt);
+        const nextOccurrence = occurrences.find((iso) => {
+          const time = new Date(iso).getTime();
+          return time >= now && time <= limit;
+        });
+        if (!nextOccurrence) return null;
+        return { event, nextOccurrence };
+      })
+      .filter(Boolean) as { event: Event; nextOccurrence: string }[]
+  ).sort((a, b) => new Date(a.nextOccurrence).getTime() - new Date(b.nextOccurrence).getTime());
 
   return (
     <>
@@ -40,6 +51,10 @@ export default async function EventsPage() {
         </Link>
       </PageIntro>
 
+      <Container className="mt-6">
+        <HeroSlider section="events" />
+      </Container>
+
       <Container className="py-10">
         <Notice title="Como funciona" variant="info">
           Eventos enviados passam por aprovação manual. Apenas eventos aprovados geram URL pública amigável. Eventos
@@ -47,7 +62,7 @@ export default async function EventsPage() {
         </Notice>
 
         <div className="mt-8 grid gap-3">
-          {upcoming.map((event) => (
+          {upcoming.map(({ event, nextOccurrence }) => (
             <article
               key={event.id}
               className="rounded-xl border border-slate-200 bg-white p-5"
@@ -55,7 +70,7 @@ export default async function EventsPage() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="text-sm text-slate-500">
-                    {formatDateLong(event.startAt)} • {formatTime(event.startAt)}
+                    {formatDateLong(nextOccurrence)} • {formatTime(nextOccurrence)}
                   </div>
                   <Link
                     href={`/eventos/${event.slug}`}
@@ -69,11 +84,7 @@ export default async function EventsPage() {
                 </div>
 
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                  {event.recurrence.type === "monthly"
-                    ? `Recorrente • Dia ${event.recurrence.dayOfMonth} de cada mês`
-                    : event.recurrence.type === "weekly"
-                      ? "Recorrente semanal"
-                      : "Evento único"}
+                  {formatRecurrence(event.recurrence, getSpanDays(event.startAt, event.endAt))}
                 </span>
               </div>
             </article>

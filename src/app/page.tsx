@@ -5,9 +5,12 @@ import Image from "next/image";
 import Link from "next/link";
 
 import Container from "@/components/Container";
-import { formatDateLong, formatDateShort, formatTime, isWithinNextDays } from "@/lib/date";
+import type { EventRecurrence } from "@/lib/database";
+import { formatDateLong, formatDateShort, formatTime } from "@/lib/date";
 import { formatCurrencyBRL } from "@/lib/format";
 import CalendarWidget from "@/components/CalendarWidget";
+import { generateEventOccurrences } from "@/lib/eventRecurrence";
+import HeroSlider from "@/components/HeroSlider";
 
 interface HomeConfig {
   heroTitle: string;
@@ -31,9 +34,14 @@ interface Event {
   city: string;
   state: string;
   location: string;
+  contactName: string;
+  contactDocument: string;
+  contactPhone?: string;
+  contactEmail?: string;
   startAt: string;
   endAt?: string;
   status: 'pending' | 'approved' | 'completed';
+  recurrence: EventRecurrence;
 }
 
 interface Listing {
@@ -97,10 +105,6 @@ interface Banner {
   endDate?: string;
   createdAt: string;
   updatedAt: string;
-}
-
-function byIsoDateAsc(a: { startAt: string }, b: { startAt: string }) {
-  return new Date(a.startAt).getTime() - new Date(b.startAt).getTime();
 }
 
 function byIsoDateDesc(a: { createdAt: string }, b: { createdAt: string }) {
@@ -188,11 +192,27 @@ export default function HomePage() {
     );
   }
 
-  const upcoming = events
-    .filter((e) => e.status === 'approved')
-    .filter((e) => isWithinNextDays(e.startAt, 21))
-    .sort(byIsoDateAsc)
+  const now = Date.now();
+  const limit = now + 21 * 24 * 60 * 60 * 1000;
+
+  const upcoming = (
+    events
+      .filter((e) => e.status === 'approved')
+      .map((event) => {
+        const occurrences = generateEventOccurrences(event.startAt, event.recurrence, event.endAt);
+        const nextOccurrence = occurrences.find((iso) => {
+          const time = new Date(iso).getTime();
+          return time >= now && time <= limit;
+        });
+        if (!nextOccurrence) return null;
+        return { event, nextOccurrence };
+      })
+      .filter(Boolean) as { event: Event; nextOccurrence: string }[]
+  )
+    .sort((a, b) => new Date(a.nextOccurrence).getTime() - new Date(b.nextOccurrence).getTime())
     .slice(0, 6);
+
+  const upcomingEventsOnly = upcoming.map(({ event }) => event);
 
   const featured = listings
     .filter((l) => (l.status === 'active' || l.status === 'approved') && l.featured)
@@ -209,20 +229,28 @@ export default function HomePage() {
 
   return (
     <>
-      <section className="border-b border-slate-200 bg-gradient-to-b from-brand-50 to-white">
+      <section
+        className="border-b border-slate-200 bg-slate-900/80"
+        style={{
+          backgroundImage:
+            "linear-gradient(to bottom, rgba(15,23,42,0.8), rgba(15,23,42,0.9)), url('https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=1600&q=80')",
+          backgroundSize: "cover",
+          backgroundPosition: "center"
+        }}
+      >
         <Container className="py-14">
           <div className="grid gap-10 md:grid-cols-2 md:items-center">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white px-3 py-1 text-xs font-semibold text-brand-800">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white">
                 Sistema Completo
-                <span className="h-1 w-1 rounded-full bg-brand-400" />
+                <span className="h-1 w-1 rounded-full bg-brand-300" />
                 Backend + Frontend
               </div>
 
-              <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+              <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
                 {config.heroTitle}
               </h1>
-              <p className="mt-4 text-lg text-slate-600">{config.heroSubtitle}</p>
+              <p className="mt-4 text-lg text-slate-100">{config.heroSubtitle}</p>
               
               <div className="mt-6 flex flex-wrap gap-4">
                 <Link
@@ -233,54 +261,17 @@ export default function HomePage() {
                 </Link>
                 <Link
                   href="/eventos"
-                  className="rounded-md border border-slate-300 px-6 py-3 text-base font-semibold text-slate-700 hover:bg-slate-50"
+                  className="rounded-md border border-white/40 px-6 py-3 text-base font-semibold text-white hover:bg-white/10"
                 >
                   Ver Eventos
                 </Link>
               </div>
             </div>
             
-            {config.youtubeEmbedUrl && (
-              <div className="aspect-video w-full max-w-md rounded-xl overflow-hidden">
-                <iframe
-                  src={config.youtubeEmbedUrl}
-                  className="w-full h-full"
-                  allowFullScreen
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                />
-              </div>
-            )}
+            <HeroSlider section="home" />
           </div>
         </Container>
       </section>
-
-      {/* Banner Principal */}
-      {config.bannerImage && (
-        <section className="bg-slate-900">
-          <Container className="py-8">
-            <Link
-              href={config.bannerLink || "#"}
-              className="block group relative overflow-hidden rounded-xl"
-            >
-              <Image
-                src={config.bannerImage}
-                alt={config.bannerTitle || "Banner"}
-                width={1200}
-                height={300}
-                className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-              <div className="absolute top-2 right-2">
-                <div className="text-center text-white">
-                  <h2 className="text-2xl font-bold">{config.bannerTitle}</h2>
-                  {config.bannerLink && (
-                    <p className="mt-2 text-sm opacity-90">Clique para saber mais</p>
-                  )}
-                </div>
-              </div>
-            </Link>
-          </Container>
-        </section>
-      )}
 
       <Container className="py-10">
         {/* Resumo Estatístico */}
@@ -315,7 +306,7 @@ export default function HomePage() {
             </Link>
           </div>
           <CalendarWidget 
-            events={upcoming} 
+            events={upcomingEventsOnly} 
             onEventClick={(event) => {
               // Redirecionar para a página do evento
               window.location.href = `/eventos/${event.slug}`;
@@ -336,14 +327,14 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {upcoming.map((event) => (
+              {upcoming.map(({ event, nextOccurrence }) => (
                 <Link
                   key={event.id}
                   href={`/eventos/${event.slug}`}
                   className="group block rounded-2xl border border-slate-200 bg-white p-6 hover:border-brand-200 transition-colors"
                 >
                   <div className="text-xs font-semibold text-brand-700">
-                    {formatDateShort(event.startAt)} • {event.city}/{event.state}
+                    {formatDateShort(nextOccurrence)} • {event.city}/{event.state}
                   </div>
                   <h3 className="mt-2 text-lg font-semibold text-slate-900 group-hover:text-brand-800">
                     {event.title}

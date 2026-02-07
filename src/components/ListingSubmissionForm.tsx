@@ -1,18 +1,21 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import Notice from "@/components/Notice";
 import { getVehicleMaxAllowedYear } from "@/lib/siteSettings";
 import { useSiteSettings } from "@/lib/useSiteSettings";
 import { getModelsForMake, vehicleMakes } from "@/lib/vehicleCatalog";
+import type { VehicleBrand } from "@/lib/database";
 
 export default function ListingSubmissionForm() {
   const { settings, isReady } = useSiteSettings();
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [brands, setBrands] = useState<VehicleBrand[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
   const [documentType, setDocumentType] = useState<"cpf" | "cnpj">("cpf");
   const [make, setMake] = useState<string>("");
   const [customMake, setCustomMake] = useState<string>("");
@@ -27,12 +30,44 @@ export default function ListingSubmissionForm() {
     [settings]
   );
 
+  useEffect(() => {
+    const loadBrands = async () => {
+      try {
+        const res = await fetch("/api/catalog/brands");
+        const data = await res.json();
+        if (data.brands?.length) {
+          setBrands(data.brands);
+          setMake((current) => current || data.brands[0]?.id || "");
+          return;
+        }
+        throw new Error("Catálogo vazio");
+      } catch (error) {
+        const fallback = vehicleMakes.map((name) => ({
+          id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          name,
+          models: getModelsForMake(name)
+        }));
+        setBrands(fallback);
+        setMake((current) => current || fallback[0]?.id || "");
+      } finally {
+        setCatalogLoading(false);
+      }
+    };
+
+    loadBrands();
+  }, []);
+
+  const selectedBrand = useMemo(
+    () => brands.find((brand) => brand.id === make),
+    [brands, make]
+  );
+
   const models = useMemo(() => {
     if (!make || make === "Outro") return [];
-    return getModelsForMake(make);
-  }, [make]);
+    return selectedBrand?.models ?? [];
+  }, [make, selectedBrand]);
 
-  const normalizedMake = (make === "Outro" ? customMake : make).trim();
+  const normalizedMake = (make === "Outro" ? customMake : selectedBrand?.name || "").trim();
   const normalizedModel = (model === "Outro" ? customModel : model).trim();
 
   const generatedTitle = useMemo(() => {
@@ -168,6 +203,7 @@ export default function ListingSubmissionForm() {
             required
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             value={make}
+            disabled={catalogLoading}
             onChange={(e) => {
               const next = e.target.value;
               setMake(next);
@@ -177,10 +213,10 @@ export default function ListingSubmissionForm() {
               setError(null);
             }}
           >
-            <option value="">Selecione</option>
-            {vehicleMakes.map((item) => (
-              <option key={item} value={item}>
-                {item}
+            <option value="">{catalogLoading ? "Carregando catálogo..." : "Selecione"}</option>
+            {brands.map((brand) => (
+              <option key={brand.id} value={brand.id}>
+                {brand.name}
               </option>
             ))}
             <option value="Outro">Outro</option>

@@ -18,5 +18,15 @@
   "comments": {
     "requireApproval": true,
     "maxLength": 1000
+  },
+  "social": {
+    "links": [
+      { "platform": "YouTube", "url": "https://www.youtube.com/" },
+      { "platform": "X", "url": "https://x.com/" },
+      { "platform": "Pinterest", "url": "https://www.pinterest.com/" },
+      { "platform": "Instagram", "url": "https://www.instagram.com/" },
+      { "platform": "Facebook", "url": "https://www.facebook.com/" },
+      { "platform": "TikTok", "url": "https://www.tiktok.com/" }
+    ]
   }
 }

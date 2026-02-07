@@ -13,6 +13,12 @@ export type EventRecurrence =
       generateMonths: number;
     }
   | {
+      type: "monthly_weekday";
+      weekday: number; // 0=Sunday..6=Saturday
+      nth: number; // 1..5
+      generateMonths: number;
+    }
+  | {
       type: "annual";
       month: number; // 1..12
       day: number; // 1..31
@@ -31,6 +37,10 @@ export type Event = {
   city: string;
   state: string;
   location: string;
+  contactName: string;
+  contactDocument: string;
+  contactPhone?: string;
+  contactEmail?: string;
   startAt: string;
   endAt?: string; // For multi-day events
   status: EventStatus;
@@ -126,12 +136,14 @@ export const events: Event[] = [
     title: "Encontro de Clássicos – São Paulo",
     description:
       "Encontro aberto ao público com exposição de veículos antigos e praça de alimentação. Evento com curadoria e aprovação manual.",
-    city: "São Paulo",
-    state: "SP",
-    location: "Parque Ibirapuera (Portão 7)",
-    startAt: isoDaysFromNow(4, 9),
-    status: "approved",
-    recurrence: {
+  city: "São Paulo",
+  state: "SP",
+  location: "Parque Ibirapuera (Portão 7)",
+  contactName: "Equipe Auto Garage",
+  contactDocument: "000.000.000-00",
+  startAt: isoDaysFromNow(4, 9),
+  status: "approved",
+  recurrence: {
       type: "monthly",
       dayOfMonth: 1,
       generateMonths: 12
@@ -144,12 +156,14 @@ export const events: Event[] = [
     title: "Encontro Vintage – Curitiba",
     description:
       "Edição especial com clubes convidados, sorteios e área para fotos. Entrada gratuita.",
-    city: "Curitiba",
-    state: "PR",
-    location: "Largo da Ordem",
-    startAt: isoDaysFromNow(12, 10),
-    status: "approved",
-    recurrence: { type: "single" }
+  city: "Curitiba",
+  state: "PR",
+  location: "Largo da Ordem",
+  contactName: "Equipe Auto Garage",
+  contactDocument: "000.000.000-00",
+  startAt: isoDaysFromNow(12, 10),
+  status: "approved",
+  recurrence: { type: "single" }
   },
   {
     id: "e3",
@@ -157,12 +171,14 @@ export const events: Event[] = [
     title: "Encontro Mensal – Belo Horizonte",
     description:
       "Encontro mensal para carros antigos (10+ anos), com área segura e regras de convivência.",
-    city: "Belo Horizonte",
-    state: "MG",
-    location: "Praça da Liberdade",
-    startAt: isoDaysFromNow(24, 9),
-    status: "approved",
-    recurrence: {
+  city: "Belo Horizonte",
+  state: "MG",
+  location: "Praça da Liberdade",
+  contactName: "Equipe Auto Garage",
+  contactDocument: "000.000.000-00",
+  startAt: isoDaysFromNow(24, 9),
+  status: "approved",
+  recurrence: {
       type: "monthly",
       dayOfMonth: 2,
       generateMonths: 12
@@ -174,12 +190,14 @@ export const events: Event[] = [
     title: "Encontro (pendente) – Porto Alegre",
     description:
       "Exemplo de evento aguardando aprovação. Não deve gerar página pública no portal.",
-    city: "Porto Alegre",
-    state: "RS",
-    location: "Orla do Guaíba",
-    startAt: isoDaysFromNow(7, 9),
-    status: "pending",
-    recurrence: { type: "single" }
+  city: "Porto Alegre",
+  state: "RS",
+  location: "Orla do Guaíba",
+  contactName: "Equipe Auto Garage",
+  contactDocument: "000.000.000-00",
+  startAt: isoDaysFromNow(7, 9),
+  status: "pending",
+  recurrence: { type: "single" }
   }
 ];
 

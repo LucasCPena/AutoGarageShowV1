@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database';
 import { getUserFromToken } from '@/lib/auth-middleware';
+import { normalizeRecurrence } from '@/lib/eventRecurrence';
 
 function slugify(input: string) {
   return input
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
     const settings = await db.settings.get();
     
     // Validar campos obrigatórios
-    const requiredFields = ['title', 'description', 'city', 'state', 'location', 'startAt'];
+    const requiredFields = ['title', 'description', 'city', 'state', 'location', 'startAt', 'contactName', 'contactDocument'];
     for (const field of requiredFields) {
       if (!eventData[field]) {
         return NextResponse.json(
@@ -64,7 +65,27 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    let endAtIso: string | undefined;
+    if (eventData.endAt) {
+      const endDate = new Date(eventData.endAt);
+      if (Number.isNaN(endDate.getTime())) {
+        return NextResponse.json(
+          { error: 'Data de término inválida' },
+          { status: 400 }
+        );
+      }
+      if (endDate.getTime() < startDate.getTime()) {
+        return NextResponse.json(
+          { error: 'A data de término não pode ser anterior ao início' },
+          { status: 400 }
+        );
+      }
+      endAtIso = endDate.toISOString();
+    }
     
+    const recurrence = normalizeRecurrence(eventData.recurrence, startDate.toISOString());
+
     // Criar slug a partir do título e garantir unicidade
     let slug = slugify(eventData.title);
     const existingEvent = await db.events.findBySlug(slug);
@@ -78,10 +99,16 @@ export async function POST(request: NextRequest) {
     
     const event = await db.events.create({
       ...eventData,
+      startAt: startDate.toISOString(),
+      endAt: endAtIso,
       slug,
       status,
-      recurrence: eventData.recurrence || { type: 'single' },
+      recurrence,
       createdBy: user?.id || 'anonymous',
+      contactName: eventData.contactName,
+      contactDocument: eventData.contactDocument,
+      contactPhone: eventData.contactPhone,
+      contactEmail: eventData.contactEmail,
       images: eventData.images || [],
       coverImage: eventData.coverImage || eventData.images?.[0]
     });

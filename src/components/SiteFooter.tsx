@@ -1,7 +1,19 @@
 import Container from "@/components/Container";
+import { db } from "@/lib/database";
 
-export default function SiteFooter() {
+const defaultSocialLinks = [
+  { platform: "YouTube", url: "https://www.youtube.com/" },
+  { platform: "X", url: "https://x.com/" },
+  { platform: "Pinterest", url: "https://www.pinterest.com/" },
+  { platform: "Instagram", url: "https://www.instagram.com/" },
+  { platform: "Facebook", url: "https://www.facebook.com/" },
+  { platform: "TikTok", url: "https://www.tiktok.com/" }
+];
+
+export default async function SiteFooter() {
   const year = new Date().getFullYear();
+  const settings = await db.settings.get();
+  const socialLinks = settings?.social?.links?.length ? settings.social.links : defaultSocialLinks;
 
   return (
     <footer className="border-t border-slate-200 bg-white">
@@ -14,36 +26,26 @@ export default function SiteFooter() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 text-sm">
-            <a
-              className="text-slate-600 hover:text-brand-700"
-              href="https://www.instagram.com/"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Instagram
-            </a>
-            <a
-              className="text-slate-600 hover:text-brand-700"
-              href="https://www.youtube.com/"
-              target="_blank"
-              rel="noreferrer"
-            >
-              YouTube
-            </a>
-            <a
-              className="text-slate-600 hover:text-brand-700"
-              href="https://www.facebook.com/"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Facebook
-            </a>
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            {socialLinks.map((link) => (
+              <a
+                key={link.platform}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-slate-700 hover:border-brand-200 hover:text-brand-700"
+                href={link.url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
+                  {link.platform.slice(0, 1)}
+                </span>
+                {link.platform}
+              </a>
+            ))}
           </div>
         </div>
 
         <div className="mt-8 text-xs text-slate-500">
-          © {year} Auto Garage Show. Todos os direitos reservados.
+          © {year} Auto Garage Show. Links editáveis em settings.json.
         </div>
       </Container>
     </footer>

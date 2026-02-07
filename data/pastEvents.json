@@ -40,5 +40,19 @@
     "updatedAt": "2026-02-02T23:18:56.011Z",
     "id": "4751f361-aa47-4c4d-9b81-103fd6c7c8c1",
     "createdAt": "2026-02-02T23:18:56.013Z"
+  },
+  {
+    "eventId": "76e08b7b-17f4-4c8a-a5cd-627234cdc548",
+    "slug": "dsadsa",
+    "title": "dsadsa",
+    "city": "dsadsa",
+    "state": "ds",
+    "date": "2026-02-02T23:20:00.000Z",
+    "images": [],
+    "description": "dsadas",
+    "attendance": 0,
+    "updatedAt": "2026-02-07T11:24:09.062Z",
+    "id": "827db144-3e77-4e8f-b229-4e58ee4bb4d5",
+    "createdAt": "2026-02-07T11:24:09.066Z"
   }
 ]

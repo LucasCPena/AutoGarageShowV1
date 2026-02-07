@@ -1,15 +1,15 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import Container from "@/components/Container";
 import CommentsSection from "@/components/CommentsSection";
-import ListingFeaturePanel from "../../../components/ListingFeaturePanel";
+import ListingFeaturePanel from "@/components/ListingFeaturePanel";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { formatCurrencyBRL } from "@/lib/format";
-import { listings } from "@/lib/mockData";
+import { db } from "@/lib/database";
 import { listingJsonLd } from "@/lib/schema";
 
 type Props = {
@@ -23,12 +23,14 @@ function toMetaDescription(text: string) {
   return clean.length > 160 ? `${clean.slice(0, 157)}...` : clean;
 }
 
-export function generateMetadata({ params }: Props): Metadata {
-  const listing = listings.find(
-    (l) => l.slug === params.slug && l.status === "approved"
-  );
+export const dynamic = "force-dynamic";
 
-  if (!listing) {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const listing = await db.listings.findBySlug(params.slug);
+  const isVisible =
+    listing && (listing.status === "approved" || listing.status === "active");
+
+  if (!listing || !isVisible) {
     return {
       title: "Anúncio",
       description: "Anúncio não encontrado."
@@ -48,18 +50,24 @@ export function generateMetadata({ params }: Props): Metadata {
   };
 }
 
-export default function ListingDetailPage({ params }: Props) {
-  const listing = listings.find((l) => l.slug === params.slug);
+export default async function ListingDetailPage({ params }: Props) {
+  const listing = await db.listings.findBySlug(params.slug);
+  const isVisible =
+    listing && (listing.status === "approved" || listing.status === "active");
 
-  if (!listing || listing.status !== "approved") {
+  if (!listing || !isVisible) {
     return notFound();
   }
+
+  const listingYear = listing.modelYear ?? listing.year ?? listing.manufactureYear;
+  const listingYearLabel = listingYear ? String(listingYear) : "Ano não informado";
+  const images = listing.images?.length ? listing.images : ["/placeholders/car.svg"];
 
   return (
     <>
       <PageIntro
         title={listing.title}
-        subtitle={`${listing.city}/${listing.state} • ${listing.year} • ${formatCurrencyBRL(listing.price)}`}
+        subtitle={`${listing.city}/${listing.state} • ${listingYearLabel} • ${formatCurrencyBRL(listing.price)}`}
       >
         <Link
           href="/classificados"
@@ -79,19 +87,26 @@ export default function ListingDetailPage({ params }: Props) {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(listingJsonLd(listing))
+            __html: JSON.stringify(
+              listingJsonLd({
+                ...listing,
+                images,
+                year: listingYear
+              })
+            )
           }}
         />
 
         <Notice title="Controle anti-fraude (planejado)" variant="info">
-          Para publicar, o usuário precisa validar e-mail. Haverá limites por CPF/CNPJ e aprovação manual antes de gerar URL pública.
+          Para publicar, o usuário precisa validar e-mail. Haverá limites por CPF/CNPJ
+          e aprovação manual antes de gerar URL pública.
         </Notice>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
           <div className="grid gap-6 lg:col-span-2">
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
               <Image
-                src={listing.images[0]}
+                src={images[0]}
                 alt={listing.title}
                 width={1200}
                 height={800}
@@ -101,7 +116,7 @@ export default function ListingDetailPage({ params }: Props) {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              {listing.images.slice(1).map((src, index) => (
+              {images.slice(1).map((src, index) => (
                 <div
                   key={`${src}-${index}`}
                   className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
@@ -149,7 +164,7 @@ export default function ListingDetailPage({ params }: Props) {
                 </div>
                 <div>
                   <dt className="text-slate-500">Ano</dt>
-                  <dd className="mt-1 font-semibold text-slate-900">{listing.year}</dd>
+                  <dd className="mt-1 font-semibold text-slate-900">{listingYearLabel}</dd>
                 </div>
                 <div>
                   <dt className="text-slate-500">Cidade / UF</dt>
@@ -188,7 +203,8 @@ export default function ListingDetailPage({ params }: Props) {
             <div className="rounded-2xl border border-slate-200 bg-white p-6">
               <div className="text-sm font-semibold text-slate-900">Contato</div>
               <p className="mt-2 text-sm text-slate-600">
-                Protótipo: dados de contato não exibidos. No sistema final, haverá controles de segurança e políticas anti-fraude.
+                Protótipo: dados de contato não exibidos. No sistema final, haverá
+                controles de segurança e políticas anti-fraude.
               </p>
               <button
                 type="button"

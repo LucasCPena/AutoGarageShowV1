@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database';
 import { getUserFromToken, requireAuth } from '@/lib/auth-middleware';
+import { normalizeRecurrence } from '@/lib/eventRecurrence';
 
 function slugify(input: string) {
   return input
@@ -90,9 +91,41 @@ export async function PUT(
       // Edição de usuário comum volta para pendente até aprovação
       nextStatus = 'pending';
     }
+
+    const baseStart = new Date(updateData.startAt ?? existing.startAt);
+    if (Number.isNaN(baseStart.getTime())) {
+      return NextResponse.json(
+        { error: 'Data de início inválida' },
+        { status: 400 }
+      );
+    }
+
+    let endAtIso = existing.endAt;
+    if (updateData.endAt !== undefined) {
+      const endDate = new Date(updateData.endAt);
+      if (Number.isNaN(endDate.getTime())) {
+        return NextResponse.json(
+          { error: 'Data de término inválida' },
+          { status: 400 }
+        );
+      }
+      endAtIso = endDate.toISOString();
+    }
+
+    if (endAtIso && new Date(endAtIso).getTime() < baseStart.getTime()) {
+      return NextResponse.json(
+        { error: 'A data de término não pode ser anterior ao início' },
+        { status: 400 }
+      );
+    }
+
+    const recurrence = normalizeRecurrence(updateData.recurrence ?? existing.recurrence, baseStart.toISOString());
     
     const sanitizedUpdates = {
       ...updateData,
+      startAt: baseStart.toISOString(),
+      endAt: endAtIso,
+      recurrence,
       slug: newSlug,
       status: nextStatus,
       createdBy: existing.createdBy // impedir troca de autoria

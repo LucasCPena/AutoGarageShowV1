@@ -1,11 +1,13 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import Image from "next/image";
 import Notice from "@/components/Notice";
 import { useAuth } from "@/lib/useAuth";
+import type { Event, EventRecurrence } from "@/lib/database";
+import { formatDateShort } from "@/lib/date";
 
 type RecurrenceType = "single" | "weekly" | "monthly" | "monthly_weekday" | "annual" | "specific";
 
@@ -15,21 +17,63 @@ const nthOptions = [1, 2, 3, 4, 5];
 
 type MessageState = { type: "success" | "error"; text: string } | null;
 
-export default function EventSubmissionForm() {
+type Props = {
+  eventId: string;
+};
+
+function isoToDate(iso: string) {
+  return iso ? iso.slice(0, 10) : "";
+}
+
+function isoToTime(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString().slice(11, 16);
+}
+
+export default function EventEditForm({ eventId }: Props) {
   const { token, user } = useAuth();
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>("single");
   const [isMultiDay, setIsMultiDay] = useState(false);
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
   const [message, setMessage] = useState<MessageState>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [eventData, setEventData] = useState<Event | null>(null);
+  const [status, setStatus] = useState<Event["status"]>("pending");
 
   const infoMessage = useMemo(
     () =>
-      "Envie seu encontro. Suporte a datas sequenciais, recorrência semanal/mensal (incluindo 3º domingo) e datas específicas. Admin publica na hora; demais envios vão para aprovação manual.",
+      "Edição de evento. Admin mantém status; criador comum volta para pendente.",
     []
   );
 
-  function buildRecurrence(form: FormData) {
+  useEffect(() => {
+    async function loadEvent() {
+      try {
+        const res = await fetch(`/api/events/${eventId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Erro ao carregar evento.");
+        setEventData(data.event);
+        setStatus(data.event.status);
+        setRecurrenceType(data.event.recurrence.type as RecurrenceType);
+        setIsMultiDay(Boolean(data.event.endAt));
+        setCoverImagePreview(data.event.coverImage || null);
+      } catch (error) {
+        setMessage({
+          type: "error",
+          text: error instanceof Error ? error.message : "Erro ao carregar evento."
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadEvent();
+  }, [eventId, token]);
+
+  function buildRecurrence(form: FormData): EventRecurrence {
     const toNumber = (value: FormDataEntryValue | null, fallback: number) => {
       const parsed = Number(value);
       return Number.isFinite(parsed) ? parsed : fallback;
@@ -38,33 +82,33 @@ export default function EventSubmissionForm() {
     switch (recurrenceType) {
       case "weekly":
         return {
-          type: "weekly" as const,
+          type: "weekly",
           dayOfWeek: toNumber(form.get("weeklyDay"), 0),
           generateWeeks: toNumber(form.get("occurrences"), 12)
         };
       case "monthly":
-      return {
-        type: "monthly" as const,
-        dayOfMonth: toNumber(form.get("monthlyDay"), 1),
-        generateMonths: toNumber(form.get("occurrences"), 12)
-      };
+        return {
+          type: "monthly",
+          dayOfMonth: toNumber(form.get("monthlyDay"), 1),
+          generateMonths: toNumber(form.get("occurrences"), 12)
+        };
       case "monthly_weekday":
         return {
-          type: "monthly_weekday" as const,
+          type: "monthly_weekday",
           weekday: toNumber(form.get("monthlyWeekdayDay"), 0),
           nth: toNumber(form.get("monthlyWeekdayNth"), 1),
           generateMonths: toNumber(form.get("occurrences"), 12)
         };
       case "annual":
         return {
-          type: "annual" as const,
+          type: "annual",
           month: toNumber(form.get("annualMonth"), 1),
           day: toNumber(form.get("annualDay"), 1),
           generateYears: toNumber(form.get("occurrences"), 5)
         };
       case "specific":
         return {
-          type: "specific" as const,
+          type: "specific",
           dates: (form.get("specificDates")?.toString() || "")
             .split(/\r?\n/)
             .map((d) => d.trim())
@@ -72,17 +116,17 @@ export default function EventSubmissionForm() {
             .filter(Boolean)
         };
       default:
-        return { type: "single" as const };
+        return { type: "single" };
     }
   }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!eventData) return;
     setSubmitting(true);
     setMessage(null);
 
     const formElement = e.currentTarget;
-    // React recicla o evento; capturamos o form antes de qualquer await
     const form = new FormData(formElement);
 
     try {
@@ -138,11 +182,12 @@ export default function EventSubmissionForm() {
         endAt,
         websiteUrl: form.get("websiteUrl")?.toString().trim() || undefined,
         recurrence,
-        coverImage: coverImagePreview || undefined
+        coverImage: coverImagePreview || undefined,
+        status: user?.role === "admin" ? status : undefined
       };
 
-      const response = await fetch("/api/events", {
-        method: "POST",
+      const response = await fetch(`/api/events/${eventData.id}`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -151,20 +196,16 @@ export default function EventSubmissionForm() {
       });
 
       const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao enviar evento.");
+        throw new Error(data.error || "Erro ao atualizar evento.");
       }
 
-      setMessage({ type: "success", text: data.message || "Evento enviado com sucesso." });
-      formElement.reset();
-      setRecurrenceType("single");
-      setIsMultiDay(false);
-      setCoverImagePreview(null);
+      setMessage({ type: "success", text: data.message || "Evento atualizado com sucesso." });
+      setEventData(data.event);
     } catch (error) {
       setMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Erro ao enviar evento."
+        text: error instanceof Error ? error.message : "Erro ao atualizar evento."
       });
     } finally {
       setSubmitting(false);
@@ -182,14 +223,30 @@ export default function EventSubmissionForm() {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
+        Carregando dados do evento...
+      </div>
+    );
+  }
+
+  if (!eventData) {
+    return (
+      <Notice title="Erro" variant="warning">
+        Evento não encontrado ou sem permissão.
+      </Notice>
+    );
+  }
+
   return (
     <form onSubmit={onSubmit} className="grid gap-6">
       {message ? (
-        <Notice title={message.type === "success" ? "Envio concluído" : "Erro"} variant={message.type === "success" ? "success" : "warning"}>
+        <Notice title={message.type === "success" ? "Sucesso" : "Erro"} variant={message.type === "success" ? "success" : "warning"}>
           {message.text}
         </Notice>
       ) : (
-        <Notice title="Regras" variant="info">
+        <Notice title="Edição" variant="info">
           {infoMessage}
         </Notice>
       )}
@@ -200,6 +257,7 @@ export default function EventSubmissionForm() {
           <input
             required
             name="title"
+            defaultValue={eventData.title}
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="Ex.: Encontro de Clássicos"
           />
@@ -209,6 +267,7 @@ export default function EventSubmissionForm() {
           <span className="text-sm font-semibold text-slate-900">URL do organizador (opcional)</span>
           <input
             name="websiteUrl"
+            defaultValue={eventData.websiteUrl}
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="https://..."
             type="url"
@@ -220,6 +279,7 @@ export default function EventSubmissionForm() {
           <input
             required
             name="contactName"
+            defaultValue={eventData.contactName}
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="Quem responde pelo evento"
           />
@@ -230,8 +290,30 @@ export default function EventSubmissionForm() {
           <input
             required
             name="contactDocument"
+            defaultValue={eventData.contactDocument}
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="000.000.000-00"
+          />
+        </label>
+
+        <label className="grid gap-1">
+          <span className="text-sm font-semibold text-slate-900">Telefone (opcional)</span>
+          <input
+            name="contactPhone"
+            defaultValue={eventData.contactPhone}
+            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+            placeholder="(11) 99999-9999"
+          />
+        </label>
+
+        <label className="grid gap-1">
+          <span className="text-sm font-semibold text-slate-900">E-mail (opcional)</span>
+          <input
+            name="contactEmail"
+            defaultValue={eventData.contactEmail}
+            type="email"
+            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+            placeholder="contato@evento.com"
           />
         </label>
 
@@ -240,6 +322,7 @@ export default function EventSubmissionForm() {
           <input
             required
             name="city"
+            defaultValue={eventData.city}
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="Cidade"
           />
@@ -250,6 +333,7 @@ export default function EventSubmissionForm() {
           <input
             required
             name="state"
+            defaultValue={eventData.state}
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="SP"
             maxLength={2}
@@ -261,27 +345,9 @@ export default function EventSubmissionForm() {
           <input
             required
             name="location"
+            defaultValue={eventData.location}
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="Nome do local / endereço"
-          />
-        </label>
-
-        <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Telefone (opcional)</span>
-          <input
-            name="contactPhone"
-            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-            placeholder="(11) 99999-9999"
-          />
-        </label>
-
-        <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">E-mail (opcional)</span>
-          <input
-            name="contactEmail"
-            type="email"
-            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-            placeholder="contato@evento.com"
           />
         </label>
 
@@ -290,6 +356,7 @@ export default function EventSubmissionForm() {
           <input
             required
             name="startDate"
+            defaultValue={isoToDate(eventData.startAt)}
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             type="date"
           />
@@ -300,6 +367,7 @@ export default function EventSubmissionForm() {
           <input
             required
             name="startTime"
+            defaultValue={isoToTime(eventData.startAt)}
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             type="time"
           />
@@ -325,6 +393,7 @@ export default function EventSubmissionForm() {
               <input
                 required
                 name="endDate"
+                defaultValue={eventData.endAt ? isoToDate(eventData.endAt) : ""}
                 className="h-11 rounded-md border border-slate-300 px-3 text-sm"
                 type="date"
               />
@@ -335,6 +404,7 @@ export default function EventSubmissionForm() {
               <input
                 required
                 name="endTime"
+                defaultValue={eventData.endAt ? isoToTime(eventData.endAt) : isoToTime(eventData.startAt)}
                 className="h-11 rounded-md border border-slate-300 px-3 text-sm"
                 type="time"
               />
@@ -362,7 +432,7 @@ export default function EventSubmissionForm() {
         {recurrenceType === "weekly" && (
           <label className="grid gap-1">
             <span className="text-sm font-semibold text-slate-900">Dia da semana</span>
-            <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="weeklyDay">
+            <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="weeklyDay" defaultValue={eventData.recurrence.dayOfWeek ?? 0}>
               {weekDays.map((day, i) => (
                 <option key={day} value={i}>
                   {day}
@@ -375,7 +445,7 @@ export default function EventSubmissionForm() {
         {recurrenceType === "monthly" && (
           <label className="grid gap-1">
             <span className="text-sm font-semibold text-slate-900">Dia do mês</span>
-            <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="monthlyDay">
+            <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="monthlyDay" defaultValue={eventData.recurrence.dayOfMonth ?? 1}>
               {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
                 <option key={day} value={day}>
                   Dia {day}
@@ -389,7 +459,7 @@ export default function EventSubmissionForm() {
           <>
             <label className="grid gap-1">
               <span className="text-sm font-semibold text-slate-900">Semana do mês</span>
-              <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="monthlyWeekdayNth">
+              <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="monthlyWeekdayNth" defaultValue={(eventData.recurrence as any).nth ?? 1}>
                 {nthOptions.map((nth) => (
                   <option key={nth} value={nth}>
                     {nth}º encontro do mês
@@ -399,7 +469,7 @@ export default function EventSubmissionForm() {
             </label>
             <label className="grid gap-1">
               <span className="text-sm font-semibold text-slate-900">Dia da semana</span>
-              <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="monthlyWeekdayDay">
+              <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="monthlyWeekdayDay" defaultValue={(eventData.recurrence as any).weekday ?? 0}>
                 {weekDays.map((day, i) => (
                   <option key={day} value={i}>
                     {day}
@@ -414,7 +484,7 @@ export default function EventSubmissionForm() {
           <>
             <label className="grid gap-1">
               <span className="text-sm font-semibold text-slate-900">Mês</span>
-              <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="annualMonth">
+              <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="annualMonth" defaultValue={eventData.recurrence.month ?? 1}>
                 {months.map((month, i) => (
                   <option key={month} value={i + 1}>
                     {month}
@@ -425,7 +495,7 @@ export default function EventSubmissionForm() {
 
             <label className="grid gap-1">
               <span className="text-sm font-semibold text-slate-900">Dia</span>
-              <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="annualDay">
+              <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="annualDay" defaultValue={eventData.recurrence.day ?? 1}>
                 {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
                   <option key={day} value={day}>
                     {day}
@@ -443,6 +513,11 @@ export default function EventSubmissionForm() {
               required
               name="specificDates"
               className="min-h-24 rounded-md border border-slate-300 px-3 py-2 text-sm font-mono"
+              defaultValue={
+                eventData.recurrence.type === "specific" && eventData.recurrence.dates
+                  ? eventData.recurrence.dates.map((d) => formatDateShort(d)).join("\n")
+                  : ""
+              }
               placeholder="2026-03-15 09:00&#10;2026-04-20 10:00&#10;2026-05-10"
             />
           </label>
@@ -457,7 +532,12 @@ export default function EventSubmissionForm() {
               type="number"
               min="1"
               max="52"
-              defaultValue="12"
+              defaultValue={
+                (eventData.recurrence as any).generateWeeks ||
+                (eventData.recurrence as any).generateMonths ||
+                (eventData.recurrence as any).generateYears ||
+                12
+              }
               className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             />
           </label>
@@ -484,10 +564,26 @@ export default function EventSubmissionForm() {
           <textarea
             required
             name="description"
+            defaultValue={eventData.description}
             className="min-h-32 rounded-md border border-slate-300 px-3 py-2 text-sm"
             placeholder="Conte detalhes do evento, regras, clubes convidados etc."
           />
         </label>
+
+        {user?.role === "admin" ? (
+          <label className="grid gap-1">
+            <span className="text-sm font-semibold text-slate-900">Status</span>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value as Event["status"])}
+              className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+            >
+              <option value="pending">Pendente</option>
+              <option value="approved">Aprovado</option>
+              <option value="completed">Realizado</option>
+            </select>
+          </label>
+        ) : null}
       </div>
 
       <button
@@ -495,11 +591,7 @@ export default function EventSubmissionForm() {
         disabled={submitting}
         className="inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-70"
       >
-        {submitting
-          ? "Enviando..."
-          : user?.role === "admin"
-            ? "Publicar (admin)"
-            : "Enviar para aprovação"}
+        {submitting ? "Salvando..." : "Salvar alterações"}
       </button>
     </form>
   );
