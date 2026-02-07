@@ -6,9 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:seed": "node scripts/seed-mysql.js"
   },
   "dependencies": {
+    "dotenv": "^16.4.5",
+    "mysql2": "^3.10.0",
     "next": "14.2.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
