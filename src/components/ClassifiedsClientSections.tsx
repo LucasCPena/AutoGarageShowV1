@@ -38,6 +38,30 @@ function byFeaturedUntilDesc(a: Listing, b: Listing) {
   return byCreatedAtDesc(a, b);
 }
 
+function formatLocation(city?: string, state?: string) {
+  const cityLabel = city?.trim() ?? "";
+  const stateLabel = state?.trim() ?? "";
+
+  if (cityLabel && stateLabel) return `${cityLabel}/${stateLabel}`;
+  if (cityLabel) return cityLabel;
+  if (stateLabel) return stateLabel;
+  return "";
+}
+
+function formatListingMeta(listing: Listing) {
+  const parts: string[] = [];
+  const location = formatLocation(listing.city, listing.state);
+  if (location) parts.push(location);
+
+  const yearLabel =
+    typeof listing.year === "number" && Number.isFinite(listing.year)
+      ? String(listing.year)
+      : "";
+  if (yearLabel) parts.push(yearLabel);
+
+  return parts.join(" • ");
+}
+
 type Props = {
   listings: Listing[];
 };
@@ -115,9 +139,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
                     Destaque
                   </span>
                 </div>
-                <div className="mt-1 text-sm text-slate-600">
-                  {l.city}/{l.state} • {l.year}
-                </div>
+                <div className="mt-1 text-sm text-slate-600">{formatListingMeta(l)}</div>
                 <div className="mt-3 text-sm font-semibold text-slate-900">
                   {formatCurrencyBRL(l.price)}
                 </div>
@@ -164,9 +186,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
                     {l.title}
                   </div>
                 </div>
-                <div className="mt-1 text-sm text-slate-600">
-                  {l.city}/{l.state} • {l.year}
-                </div>
+                <div className="mt-1 text-sm text-slate-600">{formatListingMeta(l)}</div>
                 <div className="mt-3 text-sm font-semibold text-slate-900">
                   {formatCurrencyBRL(l.price)}
                 </div>

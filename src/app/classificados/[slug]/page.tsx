@@ -23,6 +23,16 @@ function toMetaDescription(text: string) {
   return clean.length > 160 ? `${clean.slice(0, 157)}...` : clean;
 }
 
+function formatLocation(city?: string, state?: string) {
+  const cityLabel = city?.trim() ?? "";
+  const stateLabel = state?.trim() ?? "";
+
+  if (cityLabel && stateLabel) return `${cityLabel}/${stateLabel}`;
+  if (cityLabel) return cityLabel;
+  if (stateLabel) return stateLabel;
+  return "";
+}
+
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -62,12 +72,18 @@ export default async function ListingDetailPage({ params }: Props) {
   const listingYear = listing.modelYear ?? listing.year ?? listing.manufactureYear;
   const listingYearLabel = listingYear ? String(listingYear) : "Ano não informado";
   const images = listing.images?.length ? listing.images : ["/placeholders/car.svg"];
+  const locationLabel = formatLocation(listing.city, listing.state);
+  const subtitleParts = [
+    locationLabel,
+    listingYearLabel,
+    formatCurrencyBRL(listing.price)
+  ].filter(Boolean);
 
   return (
     <>
       <PageIntro
         title={listing.title}
-        subtitle={`${listing.city}/${listing.state} • ${listingYearLabel} • ${formatCurrencyBRL(listing.price)}`}
+        subtitle={subtitleParts.join(" • ")}
       >
         <Link
           href="/classificados"
@@ -169,7 +185,7 @@ export default async function ListingDetailPage({ params }: Props) {
                 <div>
                   <dt className="text-slate-500">Cidade / UF</dt>
                   <dd className="mt-1 font-semibold text-slate-900">
-                    {listing.city}/{listing.state}
+                    {locationLabel || "Não informado"}
                   </dd>
                 </div>
                 <div>
