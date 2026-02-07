@@ -30,7 +30,7 @@ export default function AdminCatalogPanel({ token }: Props) {
   const [newBrandModels, setNewBrandModels] = useState("");
 
   const [selectedBrandId, setSelectedBrandId] = useState("");
-  const [newModel, setNewModel] = useState("");
+  const [newModelsInput, setNewModelsInput] = useState("");
   const [busy, setBusy] = useState(false);
 
   const selectedBrand = useMemo(
@@ -107,8 +107,9 @@ export default function AdminCatalogPanel({ token }: Props) {
       setMessage({ type: "error", text: "Escolha uma marca." });
       return;
     }
-    if (!newModel.trim()) {
-      setMessage({ type: "error", text: "Informe o modelo." });
+    const models = parseModels(newModelsInput);
+    if (models.length === 0) {
+      setMessage({ type: "error", text: "Informe pelo menos um modelo." });
       return;
     }
     setBusy(true);
@@ -119,7 +120,7 @@ export default function AdminCatalogPanel({ token }: Props) {
           "Content-Type": "application/json",
           ...authHeaders()
         },
-        body: JSON.stringify({ model: newModel.trim() })
+        body: JSON.stringify({ models })
       });
       const data = await res.json();
       if (!res.ok) {
@@ -130,8 +131,13 @@ export default function AdminCatalogPanel({ token }: Props) {
           b.id === selectedBrand.id ? { ...b, models: data.models } : b
         )
       );
-      setMessage({ type: "success", text: "Modelo adicionado." });
-      setNewModel("");
+      const addedCount =
+        typeof data.addedCount === "number" ? data.addedCount : models.length;
+      setMessage({
+        type: "success",
+        text: `${addedCount} modelo(s) adicionado(s).`
+      });
+      setNewModelsInput("");
     } catch (error) {
       setMessage({
         type: "error",
@@ -295,20 +301,20 @@ export default function AdminCatalogPanel({ token }: Props) {
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <div className="text-sm font-semibold text-slate-900">Adicionar modelo</div>
+              <div className="text-sm font-semibold text-slate-900">Adicionar modelo(s)</div>
               <form onSubmit={handleAddModel} className="mt-3 grid gap-3">
                 <input
                   className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-                  placeholder="Ex.: Variant"
-                  value={newModel}
-                  onChange={(e) => setNewModel(e.target.value)}
+                  placeholder="Ex.: Corsa, Corsa Sedan, Vectra, Omega"
+                  value={newModelsInput}
+                  onChange={(e) => setNewModelsInput(e.target.value)}
                 />
                 <button
                   type="submit"
                   disabled={busy || !selectedBrand}
                   className="inline-flex h-10 items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
                 >
-                  {busy ? "Salvando..." : "Adicionar modelo"}
+                  {busy ? "Salvando..." : "Adicionar lista de modelos"}
                 </button>
               </form>
 

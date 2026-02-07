@@ -34,6 +34,7 @@ export default function AdminBannersPanel({ token }: Props) {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<Message>(null);
   const [busy, setBusy] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
@@ -51,10 +52,14 @@ export default function AdminBannersPanel({ token }: Props) {
     [banners]
   );
 
-  function headers() {
+  function authHeaders(): Record<string, string> {
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
+  function jsonHeaders(): Record<string, string> {
     return {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
+      ...authHeaders()
     };
   }
 
@@ -74,16 +79,58 @@ export default function AdminBannersPanel({ token }: Props) {
     loadBanners();
   }, []);
 
+  async function handleImageUpload(file: File) {
+    setUploadingImage(true);
+    setMessage(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", "banner");
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: authHeaders(),
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Erro ao fazer upload da imagem.");
+      }
+
+      setForm((current) => ({ ...current, image: data.url || "" }));
+      setMessage({ type: "success", text: "Imagem enviada com sucesso." });
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Erro ao fazer upload da imagem."
+      });
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
+  async function handleImageFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    await handleImageUpload(file);
+  }
+
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy(true);
     setMessage(null);
     try {
+      if (!form.image.trim()) {
+        throw new Error("Informe a URL da imagem ou faca upload de um arquivo.");
+      }
+
       const res = await fetch("/api/banners", {
         method: "POST",
-        headers: headers(),
+        headers: jsonHeaders(),
         body: JSON.stringify({
           ...form,
+          image: form.image.trim(),
           position: Number(form.position) || 1,
           startDate: form.startDate || new Date().toISOString(),
           endDate: form.endDate || undefined
@@ -118,7 +165,7 @@ export default function AdminBannersPanel({ token }: Props) {
     try {
       const res = await fetch(`/api/banners/${id}`, {
         method: "PUT",
-        headers: headers(),
+        headers: jsonHeaders(),
         body: JSON.stringify({ status })
       });
       const data = await res.json();
@@ -139,7 +186,7 @@ export default function AdminBannersPanel({ token }: Props) {
     try {
       const res = await fetch(`/api/banners/${id}`, {
         method: "DELETE",
-        headers: headers()
+        headers: authHeaders()
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erro ao excluir banner.");
@@ -201,16 +248,40 @@ export default function AdminBannersPanel({ token }: Props) {
           />
         </label>
 
-        <label className="grid gap-1 md:col-span-2">
-          <span className="text-sm font-semibold text-slate-900">Imagem (URL)</span>
+        <label className="grid gap-1">
+          <span className="text-sm font-semibold text-slate-900">Upload da imagem</span>
           <input
-            required
+            type="file"
+            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+            className="h-11 rounded-md border border-slate-300 px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-brand-100 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-brand-700"
+            disabled={busy || uploadingImage}
+            onChange={handleImageFileChange}
+          />
+          <span className="text-xs text-slate-500">
+            Aceita jpg, jpeg, png e webp (ate 5MB).
+          </span>
+        </label>
+
+        <label className="grid gap-1">
+          <span className="text-sm font-semibold text-slate-900">Imagem (URL manual)</span>
+          <input
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             value={form.image}
             onChange={(e) => setForm((f) => ({ ...f, image: e.target.value }))}
-            placeholder="https://..."
+            placeholder="https://... ou /uploads/banner/arquivo.webp"
           />
         </label>
+
+        {form.image ? (
+          <div className="md:col-span-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <div className="text-xs font-semibold text-slate-600">Pre-visualizacao</div>
+            <img
+              src={form.image}
+              alt="Previa do banner"
+              className="mt-2 h-28 w-full rounded-md object-cover md:h-36"
+            />
+          </div>
+        ) : null}
 
         <label className="grid gap-1">
           <span className="text-sm font-semibold text-slate-900">Seção</span>
@@ -258,10 +329,10 @@ export default function AdminBannersPanel({ token }: Props) {
 
         <button
           type="submit"
-          disabled={busy}
+          disabled={busy || uploadingImage}
           className="md:col-span-2 inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
         >
-          {busy ? "Salvando..." : "Adicionar destaque"}
+          {busy ? "Salvando..." : uploadingImage ? "Enviando imagem..." : "Adicionar destaque"}
         </button>
       </form>
 
