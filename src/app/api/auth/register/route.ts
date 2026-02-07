@@ -1,5 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, isMysqlRequiredUsersError } from '@/lib/database';
+import { dbMysql } from '@/lib/database.mysql';
+
+function isMysqlUnavailable(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const code = "code" in error ? String((error as { code?: unknown }).code ?? "") : "";
+  if (
+    code === "ER_ACCESS_DENIED_ERROR" ||
+    code === "ER_HOST_NOT_PRIVILEGED" ||
+    code === "ER_BAD_DB_ERROR" ||
+    code === "ECONNREFUSED" ||
+    code === "ENOTFOUND" ||
+    code === "ETIMEDOUT" ||
+    code === "ECONNRESET" ||
+    code === "PROTOCOL_CONNECTION_LOST"
+  ) {
+    return true;
+  }
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  return (
+    message.includes("access denied") ||
+    message.includes("mysql") ||
+    message.includes("econnrefused") ||
+    message.includes("enotfound") ||
+    message.includes("etimedout")
+  );
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,7 +38,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const existingUser = await db.users.findByEmail(email);
+    const existingUser = await dbMysql.users.findByEmail(email);
     if (existingUser) {
       return NextResponse.json(
         { error: 'Este email ja esta cadastrado' },
@@ -20,7 +46,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = await db.users.create({
+    const user = await dbMysql.users.create({
       name,
       email,
       password,
@@ -35,7 +61,7 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('Erro ao registrar usuario:', error);
-    if (isMysqlRequiredUsersError(error)) {
+    if (isMysqlUnavailable(error)) {
       return NextResponse.json(
         { error: 'Banco de dados indisponivel no momento. Tente novamente em instantes.' },
         { status: 503 }
