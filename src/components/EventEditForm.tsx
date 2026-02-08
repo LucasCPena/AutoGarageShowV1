@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Notice from "@/components/Notice";
 import { useAuth } from "@/lib/useAuth";
-import type { Event, EventRecurrence } from "@/lib/database";
+import type { Event, EventRecurrence, PastEvent } from "@/lib/database";
 import { formatDateShort } from "@/lib/date";
 
 type RecurrenceType = "single" | "weekly" | "monthly" | "monthly_weekday" | "annual" | "specific";
@@ -31,6 +31,13 @@ function isoToTime(iso: string) {
   return d.toISOString().slice(11, 16);
 }
 
+function sanitizeLinesToList(value: string) {
+  return value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
 export default function EventEditForm({ eventId }: Props) {
   const { token, user } = useAuth();
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>("single");
@@ -41,6 +48,12 @@ export default function EventEditForm({ eventId }: Props) {
   const [loading, setLoading] = useState(true);
   const [eventData, setEventData] = useState<Event | null>(null);
   const [status, setStatus] = useState<Event["status"]>("pending");
+  const [pastImages, setPastImages] = useState<string[]>([]);
+  const [pastVideosText, setPastVideosText] = useState("");
+  const [pastDescription, setPastDescription] = useState("");
+  const [pastAttendance, setPastAttendance] = useState("");
+  const [newImageUrl, setNewImageUrl] = useState("");
+  const [uploadingMedia, setUploadingMedia] = useState(false);
 
   const infoMessage = useMemo(
     () =>
@@ -61,6 +74,15 @@ export default function EventEditForm({ eventId }: Props) {
         setRecurrenceType(data.event.recurrence.type as RecurrenceType);
         setIsMultiDay(Boolean(data.event.endAt));
         setCoverImagePreview(data.event.coverImage || null);
+        const loadedPastEvent: PastEvent | null = data.pastEvent || null;
+        setPastImages(loadedPastEvent?.images || data.event.images || []);
+        setPastVideosText((loadedPastEvent?.videos || []).join("\n"));
+        setPastDescription(loadedPastEvent?.description || data.event.description || "");
+        setPastAttendance(
+          loadedPastEvent?.attendance !== undefined && loadedPastEvent?.attendance !== null
+            ? String(loadedPastEvent.attendance)
+            : ""
+        );
       } catch (error) {
         setMessage({
           type: "error",
@@ -136,13 +158,12 @@ export default function EventEditForm({ eventId }: Props) {
       const state = form.get("state")?.toString().trim();
       const location = form.get("location")?.toString().trim();
       const contactName = form.get("contactName")?.toString().trim();
-      const contactDocument = form.get("contactDocument")?.toString().trim();
       const contactPhone = form.get("contactPhone")?.toString().trim();
       const contactEmail = form.get("contactEmail")?.toString().trim();
       const startDate = form.get("startDate")?.toString();
       const startTime = form.get("startTime")?.toString() || "00:00";
 
-      if (!title || !description || !city || !state || !location || !startDate || !contactName || !contactDocument) {
+      if (!title || !description || !city || !state || !location || !startDate || !contactName) {
         throw new Error("Preencha todos os campos obrigatórios.");
       }
 
@@ -168,6 +189,13 @@ export default function EventEditForm({ eventId }: Props) {
       }
 
       const recurrence = buildRecurrence(form);
+      const parsedVideos = sanitizeLinesToList(pastVideosText);
+      const parsedAttendance = Number(pastAttendance);
+
+      if (user?.role === "admin" && status === "completed" && pastImages.length === 0 && parsedVideos.length === 0) {
+        throw new Error("Para marcar como realizado, adicione pelo menos uma foto ou link de video.");
+      }
+
       const payload = {
         title,
         description,
@@ -175,15 +203,28 @@ export default function EventEditForm({ eventId }: Props) {
         state,
         location,
         contactName,
-        contactDocument,
         contactPhone: contactPhone || undefined,
         contactEmail: contactEmail || undefined,
         startAt: startAt.toISOString(),
-        endAt,
+        endAt: isMultiDay ? endAt : null,
         websiteUrl: form.get("websiteUrl")?.toString().trim() || undefined,
         recurrence,
         coverImage: coverImagePreview || undefined,
-        status: user?.role === "admin" ? status : undefined
+        status: user?.role === "admin" ? status : undefined,
+        ...(user?.role === "admin"
+          ? {
+              images: pastImages,
+              pastEvent: {
+                images: pastImages,
+                videos: parsedVideos,
+                description: pastDescription.trim() || description,
+                attendance:
+                  Number.isFinite(parsedAttendance) && parsedAttendance >= 0
+                    ? Math.round(parsedAttendance)
+                    : undefined
+              }
+            }
+          : {})
       };
 
       const response = await fetch(`/api/events/${eventData.id}`, {
@@ -202,6 +243,17 @@ export default function EventEditForm({ eventId }: Props) {
 
       setMessage({ type: "success", text: data.message || "Evento atualizado com sucesso." });
       setEventData(data.event);
+      setStatus(data.event.status);
+      if (data.pastEvent) {
+        setPastImages(data.pastEvent.images || []);
+        setPastVideosText((data.pastEvent.videos || []).join("\n"));
+        setPastDescription(data.pastEvent.description || data.event.description || "");
+        setPastAttendance(
+          data.pastEvent.attendance !== undefined && data.pastEvent.attendance !== null
+            ? String(data.pastEvent.attendance)
+            : ""
+        );
+      }
     } catch (error) {
       setMessage({
         type: "error",
@@ -221,6 +273,59 @@ export default function EventEditForm({ eventId }: Props) {
     } else {
       setCoverImagePreview(null);
     }
+  }
+
+  async function uploadEventImage(file: File) {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("type", "event");
+
+    const response = await fetch("/api/upload", {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: formData
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "Erro ao enviar imagem.");
+    }
+    return String(data.url || "");
+  }
+
+  async function onPastImagesUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (files.length === 0) return;
+
+    setUploadingMedia(true);
+    try {
+      const uploaded: string[] = [];
+      for (const file of files) {
+        const url = await uploadEventImage(file);
+        if (url) uploaded.push(url);
+      }
+      if (uploaded.length > 0) {
+        setPastImages((current) => Array.from(new Set([...current, ...uploaded])));
+      }
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Erro ao enviar imagens."
+      });
+    } finally {
+      setUploadingMedia(false);
+    }
+  }
+
+  function addImageUrl() {
+    const url = newImageUrl.trim();
+    if (!url) return;
+    setPastImages((current) => Array.from(new Set([...current, url])));
+    setNewImageUrl("");
+  }
+
+  function removeImage(imageUrl: string) {
+    setPastImages((current) => current.filter((item) => item !== imageUrl));
   }
 
   if (loading) {
@@ -275,24 +380,13 @@ export default function EventEditForm({ eventId }: Props) {
         </label>
 
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Nome do contato / proprietário</span>
+          <span className="text-sm font-semibold text-slate-900">Organizador</span>
           <input
             required
             name="contactName"
             defaultValue={eventData.contactName}
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-            placeholder="Quem responde pelo evento"
-          />
-        </label>
-
-        <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">CPF ou CNPJ</span>
-          <input
-            required
-            name="contactDocument"
-            defaultValue={eventData.contactDocument}
-            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-            placeholder="000.000.000-00"
+            placeholder="Nome do organizador"
           />
         </label>
 
@@ -559,6 +653,101 @@ export default function EventEditForm({ eventId }: Props) {
           )}
         </label>
 
+        {user?.role === "admin" ? (
+          <div className="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div className="text-sm font-semibold text-slate-900">Mídia do evento realizado</div>
+            <div className="mt-1 text-xs text-slate-600">
+              O evento só pode ficar como realizado quando houver foto ou vídeo.
+            </div>
+
+            <label className="mt-4 grid gap-1">
+              <span className="text-sm font-semibold text-slate-900">Upload de fotos</span>
+              <input
+                type="file"
+                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                multiple
+                onChange={onPastImagesUpload}
+                disabled={uploadingMedia || submitting}
+                className="h-11 rounded-md border border-slate-300 px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-brand-100 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-brand-700"
+              />
+              <span className="text-xs text-slate-500">
+                Você pode adicionar várias fotos por evento.
+              </span>
+            </label>
+
+            <div className="mt-3 grid gap-2 md:grid-cols-[1fr_auto]">
+              <input
+                value={newImageUrl}
+                onChange={(e) => setNewImageUrl(e.target.value)}
+                className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+                placeholder="https://... (URL de foto)"
+              />
+              <button
+                type="button"
+                onClick={addImageUrl}
+                className="h-11 rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+              >
+                Adicionar foto
+              </button>
+            </div>
+
+            {pastImages.length > 0 ? (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {pastImages.map((image) => (
+                  <div key={image} className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+                    <img src={image} alt="Foto do evento" className="h-28 w-full object-cover" />
+                    <button
+                      type="button"
+                      className="w-full border-t border-slate-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50"
+                      onClick={() => removeImage(image)}
+                    >
+                      Remover
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-3 text-xs text-slate-500">
+                Nenhuma foto adicionada ainda.
+              </div>
+            )}
+
+            <label className="mt-4 grid gap-1">
+              <span className="text-sm font-semibold text-slate-900">Links de vídeo (1 por linha)</span>
+              <textarea
+                value={pastVideosText}
+                onChange={(e) => setPastVideosText(e.target.value)}
+                className="min-h-24 rounded-md border border-slate-300 px-3 py-2 text-sm"
+                placeholder="https://www.youtube.com/watch?v=...\nhttps://www.instagram.com/reel/..."
+              />
+            </label>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <label className="grid gap-1">
+                <span className="text-sm font-semibold text-slate-900">Descrição da galeria (opcional)</span>
+                <textarea
+                  value={pastDescription}
+                  onChange={(e) => setPastDescription(e.target.value)}
+                  className="min-h-20 rounded-md border border-slate-300 px-3 py-2 text-sm"
+                  placeholder="Resumo do evento realizado."
+                />
+              </label>
+
+              <label className="grid gap-1">
+                <span className="text-sm font-semibold text-slate-900">Público estimado (opcional)</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={pastAttendance}
+                  onChange={(e) => setPastAttendance(e.target.value)}
+                  className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+                  placeholder="Ex.: 450"
+                />
+              </label>
+            </div>
+          </div>
+        ) : null}
+
         <label className="grid gap-1 md:col-span-2">
           <span className="text-sm font-semibold text-slate-900">Descrição</span>
           <textarea
@@ -588,10 +777,10 @@ export default function EventEditForm({ eventId }: Props) {
 
       <button
         type="submit"
-        disabled={submitting}
+        disabled={submitting || uploadingMedia}
         className="inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-70"
       >
-        {submitting ? "Salvando..." : "Salvar alterações"}
+        {submitting ? "Salvando..." : uploadingMedia ? "Enviando mídias..." : "Salvar alterações"}
       </button>
     </form>
   );

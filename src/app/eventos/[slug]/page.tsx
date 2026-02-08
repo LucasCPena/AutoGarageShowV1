@@ -57,6 +57,7 @@ export default async function EventDetailPage({ params }: Props) {
   const futureOccurrences = occurrences.filter((iso) => new Date(iso).getTime() >= Date.now());
   const spanDays = getSpanDays(event.startAt, event.endAt);
   const recurrenceLabel = formatRecurrence(event.recurrence, spanDays);
+  const heroImage = event.coverImage || event.images?.[0] || "/placeholders/event.svg";
 
   return (
     <>
@@ -93,6 +94,11 @@ export default async function EventDetailPage({ params }: Props) {
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
           <div className="grid gap-6 lg:col-span-2">
             <section className="rounded-2xl border border-slate-200 bg-white p-6">
+              <img
+                src={heroImage}
+                alt={event.title}
+                className="mb-4 h-52 w-full rounded-xl object-cover border border-slate-200"
+              />
               <h2 className="text-lg font-semibold text-slate-900">Sobre o evento</h2>
               <p className="mt-3 text-sm leading-relaxed text-slate-700">
                 {event.description}
@@ -152,15 +158,9 @@ export default async function EventDetailPage({ params }: Props) {
                 </dd>
               </div>
               <div>
-                <dt className="text-slate-500">Contato</dt>
+                <dt className="text-slate-500">Organizador</dt>
                 <dd className="mt-1 font-semibold text-slate-900">
                   {event.contactName}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-slate-500">CPF / CNPJ</dt>
-                <dd className="mt-1 font-semibold text-slate-900">
-                  {event.contactDocument}
                 </dd>
               </div>
               {event.contactPhone ? (

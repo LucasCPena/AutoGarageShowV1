@@ -35,7 +35,7 @@ interface Event {
   state: string;
   location: string;
   contactName: string;
-  contactDocument: string;
+  contactDocument?: string;
   contactPhone?: string;
   contactEmail?: string;
   startAt: string;

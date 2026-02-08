@@ -108,7 +108,7 @@ function mapEvent(row: Row): Event {
     state: row.state,
     location: row.location,
     contactName: row.contact_name,
-    contactDocument: row.contact_document,
+    contactDocument: row.contact_document ?? undefined,
     contactPhone: row.contact_phone ?? undefined,
     contactEmail: row.contact_email ?? undefined,
     startAt: row.start_at,
@@ -324,7 +324,7 @@ export const dbMysql = {
           newEvent.state,
           newEvent.location,
           newEvent.contactName,
-          newEvent.contactDocument,
+          newEvent.contactDocument ?? "",
           newEvent.contactPhone ?? null,
           newEvent.contactEmail ?? null,
           newEvent.startAt,
@@ -359,7 +359,7 @@ export const dbMysql = {
           next.state,
           next.location,
           next.contactName,
-          next.contactDocument,
+          next.contactDocument ?? "",
           next.contactPhone ?? null,
           next.contactEmail ?? null,
           next.startAt,
@@ -383,6 +383,21 @@ export const dbMysql = {
   },
   pastEvents: {
     getAll: async () => (await query("SELECT * FROM past_events")).map(mapPastEvent),
+    findById: async (id: string) => {
+      const row = await queryOne("SELECT * FROM past_events WHERE id = ?", [id]);
+      return row ? mapPastEvent(row) : null;
+    },
+    findBySlug: async (slug: string) => {
+      const row = await queryOne("SELECT * FROM past_events WHERE slug = ?", [slug]);
+      return row ? mapPastEvent(row) : null;
+    },
+    findByEventId: async (eventId: string) => {
+      const row = await queryOne(
+        "SELECT * FROM past_events WHERE event_id = ? ORDER BY created_at DESC LIMIT 1",
+        [eventId]
+      );
+      return row ? mapPastEvent(row) : null;
+    },
     create: async (pastEvent: Omit<PastEvent, "id" | "createdAt">) => {
       const now = nowIso();
       const newPast: PastEvent = {
@@ -411,6 +426,33 @@ export const dbMysql = {
         ]
       );
       return newPast;
+    },
+    update: async (id: string, updates: Partial<PastEvent>) => {
+      const current = await dbMysql.pastEvents.findById(id);
+      if (!current) return null;
+      const next: PastEvent = {
+        ...current,
+        ...updates,
+        updatedAt: nowIso()
+      };
+      await query(
+        `UPDATE past_events SET event_id=?, slug=?, title=?, city=?, state=?, date=?, images=?, description=?, attendance=?, videos=?, updated_at=? WHERE id=?`,
+        [
+          next.eventId ?? null,
+          next.slug,
+          next.title,
+          next.city,
+          next.state,
+          next.date,
+          JSON.stringify(next.images ?? []),
+          next.description ?? null,
+          next.attendance ?? null,
+          JSON.stringify(next.videos ?? []),
+          next.updatedAt,
+          id
+        ]
+      );
+      return next;
     }
   },
   listings: {

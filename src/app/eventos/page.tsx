@@ -69,6 +69,11 @@ export default async function EventsPage() {
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
+                  <img
+                    src={event.coverImage || event.images?.[0] || "/placeholders/event.svg"}
+                    alt={event.title}
+                    className="mb-3 h-28 w-full max-w-xs rounded-lg border border-slate-200 object-cover"
+                  />
                   <div className="text-sm text-slate-500">
                     {formatDateLong(nextOccurrence)} • {formatTime(nextOccurrence)}
                   </div>

@@ -92,13 +92,12 @@ export default function EventSubmissionForm() {
       const state = form.get("state")?.toString().trim();
       const location = form.get("location")?.toString().trim();
       const contactName = form.get("contactName")?.toString().trim();
-      const contactDocument = form.get("contactDocument")?.toString().trim();
       const contactPhone = form.get("contactPhone")?.toString().trim();
       const contactEmail = form.get("contactEmail")?.toString().trim();
       const startDate = form.get("startDate")?.toString();
       const startTime = form.get("startTime")?.toString() || "00:00";
 
-      if (!title || !description || !city || !state || !location || !startDate || !contactName || !contactDocument) {
+      if (!title || !description || !city || !state || !location || !startDate || !contactName) {
         throw new Error("Preencha todos os campos obrigatórios.");
       }
 
@@ -131,7 +130,6 @@ export default function EventSubmissionForm() {
         state,
         location,
         contactName,
-        contactDocument,
         contactPhone: contactPhone || undefined,
         contactEmail: contactEmail || undefined,
         startAt: startAt.toISOString(),
@@ -216,22 +214,12 @@ export default function EventSubmissionForm() {
         </label>
 
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Nome do contato / proprietário</span>
+          <span className="text-sm font-semibold text-slate-900">Organizador</span>
           <input
             required
             name="contactName"
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-            placeholder="Quem responde pelo evento"
-          />
-        </label>
-
-        <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">CPF ou CNPJ</span>
-          <input
-            required
-            name="contactDocument"
-            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-            placeholder="000.000.000-00"
+            placeholder="Nome do organizador"
           />
         </label>
 

@@ -20,6 +20,10 @@ function formatDateTime(iso: string) {
   return `${date} • ${time}`;
 }
 
+function eventThumbnail(event: Event) {
+  return event.coverImage || event.images?.[0] || "/placeholders/event.svg";
+}
+
 export default function AdminEventsPanel({ events, token }: Props) {
   const [message, setMessage] = useState<Message>(null);
   const [activeTab, setActiveTab] = useState<"pending" | "approved" | "completed">("pending");
@@ -136,13 +140,18 @@ export default function AdminEventsPanel({ events, token }: Props) {
               <div key={event.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <div className="flex flex-wrap justify-between gap-2">
                   <div>
+                    <img
+                      src={eventThumbnail(event)}
+                      alt={event.title}
+                      className="mb-2 h-16 w-24 rounded-md border border-slate-200 object-cover"
+                    />
                     <div className="text-sm text-slate-500">{formatDateTime(event.startAt)}</div>
                     <div className="text-base font-semibold text-slate-900">{event.title}</div>
                     <div className="text-sm text-slate-600">
                       {event.city}/{event.state} • {event.location}
                     </div>
                     <div className="text-xs text-slate-500">
-                      Contato: {event.contactName} ({event.contactDocument})
+                      Organizador: {event.contactName}
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -186,13 +195,18 @@ export default function AdminEventsPanel({ events, token }: Props) {
               <div key={event.id} className="rounded-xl border border-slate-200 bg-white p-4">
                 <div className="flex flex-wrap justify-between gap-2">
                   <div>
+                    <img
+                      src={eventThumbnail(event)}
+                      alt={event.title}
+                      className="mb-2 h-16 w-24 rounded-md border border-slate-200 object-cover"
+                    />
                     <div className="text-sm text-slate-500">{formatDateTime(event.startAt)}</div>
                     <div className="text-base font-semibold text-slate-900">{event.title}</div>
                     <div className="text-sm text-slate-600">
                       {event.city}/{event.state} • {event.location}
                     </div>
                     <div className="text-xs text-slate-500">
-                      Contato: {event.contactName} ({event.contactDocument})
+                      Organizador: {event.contactName}
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -235,10 +249,15 @@ export default function AdminEventsPanel({ events, token }: Props) {
               <div key={event.id} className="rounded-xl border border-slate-200 bg-white p-4">
                 <div className="flex flex-wrap justify-between gap-2">
                   <div>
+                    <img
+                      src={eventThumbnail(event)}
+                      alt={event.title}
+                      className="mb-2 h-16 w-24 rounded-md border border-slate-200 object-cover"
+                    />
                     <div className="text-sm text-slate-500">{formatDateTime(event.startAt)}</div>
                     <div className="text-base font-semibold text-slate-900">{event.title}</div>
                     <div className="text-xs text-slate-500">
-                      Contato: {event.contactName} ({event.contactDocument})
+                      Organizador: {event.contactName}
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">

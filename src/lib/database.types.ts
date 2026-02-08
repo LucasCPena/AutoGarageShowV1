@@ -33,7 +33,7 @@ export interface Event {
   state: string;
   location: string;
   contactName: string;
-  contactDocument: string;
+  contactDocument?: string; // legado (nao obrigatorio para eventos)
   contactPhone?: string;
   contactEmail?: string;
   startAt: string;

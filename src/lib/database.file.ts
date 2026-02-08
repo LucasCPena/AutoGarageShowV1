@@ -108,16 +108,32 @@ export const dbFile = {
   },
   pastEvents: {
     getAll: () => readData<PastEvent>('pastEvents.json'),
+    findById: (id: string) => readData<PastEvent>('pastEvents.json').then(pastEvents => pastEvents.find(e => e.id === id)),
+    findBySlug: (slug: string) => readData<PastEvent>('pastEvents.json').then(pastEvents => pastEvents.find(e => e.slug === slug)),
+    findByEventId: (eventId: string) => readData<PastEvent>('pastEvents.json').then(pastEvents => pastEvents.find(e => e.eventId === eventId)),
     create: async (pastEvent: Omit<PastEvent, 'id' | 'createdAt'>) => {
       const pastEvents = await readData<PastEvent>('pastEvents.json');
       const newPastEvent: PastEvent = {
         ...pastEvent,
         id: crypto.randomUUID(),
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        updatedAt: pastEvent.updatedAt ?? new Date().toISOString()
       };
       pastEvents.push(newPastEvent);
       await writeData('pastEvents.json', pastEvents);
       return newPastEvent;
+    },
+    update: async (id: string, updates: Partial<PastEvent>) => {
+      const pastEvents = await readData<PastEvent>('pastEvents.json');
+      const index = pastEvents.findIndex(e => e.id === id);
+      if (index === -1) return null;
+      pastEvents[index] = {
+        ...pastEvents[index],
+        ...updates,
+        updatedAt: new Date().toISOString()
+      };
+      await writeData('pastEvents.json', pastEvents);
+      return pastEvents[index];
     }
   },
   listings: {

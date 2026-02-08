@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     const settings = await db.settings.get();
     
     // Validar campos obrigatórios
-    const requiredFields = ['title', 'description', 'city', 'state', 'location', 'startAt', 'contactName', 'contactDocument'];
+    const requiredFields = ['title', 'description', 'city', 'state', 'location', 'startAt', 'contactName'];
     for (const field of requiredFields) {
       if (!eventData[field]) {
         return NextResponse.json(
@@ -97,6 +97,10 @@ export async function POST(request: NextRequest) {
     const shouldAutoApprove = user?.role === 'admin' || requireApproval === false;
     const status: 'approved' | 'pending' = shouldAutoApprove ? 'approved' : 'pending';
     
+    const images = Array.isArray(eventData.images)
+      ? eventData.images.filter((value: unknown) => typeof value === 'string' && value.trim().length > 0)
+      : [];
+
     const event = await db.events.create({
       ...eventData,
       startAt: startDate.toISOString(),
@@ -105,12 +109,12 @@ export async function POST(request: NextRequest) {
       status,
       recurrence,
       createdBy: user?.id || 'anonymous',
-      contactName: eventData.contactName,
-      contactDocument: eventData.contactDocument,
+      contactName: String(eventData.contactName || '').trim(),
+      contactDocument: String(eventData.contactDocument || '').trim() || 'nao informado',
       contactPhone: eventData.contactPhone,
       contactEmail: eventData.contactEmail,
-      images: eventData.images || [],
-      coverImage: eventData.coverImage || eventData.images?.[0]
+      images,
+      coverImage: eventData.coverImage || images[0]
     });
     
     return NextResponse.json(

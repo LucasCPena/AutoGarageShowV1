@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database';
 import { getUserFromToken, requireAuth } from '@/lib/auth-middleware';
 import { normalizeRecurrence } from '@/lib/eventRecurrence';
@@ -10,6 +10,18 @@ function slugify(input: string) {
     .replace(/(^-|-$)/g, '');
 }
 
+function sanitizeStringList(value: unknown) {
+  if (!Array.isArray(value)) return [] as string[];
+  return value
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function hasMedia(images: string[], videos: string[]) {
+  return images.length > 0 || videos.length > 0;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -17,15 +29,15 @@ export async function GET(
   try {
     const user = getUserFromToken(request);
     const event = await db.events.findById(params.id);
-    
+
     if (!event) {
       return NextResponse.json(
-        { error: 'Evento não encontrado' },
+        { error: 'Evento nao encontrado' },
         { status: 404 }
       );
     }
-    
-    // Apenas admin ou criador podem ver pendentes; público só eventos aprovados
+
+    // Apenas admin ou criador podem ver pendentes; publico so eventos aprovados
     if (
       event.status !== 'approved' &&
       user?.role !== 'admin' &&
@@ -36,8 +48,10 @@ export async function GET(
         { status: 403 }
       );
     }
-    
-    return NextResponse.json({ event });
+
+    const pastEvent = await db.pastEvents.findByEventId(event.id);
+
+    return NextResponse.json({ event, pastEvent });
   } catch (error) {
     console.error('Erro ao buscar evento:', error);
     return NextResponse.json(
@@ -55,22 +69,21 @@ export async function PUT(
     const user = requireAuth(request);
     const updateData = await request.json();
     const existing = await db.events.findById(params.id);
-    
+
     if (!existing) {
       return NextResponse.json(
-        { error: 'Evento não encontrado' },
+        { error: 'Evento nao encontrado' },
         { status: 404 }
       );
     }
-    
+
     if (user.role !== 'admin' && existing.createdBy !== user.id) {
       return NextResponse.json(
-        { error: 'Você não tem permissão para editar este evento' },
+        { error: 'Voce nao tem permissao para editar este evento' },
         { status: 403 }
       );
     }
-    
-    // Se título mudou, recalcular slug (garantindo unicidade)
+
     let newSlug = existing.slug;
     if (updateData.title && updateData.title !== existing.title) {
       newSlug = slugify(updateData.title);
@@ -79,48 +92,100 @@ export async function PUT(
         newSlug = `${newSlug}-${crypto.randomUUID().slice(0, 6)}`;
       }
     }
-    
+
     let nextStatus = existing.status;
     const allowedStatus = ['pending', 'approved', 'completed'] as const;
-    
+
     if (user.role === 'admin') {
       if (updateData.status && allowedStatus.includes(updateData.status)) {
         nextStatus = updateData.status;
       }
     } else {
-      // Edição de usuário comum volta para pendente até aprovação
+      // Edicao de usuario comum volta para pendente ate aprovacao
       nextStatus = 'pending';
     }
 
     const baseStart = new Date(updateData.startAt ?? existing.startAt);
     if (Number.isNaN(baseStart.getTime())) {
       return NextResponse.json(
-        { error: 'Data de início inválida' },
+        { error: 'Data de inicio invalida' },
         { status: 400 }
       );
     }
 
     let endAtIso = existing.endAt;
     if (updateData.endAt !== undefined) {
-      const endDate = new Date(updateData.endAt);
-      if (Number.isNaN(endDate.getTime())) {
-        return NextResponse.json(
-          { error: 'Data de término inválida' },
-          { status: 400 }
-        );
+      if (!updateData.endAt) {
+        endAtIso = undefined;
+      } else {
+        const endDate = new Date(updateData.endAt);
+        if (Number.isNaN(endDate.getTime())) {
+          return NextResponse.json(
+            { error: 'Data de termino invalida' },
+            { status: 400 }
+          );
+        }
+        endAtIso = endDate.toISOString();
       }
-      endAtIso = endDate.toISOString();
     }
 
     if (endAtIso && new Date(endAtIso).getTime() < baseStart.getTime()) {
       return NextResponse.json(
-        { error: 'A data de término não pode ser anterior ao início' },
+        { error: 'A data de termino nao pode ser anterior ao inicio' },
         { status: 400 }
       );
     }
 
-    const recurrence = normalizeRecurrence(updateData.recurrence ?? existing.recurrence, baseStart.toISOString());
-    
+    const recurrence = normalizeRecurrence(
+      updateData.recurrence ?? existing.recurrence,
+      baseStart.toISOString()
+    );
+
+    const nextImages =
+      updateData.images !== undefined
+        ? sanitizeStringList(updateData.images)
+        : (existing.images ?? []);
+
+    const providedCoverImage =
+      typeof updateData.coverImage === 'string' ? updateData.coverImage.trim() : undefined;
+    const nextCoverImage = providedCoverImage || existing.coverImage || nextImages[0];
+    const nextContactDocument =
+      typeof updateData.contactDocument === 'string'
+        ? updateData.contactDocument.trim() || 'nao informado'
+        : (existing.contactDocument || 'nao informado');
+
+    const pastPayload =
+      updateData.pastEvent && typeof updateData.pastEvent === 'object'
+        ? updateData.pastEvent
+        : null;
+    const existingPastEvent = await db.pastEvents.findByEventId(existing.id);
+
+    const nextPastImages =
+      pastPayload && 'images' in pastPayload
+        ? sanitizeStringList((pastPayload as { images?: unknown }).images)
+        : existingPastEvent?.images ?? nextImages;
+    const nextPastVideos =
+      pastPayload && 'videos' in pastPayload
+        ? sanitizeStringList((pastPayload as { videos?: unknown }).videos)
+        : existingPastEvent?.videos ?? [];
+
+    const canBeCompleted = hasMedia(nextPastImages, nextPastVideos);
+
+    if (nextStatus === 'completed' && !canBeCompleted) {
+      return NextResponse.json(
+        {
+          error:
+            'Para marcar como realizado, adicione ao menos uma foto ou link de video.'
+        },
+        { status: 400 }
+      );
+    }
+
+    const hasEnded = baseStart.getTime() <= Date.now();
+    if (user.role === 'admin' && canBeCompleted && hasEnded && nextStatus !== 'pending') {
+      nextStatus = 'completed';
+    }
+
     const sanitizedUpdates = {
       ...updateData,
       startAt: baseStart.toISOString(),
@@ -128,17 +193,80 @@ export async function PUT(
       recurrence,
       slug: newSlug,
       status: nextStatus,
+      contactDocument: nextContactDocument,
+      images: nextImages,
+      coverImage: nextCoverImage,
       createdBy: existing.createdBy // impedir troca de autoria
-    };
-    
-    const event = await db.events.update(params.id, sanitizedUpdates);
-    
-    return NextResponse.json(
-      { event, message: 'Evento atualizado com sucesso' }
-    );
+    } as Record<string, unknown>;
+
+    delete sanitizedUpdates.pastEvent;
+
+    const event = await db.events.update(params.id, sanitizedUpdates as Partial<typeof existing>);
+    if (!event) {
+      return NextResponse.json(
+        { error: 'Evento nao encontrado' },
+        { status: 404 }
+      );
+    }
+
+    let pastEvent = existingPastEvent;
+    if (canBeCompleted || existingPastEvent || pastPayload) {
+      const descriptionFromPayload =
+        pastPayload && typeof (pastPayload as { description?: unknown }).description === 'string'
+          ? (pastPayload as { description?: string }).description?.trim()
+          : undefined;
+      const attendanceRaw =
+        pastPayload && 'attendance' in pastPayload
+          ? Number((pastPayload as { attendance?: unknown }).attendance)
+          : NaN;
+      const attendance =
+        Number.isFinite(attendanceRaw) && attendanceRaw >= 0
+          ? Math.round(attendanceRaw)
+          : (existingPastEvent?.attendance ?? 0);
+
+      if (pastEvent) {
+        pastEvent = await db.pastEvents.update(pastEvent.id, {
+          slug: pastEvent.slug || newSlug,
+          title: event.title,
+          city: event.city,
+          state: event.state,
+          date: event.startAt,
+          images: nextPastImages,
+          videos: nextPastVideos,
+          description: descriptionFromPayload || pastEvent.description || event.description,
+          attendance
+        });
+      } else if (canBeCompleted) {
+        let pastSlug = newSlug || slugify(event.title) || `evento-${event.id.slice(0, 8)}`;
+        const allPastEvents = await db.pastEvents.getAll();
+        while (allPastEvents.some((item) => item.slug === pastSlug)) {
+          pastSlug = `${pastSlug}-${crypto.randomUUID().slice(0, 4)}`;
+        }
+
+        pastEvent = await db.pastEvents.create({
+          eventId: event.id,
+          slug: pastSlug,
+          title: event.title,
+          city: event.city,
+          state: event.state,
+          date: event.startAt,
+          images: nextPastImages,
+          videos: nextPastVideos,
+          description: descriptionFromPayload || event.description,
+          attendance,
+          updatedAt: new Date().toISOString()
+        });
+      }
+    }
+
+    return NextResponse.json({
+      event,
+      pastEvent,
+      message: 'Evento atualizado com sucesso'
+    });
   } catch (error) {
     console.error('Erro ao atualizar evento:', error);
-    if (error instanceof Error && error.message === 'Não autorizado') {
+    if (error instanceof Error && error.message === 'Nao autorizado') {
       return NextResponse.json({ error: error.message }, { status: 401 });
     }
     return NextResponse.json(
@@ -155,29 +283,29 @@ export async function DELETE(
   try {
     const user = requireAuth(request);
     const event = await db.events.findById(params.id);
-    
+
     if (!event) {
       return NextResponse.json(
-        { error: 'Evento não encontrado' },
+        { error: 'Evento nao encontrado' },
         { status: 404 }
       );
     }
-    
+
     if (user.role !== 'admin') {
       return NextResponse.json(
-        { error: 'Somente administradores podem excluir eventos (ação imediata).' },
+        { error: 'Somente administradores podem excluir eventos (acao imediata).' },
         { status: 403 }
       );
     }
-    
+
     await db.events.delete(params.id);
-    
+
     return NextResponse.json(
-      { message: 'Evento excluído com sucesso' }
+      { message: 'Evento excluido com sucesso' }
     );
   } catch (error) {
     console.error('Erro ao excluir evento:', error);
-    if (error instanceof Error && error.message === 'Não autorizado') {
+    if (error instanceof Error && error.message === 'Nao autorizado') {
       return NextResponse.json({ error: error.message }, { status: 401 });
     }
     return NextResponse.json(
@@ -186,3 +314,4 @@ export async function DELETE(
     );
   }
 }
+
