@@ -19,16 +19,6 @@ let pool: mysql.Pool | null = null;
 function getPool() {
   if (pool) return pool;
 
-  const url = process.env.MYSQL_URL;
-  if (url) {
-    pool = mysql.createPool({
-      uri: url,
-      waitForConnections: true,
-      connectionLimit: 10
-    });
-    return pool;
-  }
-
   const host = process.env.MYSQL_HOST;
   const user = process.env.MYSQL_USER;
   const password = process.env.MYSQL_PASSWORD;
@@ -39,21 +29,32 @@ function getPool() {
       ? "127.0.0.1"
       : host;
 
-  if (!host || !user || !database) {
-    throw new Error("MySQL não configurado. Defina MYSQL_HOST, MYSQL_USER e MYSQL_DATABASE.");
+  const hasDirectConfig = Boolean(host && user && database);
+
+  if (hasDirectConfig) {
+    pool = mysql.createPool({
+      host: normalizedHost,
+      user,
+      password,
+      database,
+      port,
+      waitForConnections: true,
+      connectionLimit: 10
+    });
+    return pool;
   }
 
-  pool = mysql.createPool({
-    host: normalizedHost,
-    user,
-    password,
-    database,
-    port,
-    waitForConnections: true,
-    connectionLimit: 10
-  });
+  const url = process.env.MYSQL_URL;
+  if (url) {
+    pool = mysql.createPool({
+      uri: url,
+      waitForConnections: true,
+      connectionLimit: 10
+    });
+    return pool;
+  }
 
-  return pool;
+  throw new Error("MySQL não configurado. Defina MYSQL_HOST, MYSQL_USER e MYSQL_DATABASE.");
 }
 
 async function query<T = Row>(sql: string, params: any[] = []): Promise<T[]> {
