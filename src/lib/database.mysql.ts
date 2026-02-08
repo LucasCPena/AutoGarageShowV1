@@ -34,6 +34,13 @@ function getPool() {
   const password = process.env.MYSQL_PASSWORD;
   const database = process.env.MYSQL_DATABASE;
   const port = Number(process.env.MYSQL_PORT || 3306);
+  const configuredFamily = Number(process.env.MYSQL_FAMILY || 0);
+  const family =
+    Number.isFinite(configuredFamily) && configuredFamily > 0
+      ? configuredFamily
+      : host === "localhost"
+        ? 4
+        : undefined;
 
   if (!host || !user || !database) {
     throw new Error("MySQL não configurado. Defina MYSQL_HOST, MYSQL_USER e MYSQL_DATABASE.");
@@ -45,6 +52,7 @@ function getPool() {
     password,
     database,
     port,
+    ...(family ? { family } : {}),
     waitForConnections: true,
     connectionLimit: 10
   });
