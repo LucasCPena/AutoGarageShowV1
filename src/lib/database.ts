@@ -9,6 +9,9 @@ const useMysql =
   Boolean(process.env.MYSQL_HOST);
 
 const warnedFallbackOps = new Set<string>();
+const strictMysqlAll =
+  process.env.DB_PROVIDER === "mysql" &&
+  process.env.DB_ALLOW_FALLBACK !== "true";
 const strictMysqlPrefixes = ["dbMysql.users."];
 const mysqlRequiredErrorCode = "MYSQL_REQUIRED_USERS";
 
@@ -58,6 +61,7 @@ function warnFallback(path: string, error: unknown) {
 }
 
 function requiresStrictMysql(path: string) {
+  if (strictMysqlAll) return true;
   return strictMysqlPrefixes.some((prefix) => path.startsWith(prefix));
 }
 

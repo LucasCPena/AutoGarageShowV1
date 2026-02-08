@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:seed": "node scripts/seed-mysql.js"
+    "db:seed": "node scripts/seed-mysql.js",
+    "db:check": "node scripts/check-mysql.js"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
