@@ -2,8 +2,9 @@ import type { MetadataRoute } from "next";
 
 import { db } from "@/lib/database";
 import { listings, news, pastEvents } from "@/lib/mockData";
+import { siteUrl } from "@/lib/site-url";
 
-const baseUrl = "https://autogarageshow.com.br";
+const baseUrl = siteUrl;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();

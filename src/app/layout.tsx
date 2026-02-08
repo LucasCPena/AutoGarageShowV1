@@ -6,11 +6,12 @@ import "./globals.css";
 
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
+import { siteUrl } from "@/lib/site-url";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://autogarageshow.com.br"),
+  metadataBase: new URL(siteUrl),
   title: {
     default: "Auto Garage Show",
     template: "%s | Auto Garage Show"

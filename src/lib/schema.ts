@@ -1,12 +1,6 @@
 import type { Event } from "@/lib/database";
 import type { NewsArticle } from "@/lib/mockData";
-
-const siteUrl = "https://autogarageshow.com.br";
-
-function absoluteUrl(path: string) {
-  if (path.startsWith("http://") || path.startsWith("https://")) return path;
-  return `${siteUrl}${path}`;
-}
+import { toAbsoluteUrl } from "@/lib/site-url";
 
 export function eventJsonLd(event: Event) {
   return {
@@ -27,7 +21,7 @@ export function eventJsonLd(event: Event) {
         addressCountry: "BR"
       }
     },
-    url: absoluteUrl(`/eventos/${event.slug}`)
+    url: toAbsoluteUrl(`/eventos/${event.slug}`)
   };
 }
 
@@ -56,13 +50,13 @@ export function listingJsonLd(listing: ListingJsonLdInput) {
     model: listing.model,
     vehicleModelDate: String(yearValue),
     description: listing.description,
-    image: listing.images.map((img) => absoluteUrl(img)),
+    image: listing.images.map((img) => toAbsoluteUrl(img)),
     offers: {
       "@type": "Offer",
       priceCurrency: "BRL",
       price: listing.price,
       availability: "https://schema.org/InStock",
-      url: absoluteUrl(`/classificados/${listing.slug}`)
+      url: toAbsoluteUrl(`/classificados/${listing.slug}`)
     }
   };
 }
@@ -75,7 +69,7 @@ export function newsJsonLd(article: NewsArticle) {
     description: article.excerpt,
     datePublished: article.publishedAt,
     articleSection: article.category,
-    image: [absoluteUrl(article.coverImage)],
-    mainEntityOfPage: absoluteUrl(`/noticias/${article.slug}`)
+    image: [toAbsoluteUrl(article.coverImage)],
+    mainEntityOfPage: toAbsoluteUrl(`/noticias/${article.slug}`)
   };
 }
