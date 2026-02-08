@@ -9,9 +9,11 @@ const useMysql =
   Boolean(process.env.MYSQL_HOST);
 
 const warnedFallbackOps = new Set<string>();
-const strictMysqlAll = process.env.DB_STRICT_MYSQL_ALL === "true";
+const strictMysqlAll =
+  process.env.DB_STRICT_MYSQL_ALL === "true" ||
+  (process.env.DB_PROVIDER === "mysql" && process.env.DB_STRICT_MYSQL_ALL !== "false");
 const strictMysqlPrefixes = ["dbMysql.users."];
-const mysqlRequiredErrorCode = "MYSQL_REQUIRED_USERS";
+const mysqlRequiredErrorCode = "MYSQL_REQUIRED";
 
 function getErrorCode(error: unknown) {
   if (typeof error === "object" && error && "code" in error) {
@@ -65,7 +67,7 @@ function requiresStrictMysql(path: string) {
 
 function throwMysqlRequiredError(path: string, cause: unknown): never {
   const error = new Error(
-    `MySQL obrigatorio para operacao de autenticacao (${path}).`
+    `MySQL obrigatorio para operacao (${path}).`
   ) as Error & { code?: string; cause?: unknown };
   error.code = mysqlRequiredErrorCode;
   error.cause = cause;
@@ -78,7 +80,7 @@ export function isMysqlRequiredUsersError(error: unknown) {
     return true;
   }
   if (!(error instanceof Error)) return false;
-  return error.message.toLowerCase().includes("mysql obrigatorio para operacao de autenticacao");
+  return error.message.toLowerCase().includes("mysql obrigatorio para operacao");
 }
 
 function withMysqlFallback<T extends Record<string, any>>(
