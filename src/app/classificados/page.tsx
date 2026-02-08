@@ -7,6 +7,7 @@ import ClassifiedsClientSections from "@/components/ClassifiedsClientSections";
 import Container from "@/components/Container";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
+import { fetchJson } from "@/lib/fetch-json";
 import type { Listing } from "@/lib/mockData";
 
 export default function ClassifiedsPage() {
@@ -15,8 +16,7 @@ export default function ClassifiedsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/listings')
-      .then(res => res.json())
+    fetchJson<{ listings?: Listing[] }>('/api/listings')
       .then(data => {
         setListings(data.listings || []);
         setLoading(false);

@@ -1,5 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/database';
+import { db, isMysqlRequiredError } from '@/lib/database';
 import { requireAdmin } from '@/lib/auth-middleware';
 
 const DEFAULT_SECTIONS = ['home', 'events', 'listings'];
@@ -52,6 +52,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ banners });
   } catch (error) {
     console.error('Erro ao buscar banners:', error);
+    if (isMysqlRequiredError(error)) {
+      return NextResponse.json(
+        { error: 'Banco de dados indisponivel no momento.' },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -98,6 +104,12 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('Erro ao criar banner:', error);
+    if (isMysqlRequiredError(error)) {
+      return NextResponse.json(
+        { error: 'Banco de dados indisponivel no momento.' },
+        { status: 503 }
+      );
+    }
     if (error instanceof Error) {
       return NextResponse.json(
         { error: error.message },
@@ -110,4 +122,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

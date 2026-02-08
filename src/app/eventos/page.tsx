@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import Link from "next/link";
 
 import Container from "@/components/Container";
@@ -12,13 +12,22 @@ import HeroSlider from "@/components/HeroSlider";
 export const metadata: Metadata = {
   title: "Eventos",
   description:
-    "Calendário público com eventos aprovados de carros antigos. Exibe apenas os próximos 21 dias."
+    "Calendario publico com eventos aprovados de carros antigos. Exibe apenas os proximos 21 dias."
 };
 
 export const dynamic = "force-dynamic";
 
 export default async function EventsPage() {
-  const allEvents: Event[] = await db.events.getAll();
+  let allEvents: Event[] = [];
+  let dbError = false;
+
+  try {
+    allEvents = await db.events.getAll();
+  } catch (error) {
+    dbError = true;
+    console.error("Erro ao carregar eventos:", error);
+  }
+
   const now = Date.now();
   const limit = now + 21 * 24 * 60 * 60 * 1000;
 
@@ -40,8 +49,8 @@ export default async function EventsPage() {
   return (
     <>
       <PageIntro
-        title="Calendário de eventos"
-        subtitle="Mostrando apenas eventos aprovados nos próximos 21 dias (regra pública)."
+        title="Calendario de eventos"
+        subtitle="Mostrando apenas eventos aprovados nos proximos 21 dias (regra publica)."
       >
         <Link
           href="/eventos/cadastrar"
@@ -56,9 +65,15 @@ export default async function EventsPage() {
       </Container>
 
       <Container className="py-10">
+        {dbError ? (
+          <Notice title="Banco indisponivel" variant="warning">
+            Nao foi possivel carregar os eventos agora. Tente novamente em instantes.
+          </Notice>
+        ) : null}
+
         <Notice title="Como funciona" variant="info">
-          Eventos enviados passam por aprovação manual. Apenas eventos aprovados geram URL pública amigável. Eventos
-          recorrentes podem gerar datas automaticamente por até 12 meses.
+          Eventos enviados passam por aprovacao manual. Apenas eventos aprovados geram URL publica amigavel. Eventos
+          recorrentes podem gerar datas automaticamente por ate 12 meses.
         </Notice>
 
         <div className="mt-8 grid gap-3">
@@ -97,7 +112,7 @@ export default async function EventsPage() {
 
           {upcoming.length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-600">
-              Nenhum evento aprovado nos próximos 21 dias.
+              Nenhum evento aprovado nos proximos 21 dias.
             </div>
           ) : null}
         </div>
@@ -107,7 +122,7 @@ export default async function EventsPage() {
             Quer divulgar um encontro?
           </div>
           <p className="mt-1 text-sm text-slate-600">
-            Envie seu evento para revisão. No sistema final haverá validação de e-mail, captcha e controle anti-spam.
+            Envie seu evento para revisao. No sistema final havera validacao de e-mail, captcha e controle anti-spam.
           </p>
           <div className="mt-4">
             <Link

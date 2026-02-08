@@ -8,6 +8,7 @@ import Container from "@/components/Container";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { formatDateLong } from "@/lib/date";
+import { fetchJson } from "@/lib/fetch-json";
 import { useAuth } from "@/lib/useAuth";
 
 interface News {
@@ -34,8 +35,7 @@ export default function NewsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/noticias')
-      .then(res => res.json())
+    fetchJson<{ news?: News[] }>('/api/noticias')
       .then(data => {
         setNews(data.news || []);
         setLoading(false);

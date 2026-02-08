@@ -83,6 +83,10 @@ export function isMysqlRequiredUsersError(error: unknown) {
   return error.message.toLowerCase().includes("mysql obrigatorio para operacao");
 }
 
+export function isMysqlRequiredError(error: unknown) {
+  return isMysqlRequiredUsersError(error);
+}
+
 function withMysqlFallback<T extends Record<string, any>>(
   mysqlTarget: T,
   fileTarget: Record<string, any>,

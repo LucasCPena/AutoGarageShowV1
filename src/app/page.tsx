@@ -8,6 +8,7 @@ import Container from "@/components/Container";
 import type { EventRecurrence } from "@/lib/database";
 import { formatDateLong, formatDateShort, formatTime } from "@/lib/date";
 import { formatCurrencyBRL } from "@/lib/format";
+import { fetchJson } from "@/lib/fetch-json";
 import CalendarWidget from "@/components/CalendarWidget";
 import { generateEventOccurrences } from "@/lib/eventRecurrence";
 import HeroSlider from "@/components/HeroSlider";
@@ -128,26 +129,22 @@ export default function HomePage() {
   const [pastEvents, setPastEvents] = useState<any[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Buscar todas as configurações e dados
     const fetchData = async () => {
       try {
-        const [settingsRes, eventsRes, listingsRes, newsRes, pastEventsRes, bannersRes] = await Promise.all([
-          fetch('/api/settings'),
-          fetch('/api/events'),
-          fetch('/api/listings'),
-          fetch('/api/noticias'),
-          fetch('/api/events/past'),
-          fetch('/api/banners')
+        const [settingsData, eventsData, listingsData, newsData, pastEventsData, bannersData] = await Promise.all([
+          fetchJson<{ settings?: any }>('/api/settings'),
+          fetchJson<{ events?: Event[] }>('/api/events'),
+          fetchJson<{ listings?: Listing[] }>('/api/listings'),
+          fetchJson<{ news?: News[] }>('/api/noticias'),
+          fetchJson<{ events?: any[] }>('/api/events/past'),
+          fetchJson<{ banners?: Banner[] }>('/api/banners')
         ]);
 
-        const settings = await settingsRes.json();
-        const eventsData = await eventsRes.json();
-        const listingsData = await listingsRes.json();
-        const newsData = await newsRes.json();
-        const pastEventsData = await pastEventsRes.json();
-        const bannersData = await bannersRes.json();
+        const settings = settingsData.settings;
 
         if (settings?.settings?.events?.requireApproval === true) {
           setConfig((current) => ({
@@ -176,6 +173,7 @@ export default function HomePage() {
         setBanners(bannersData.banners || []);
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
+        setError(error instanceof Error ? error.message : "Erro ao carregar dados.");
       } finally {
         setLoading(false);
       }
@@ -188,6 +186,16 @@ export default function HomePage() {
     return (
       <Container className="py-10">
         <div>Carregando...</div>
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container className="py-10">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
+        </div>
       </Container>
     );
   }

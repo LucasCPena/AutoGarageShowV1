@@ -12,8 +12,13 @@ const defaultSocialLinks = [
 
 export default async function SiteFooter() {
   const year = new Date().getFullYear();
-  const settings = await db.settings.get();
-  const socialLinks = settings?.social?.links?.length ? settings.social.links : defaultSocialLinks;
+  let socialLinks = defaultSocialLinks;
+  try {
+    const settings = await db.settings.get();
+    socialLinks = settings?.social?.links?.length ? settings.social.links : defaultSocialLinks;
+  } catch (error) {
+    console.error("Erro ao carregar links sociais no rodape:", error);
+  }
 
   return (
     <footer className="border-t border-slate-200 bg-white">

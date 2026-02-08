@@ -35,12 +35,22 @@ function formatLocation(city?: string, state?: string) {
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const listing = await db.listings.findBySlug(params.slug);
-  const isVisible =
-    listing && (listing.status === "approved" || listing.status === "active");
+async function findVisibleListing(slug: string) {
+  try {
+    const listing = await db.listings.findBySlug(slug);
+    const isVisible =
+      listing && (listing.status === "approved" || listing.status === "active");
+    return isVisible ? listing : null;
+  } catch (error) {
+    console.error("Erro ao buscar classificado por slug:", error);
+    return null;
+  }
+}
 
-  if (!listing || !isVisible) {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const listing = await findVisibleListing(params.slug);
+
+  if (!listing) {
     return {
       title: "Anúncio",
       description: "Anúncio não encontrado."
@@ -61,11 +71,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ListingDetailPage({ params }: Props) {
-  const listing = await db.listings.findBySlug(params.slug);
-  const isVisible =
-    listing && (listing.status === "approved" || listing.status === "active");
+  const listing = await findVisibleListing(params.slug);
 
-  if (!listing || !isVisible) {
+  if (!listing) {
     return notFound();
   }
 

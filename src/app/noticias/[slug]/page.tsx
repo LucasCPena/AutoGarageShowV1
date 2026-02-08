@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 import Container from "@/components/Container";
 import PageIntro from "@/components/PageIntro";
 import { formatDateLong } from "@/lib/date";
+import { fetchJson } from "@/lib/fetch-json";
 
 interface News {
   id: string;
@@ -39,8 +40,7 @@ export default function NewsDetailPage({ params }: Props) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/noticias`)
-      .then(res => res.json())
+    fetchJson<{ news?: News[] }>(`/api/noticias`)
       .then(data => {
         const foundArticle = data.news?.find((n: News) => n.slug === params.slug);
         if (foundArticle) {

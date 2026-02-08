@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -23,13 +23,24 @@ function toMetaDescription(text: string) {
   return clean.length > 160 ? `${clean.slice(0, 157)}...` : clean;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const event = await db.events.findBySlug(params.slug);
+async function findApprovedEvent(slug: string) {
+  try {
+    const event = await db.events.findBySlug(slug);
+    if (!event || event.status !== "approved") return null;
+    return event;
+  } catch (error) {
+    console.error("Erro ao buscar evento por slug:", error);
+    return null;
+  }
+}
 
-  if (!event || event.status !== "approved") {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const event = await findApprovedEvent(params.slug);
+
+  if (!event) {
     return {
       title: "Evento",
-      description: "Evento não encontrado."
+      description: "Evento nao encontrado."
     };
   }
 
@@ -47,9 +58,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function EventDetailPage({ params }: Props) {
-  const event = await db.events.findBySlug(params.slug);
+  const event = await findApprovedEvent(params.slug);
 
-  if (!event || event.status !== "approved") {
+  if (!event) {
     return notFound();
   }
 
@@ -87,8 +98,8 @@ export default async function EventDetailPage({ params }: Props) {
           }}
         />
 
-        <Notice title="Regra de exibição (público)" variant="info">
-          No calendário público aparecem apenas eventos aprovados dos próximos 21 dias. No admin, é possível visualizar todos os cadastros.
+        <Notice title="Regra de exibicao (publico)" variant="info">
+          No calendario publico aparecem apenas eventos aprovados dos proximos 21 dias. No admin, e possivel visualizar todos os cadastros.
         </Notice>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
@@ -106,7 +117,7 @@ export default async function EventDetailPage({ params }: Props) {
             </section>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-6">
-              <h2 className="text-lg font-semibold text-slate-900">Recorrência</h2>
+              <h2 className="text-lg font-semibold text-slate-900">Recorrencia</h2>
               <p className="mt-2 text-sm text-slate-600">
                 {recurrenceLabel}
               </p>
@@ -130,7 +141,7 @@ export default async function EventDetailPage({ params }: Props) {
           </div>
 
           <aside className="rounded-2xl border border-slate-200 bg-white p-6">
-            <div className="text-sm font-semibold text-slate-900">Informações</div>
+            <div className="text-sm font-semibold text-slate-900">Informacoes</div>
 
             <dl className="mt-4 grid gap-4 text-sm">
               <div>
@@ -140,7 +151,7 @@ export default async function EventDetailPage({ params }: Props) {
                 </dd>
               </div>
               <div>
-                <dt className="text-slate-500">Horário</dt>
+                <dt className="text-slate-500">Horario</dt>
                 <dd className="mt-1 font-semibold text-slate-900">
                   {formatTime(event.startAt)}
                 </dd>
@@ -193,7 +204,7 @@ export default async function EventDetailPage({ params }: Props) {
             ) : null}
 
             <div className="mt-6 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
-              Após a data, o evento pode virar “Evento realizado” com galeria de fotos (otimizadas em WEBP e lazy load).
+              Apos a data, o evento pode virar Evento realizado com galeria de fotos.
             </div>
           </aside>
         </div>

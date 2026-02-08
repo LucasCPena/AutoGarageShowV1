@@ -17,7 +17,12 @@ type Props = {
 export const dynamic = "force-dynamic";
 
 async function loadPastEvent(slug: string) {
-  return db.pastEvents.findBySlug(slug);
+  try {
+    return await db.pastEvents.findBySlug(slug);
+  } catch (error) {
+    console.error("Erro ao carregar evento realizado:", error);
+    return null;
+  }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

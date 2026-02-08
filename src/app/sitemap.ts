@@ -8,7 +8,12 @@ const baseUrl = siteUrl;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
-  const events = await db.events.getAll();
+  let events = [] as Awaited<ReturnType<typeof db.events.getAll>>;
+  try {
+    events = await db.events.getAll();
+  } catch (error) {
+    console.error("Erro ao carregar eventos para sitemap:", error);
+  }
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${baseUrl}/`, lastModified: now, changeFrequency: "daily", priority: 1 },

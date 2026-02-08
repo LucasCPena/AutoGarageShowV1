@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/database';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { db, isMysqlRequiredError } from '@/lib/database';
 import { generateEventOccurrences } from '@/lib/eventRecurrence';
 
 export const dynamic = 'force-dynamic';
@@ -11,10 +11,10 @@ export async function GET(request: NextRequest) {
     const month = searchParams.get('month');
 
     let events = await db.events.getAll();
-    events = events.filter(event => event.status === 'approved');
+    events = events.filter((event) => event.status === 'approved');
 
-    const targetYear = year ? parseInt(year) : null;
-    const targetMonth = month ? parseInt(month) - 1 : null;
+    const targetYear = year ? parseInt(year, 10) : null;
+    const targetMonth = month ? parseInt(month, 10) - 1 : null;
 
     const enriched = events.map((event) => {
       let occurrences = generateEventOccurrences(event.startAt, event.recurrence, event.endAt);
@@ -35,7 +35,13 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ events: enriched });
   } catch (error) {
-    console.error('Erro ao buscar calendário:', error);
+    console.error('Erro ao buscar calendario:', error);
+    if (isMysqlRequiredError(error)) {
+      return NextResponse.json(
+        { error: 'Banco de dados indisponivel no momento.' },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

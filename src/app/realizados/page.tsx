@@ -8,6 +8,7 @@ import Container from "@/components/Container";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { formatDateShort } from "@/lib/date";
+import { fetchJson } from "@/lib/fetch-json";
 
 interface PastEvent {
   id: string;
@@ -27,8 +28,7 @@ export default function PastEventsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/events/past')
-      .then(res => res.json())
+    fetchJson<{ events?: PastEvent[] }>('/api/events/past')
       .then(data => {
         setEvents(data.events || []);
         setLoading(false);

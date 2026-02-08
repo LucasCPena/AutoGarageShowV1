@@ -6,6 +6,7 @@ import Calendar from "@/components/Calendar";
 import Container from "@/components/Container";
 import MultiMonthCalendar from "@/components/MultiMonthCalendar";
 import PageIntro from "@/components/PageIntro";
+import { fetchJson } from "@/lib/fetch-json";
 import type { Event } from "@/lib/mockData";
 
 export default function CalendarPage() {
@@ -13,8 +14,7 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/calendar')
-      .then(res => res.json())
+    fetchJson<{ events?: Event[] }>('/api/calendar')
       .then(data => {
         setEvents(data.events || []);
         setLoading(false);
