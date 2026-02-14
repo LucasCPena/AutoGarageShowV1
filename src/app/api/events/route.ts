@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     const images = Array.isArray(eventData.images)
       ? eventData.images
           .map((value: unknown) => normalizeAssetReference(value))
-          .filter((value): value is string => Boolean(value))
+          .filter((value: string | undefined): value is string => Boolean(value))
       : [];
 
     const coverImage =
