@@ -28,5 +28,8 @@
       { "platform": "Facebook", "url": "https://www.facebook.com/" },
       { "platform": "TikTok", "url": "https://www.tiktok.com/" }
     ]
+  },
+  "branding": {
+    "logoUrl": "/uploads/site/logo-site.png"
   }
 }

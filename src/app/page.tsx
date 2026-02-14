@@ -238,7 +238,7 @@ export default function HomePage() {
         className="border-b border-brand-900/30 bg-slate-900/80"
         style={{
           backgroundImage:
-            `linear-gradient(110deg, rgba(10, 10, 10, 0.9), rgba(99, 27, 12, 0.72)), url('${heroBackgroundImage}')`,
+            `linear-gradient(110deg, rgba(10, 12, 10, 0.9), rgba(67, 64, 3, 0.72)), url('${heroBackgroundImage}')`,
           backgroundSize: "cover",
           backgroundPosition: "center"
         }}

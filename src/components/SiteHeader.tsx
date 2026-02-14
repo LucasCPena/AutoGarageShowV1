@@ -13,6 +13,8 @@ import {
 } from "@/lib/siteBranding";
 import { useAuth } from "@/lib/useAuth";
 
+const DEFAULT_LOGO_URL = "/uploads/site/logo-site.png";
+
 function applyFavicon(faviconUrl: string) {
   const entries: Array<{ rel: string }> = [
     { rel: "icon" },
@@ -38,6 +40,7 @@ export default function SiteHeader() {
   const [mounted, setMounted] = useState(false);
   const [branding, setBranding] = useState<SiteBranding>({});
   const [logoLoadFailed, setLogoLoadFailed] = useState(false);
+  const logoUrl = branding.logoUrl || DEFAULT_LOGO_URL;
 
   useEffect(() => {
     setMounted(true);
@@ -45,7 +48,7 @@ export default function SiteHeader() {
 
   useEffect(() => {
     setLogoLoadFailed(false);
-  }, [branding.logoUrl]);
+  }, [logoUrl]);
 
   useEffect(() => {
     let active = true;
@@ -109,7 +112,7 @@ export default function SiteHeader() {
     return items;
   }, [user, mounted]);
 
-  const showCustomLogo = Boolean(branding.logoUrl && !logoLoadFailed);
+  const showCustomLogo = !logoLoadFailed;
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur">
@@ -118,7 +121,7 @@ export default function SiteHeader() {
           {showCustomLogo ? (
             <>
               <img
-                src={branding.logoUrl}
+                src={logoUrl}
                 alt="Auto Garage Show"
                 className="h-10 w-auto max-w-[210px] object-contain"
                 onError={() => setLogoLoadFailed(true)}
