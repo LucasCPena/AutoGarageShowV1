@@ -12,6 +12,13 @@ const warnedFallbackOps = new Set<string>();
 const strictMysqlAll = process.env.DB_STRICT_MYSQL_ALL === "true";
 const strictMysqlPrefixes = ["dbMysql.users."];
 const mysqlRequiredErrorCode = "MYSQL_REQUIRED";
+const readOnlyMethodPrefixes = ["get", "find", "list", "search", "count"];
+
+function isReadOnlyMethod(path: string) {
+  const method = path.split(".").pop()?.toLowerCase() ?? "";
+  if (!method) return false;
+  return readOnlyMethodPrefixes.some((prefix) => method.startsWith(prefix));
+}
 
 function getErrorCode(error: unknown) {
   if (typeof error === "object" && error && "code" in error) {
@@ -59,7 +66,7 @@ function warnFallback(path: string, error: unknown) {
 }
 
 function requiresStrictMysql(path: string) {
-  if (strictMysqlAll) return true;
+  if (strictMysqlAll && !isReadOnlyMethod(path)) return true;
   return strictMysqlPrefixes.some((prefix) => path.startsWith(prefix));
 }
 
