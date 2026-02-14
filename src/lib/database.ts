@@ -70,7 +70,7 @@ function warnFallback(path: string, error: unknown) {
 }
 
 function requiresStrictMysql(path: string) {
-  if (strictMysqlAll && !isReadOnlyMethod(path)) return true;
+  if (strictMysqlAll) return true;
   return strictMysqlPrefixes.some((prefix) => path.startsWith(prefix));
 }
 
