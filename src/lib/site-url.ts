@@ -14,3 +14,31 @@ export function toAbsoluteUrl(path: string) {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   return `${siteUrl}${normalizedPath}`;
 }
+
+export function toPublicAssetUrl(value: unknown) {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  if (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("data:") ||
+    trimmed.startsWith("blob:")
+  ) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith("/uploads/") || trimmed.startsWith("uploads/")) {
+    return toAbsoluteUrl(trimmed);
+  }
+
+  return trimmed;
+}
+
+export function toPublicAssetUrls(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => toPublicAssetUrl(item))
+    .filter((item): item is string => Boolean(item));
+}

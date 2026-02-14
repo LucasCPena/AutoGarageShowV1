@@ -11,6 +11,7 @@ import type {
   User,
   VehicleBrand
 } from "./database.types";
+import { toPublicAssetUrl, toPublicAssetUrls } from "./site-url";
 
 type Row = Record<string, any>;
 
@@ -116,8 +117,8 @@ function mapEvent(row: Row): Event {
     status: row.status,
     recurrence: parseJson(row.recurrence, { type: "single" }),
     websiteUrl: row.website_url ?? undefined,
-    coverImage: row.cover_image ?? undefined,
-    images: parseJson(row.images, []),
+    coverImage: toPublicAssetUrl(row.cover_image),
+    images: toPublicAssetUrls(parseJson(row.images, [])),
     createdBy: row.created_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at
@@ -133,7 +134,7 @@ function mapPastEvent(row: Row): PastEvent {
     city: row.city,
     state: row.state,
     date: row.date,
-    images: parseJson(row.images, []),
+    images: toPublicAssetUrls(parseJson(row.images, [])),
     description: row.description ?? undefined,
     attendance: row.attendance ?? undefined,
     videos: parseJson(row.videos, []),
@@ -155,7 +156,7 @@ function mapListing(row: Row): Listing {
     year: Number(row.year ?? row.model_year),
     mileage: Number(row.mileage),
     price: Number(row.price),
-    images: parseJson(row.images, []),
+    images: toPublicAssetUrls(parseJson(row.images, [])),
     contact: parseJson(row.contact, { name: "", email: "", phone: "" }),
     specifications: parseJson(row.specifications, {
       singleOwner: false,
@@ -195,7 +196,7 @@ function mapBanner(row: Row): Banner {
   return {
     id: row.id,
     title: row.title,
-    image: row.image,
+    image: toPublicAssetUrl(row.image) || row.image,
     link: row.link ?? undefined,
     section: row.section,
     position: Number(row.position),
@@ -215,7 +216,7 @@ function mapNews(row: Row): News {
     content: row.content,
     excerpt: row.excerpt,
     category: row.category,
-    coverImage: row.cover_image,
+    coverImage: toPublicAssetUrl(row.cover_image) || row.cover_image,
     author: row.author,
     status: row.status,
     createdAt: row.created_at,
@@ -801,7 +802,18 @@ export const dbMysql = {
     get: async () => {
       const row = await queryOne<{ data: any }>("SELECT data FROM settings WHERE id = 1");
       if (!row) return null;
-      return parseJson<Settings | null>(row.data, null);
+      const settings = parseJson<Settings | null>(row.data, null);
+      if (!settings) return null;
+
+      if (settings.branding) {
+        settings.branding = {
+          ...settings.branding,
+          logoUrl: toPublicAssetUrl(settings.branding.logoUrl),
+          faviconUrl: toPublicAssetUrl(settings.branding.faviconUrl)
+        };
+      }
+
+      return settings;
     },
     update: async (settings: Partial<Settings>) => {
       const current = (await dbMysql.settings.get()) || ({} as Settings);

@@ -12,6 +12,7 @@ try {
 const remotePatterns = [
   { protocol: "https", hostname: "images.unsplash.com" },
   { protocol: "https", hostname: "**" },
+  { protocol: "http", hostname: "**" },
   { protocol: "http", hostname: "localhost" },
   { protocol: "http", hostname: "127.0.0.1" }
 ];
