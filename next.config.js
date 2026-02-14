@@ -23,6 +23,7 @@ if (siteHostname && !remotePatterns.some((item) => item.hostname === siteHostnam
 
 const nextConfig = {
   images: {
+    unoptimized: true,
     formats: ["image/avif", "image/webp"],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
