@@ -28,6 +28,11 @@ function byPublishedAtDesc(a: News, b: News) {
   return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
 }
 
+function getNewsCoverSrc(coverImage?: string) {
+  const value = coverImage?.trim();
+  return value || "/placeholders/news.svg";
+}
+
 export default function NewsPage() {
   const { user, isLoading: authLoading } = useAuth();
   const [news, setNews] = useState<News[]>([]);
@@ -94,7 +99,7 @@ export default function NewsPage() {
               className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white hover:border-brand-200 sm:flex-row"
             >
               <Image
-                src={article.coverImage}
+                src={getNewsCoverSrc(article.coverImage)}
                 alt={article.title}
                 width={1200}
                 height={800}

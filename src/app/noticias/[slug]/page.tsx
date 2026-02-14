@@ -35,6 +35,11 @@ function toMetaDescription(text: string) {
   return clean.length > 160 ? `${clean.slice(0, 157)}...` : clean;
 }
 
+function getNewsCoverSrc(coverImage?: string) {
+  const value = coverImage?.trim();
+  return value || "/placeholders/news.svg";
+}
+
 export default function NewsDetailPage({ params }: Props) {
   const [article, setArticle] = useState<News | null>(null);
   const [loading, setLoading] = useState(true);
@@ -86,7 +91,7 @@ export default function NewsDetailPage({ params }: Props) {
         <div className="mx-auto max-w-3xl">
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
             <Image
-              src={article.coverImage}
+              src={getNewsCoverSrc(article.coverImage)}
               alt={article.title}
               width={1200}
               height={800}

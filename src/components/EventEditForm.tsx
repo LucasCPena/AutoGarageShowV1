@@ -648,7 +648,7 @@ export default function EventEditForm({ eventId }: Props) {
           />
           {coverImagePreview && (
             <div className="mt-2">
-              <Image src={coverImagePreview} alt="Preview" className="h-32 w-48 rounded-lg object-cover border border-slate-200" width={192} height={128} />
+              <Image src={coverImagePreview} alt="Preview" className="h-32 w-48 rounded-lg object-cover border border-slate-200" width={192} height={128} unoptimized />
             </div>
           )}
         </label>

@@ -62,6 +62,11 @@ function formatListingMeta(listing: Listing) {
   return parts.join(" • ");
 }
 
+function getListingImageSrc(images: string[] | undefined) {
+  const firstImage = images?.[0]?.trim();
+  return firstImage || "/placeholders/car.svg";
+}
+
 type Props = {
   listings: Listing[];
 };
@@ -124,7 +129,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
               className="group overflow-hidden rounded-2xl border border-slate-200 bg-white hover:border-brand-200"
             >
               <Image
-                src={l.images[0]}
+                src={getListingImageSrc(l.images)}
                 alt={l.title}
                 width={1200}
                 height={800}
@@ -173,7 +178,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
               className="group overflow-hidden rounded-2xl border border-slate-200 bg-white hover:border-brand-200"
             >
               <Image
-                src={l.images[0]}
+                src={getListingImageSrc(l.images)}
                 alt={l.title}
                 width={1200}
                 height={800}
