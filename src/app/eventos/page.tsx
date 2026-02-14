@@ -7,6 +7,7 @@ import PageIntro from "@/components/PageIntro";
 import { formatDateLong, formatTime } from "@/lib/date";
 import { db, Event } from "@/lib/database";
 import { formatRecurrence, generateEventOccurrences, getSpanDays } from "@/lib/eventRecurrence";
+import { normalizeAssetReference } from "@/lib/site-url";
 import HeroSlider from "@/components/HeroSlider";
 
 export const metadata: Metadata = {
@@ -85,7 +86,10 @@ export default async function EventsPage() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <img
-                    src={event.coverImage || event.images?.[0] || "/placeholders/event.svg"}
+                    src={
+                      normalizeAssetReference(event.coverImage || event.images?.[0]) ||
+                      "/placeholders/event.svg"
+                    }
                     alt={event.title}
                     className="mb-3 h-28 w-full max-w-xs rounded-lg border border-slate-200 object-cover"
                   />

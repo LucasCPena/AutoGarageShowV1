@@ -7,6 +7,7 @@ import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { formatDateLong } from "@/lib/date";
 import { db } from "@/lib/database";
+import { normalizeAssetReference } from "@/lib/site-url";
 
 type Props = {
   params: {
@@ -55,7 +56,9 @@ export default async function PastEventDetailPage({ params }: Props) {
     notFound();
   }
 
-  const images = event.images?.length ? event.images : ["/placeholders/event.svg"];
+  const images = (event.images?.length ? event.images : ["/placeholders/event.svg"]).map(
+    (image) => normalizeAssetReference(image) || "/placeholders/event.svg"
+  );
   const videos = event.videos || [];
 
   return (

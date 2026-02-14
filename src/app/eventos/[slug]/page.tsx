@@ -9,6 +9,7 @@ import { formatDateLong, formatTime } from "@/lib/date";
 import { db } from "@/lib/database";
 import { formatRecurrence, generateEventOccurrences, getSpanDays } from "@/lib/eventRecurrence";
 import { eventJsonLd } from "@/lib/schema";
+import { normalizeAssetReference } from "@/lib/site-url";
 
 type Props = {
   params: {
@@ -68,7 +69,9 @@ export default async function EventDetailPage({ params }: Props) {
   const futureOccurrences = occurrences.filter((iso) => new Date(iso).getTime() >= Date.now());
   const spanDays = getSpanDays(event.startAt, event.endAt);
   const recurrenceLabel = formatRecurrence(event.recurrence, spanDays);
-  const heroImage = event.coverImage || event.images?.[0] || "/placeholders/event.svg";
+  const heroImage =
+    normalizeAssetReference(event.coverImage || event.images?.[0]) ||
+    "/placeholders/event.svg";
 
   return (
     <>

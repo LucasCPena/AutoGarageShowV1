@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, isMysqlRequiredError } from '@/lib/database';
 import { getUserFromToken } from '@/lib/auth-middleware';
 import { normalizeRecurrence } from '@/lib/eventRecurrence';
+import { normalizeAssetReference } from '@/lib/site-url';
 
 function slugify(input: string) {
   return input
@@ -104,8 +105,14 @@ export async function POST(request: NextRequest) {
     const status: 'approved' | 'pending' = shouldAutoApprove ? 'approved' : 'pending';
     
     const images = Array.isArray(eventData.images)
-      ? eventData.images.filter((value: unknown) => typeof value === 'string' && value.trim().length > 0)
+      ? eventData.images
+          .map((value: unknown) => normalizeAssetReference(value))
+          .filter((value): value is string => Boolean(value))
       : [];
+
+    const coverImage =
+      normalizeAssetReference(eventData.coverImage) ||
+      images[0];
 
     const event = await db.events.create({
       ...eventData,
@@ -120,7 +127,7 @@ export async function POST(request: NextRequest) {
       contactPhone: eventData.contactPhone,
       contactEmail: eventData.contactEmail,
       images,
-      coverImage: eventData.coverImage || images[0]
+      coverImage
     });
     
     return NextResponse.json(

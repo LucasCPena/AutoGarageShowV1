@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { db, isMysqlRequiredError } from '@/lib/database';
+import { normalizeAssetReference } from '@/lib/site-url';
 
 function sanitizeStringList(value: unknown) {
   if (!Array.isArray(value)) return [] as string[];
@@ -7,6 +8,13 @@ function sanitizeStringList(value: unknown) {
     .filter((item): item is string => typeof item === 'string')
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function sanitizeImageList(value: unknown) {
+  if (!Array.isArray(value)) return [] as string[];
+  return value
+    .map((item) => normalizeAssetReference(item))
+    .filter((item): item is string => Boolean(item));
 }
 
 function hasMedia(images: string[] = [], videos: string[] = []) {
@@ -38,7 +46,7 @@ export async function GET(request: NextRequest) {
     // cria a entrada de realizado automaticamente uma unica vez.
     for (const event of events) {
       const isPast = new Date(event.startAt).getTime() <= now;
-      const eventImages = event.images ?? [];
+      const eventImages = sanitizeImageList(event.images ?? []);
       if (event.status !== 'completed' || !isPast || eventImages.length === 0) continue;
       if (byEventId.has(event.id)) continue;
 
@@ -97,7 +105,7 @@ export async function POST(request: NextRequest) {
     const city = String(eventData.city || '').trim();
     const state = String(eventData.state || '').trim();
     const date = String(eventData.date || '').trim();
-    const images = sanitizeStringList(eventData.images);
+    const images = sanitizeImageList(eventData.images);
     const videos = sanitizeStringList(eventData.videos);
 
     if (!title || !city || !state || !date) {

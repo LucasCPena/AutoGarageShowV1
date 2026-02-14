@@ -2,6 +2,7 @@
 import { db } from '@/lib/database';
 import { getUserFromToken, requireAuth } from '@/lib/auth-middleware';
 import { normalizeRecurrence } from '@/lib/eventRecurrence';
+import { normalizeAssetReference } from '@/lib/site-url';
 
 function slugify(input: string) {
   return input
@@ -16,6 +17,13 @@ function sanitizeStringList(value: unknown) {
     .filter((item): item is string => typeof item === 'string')
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function sanitizeImageList(value: unknown) {
+  if (!Array.isArray(value)) return [] as string[];
+  return value
+    .map((item) => normalizeAssetReference(item))
+    .filter((item): item is string => Boolean(item));
 }
 
 function hasMedia(images: string[], videos: string[]) {
@@ -143,12 +151,15 @@ export async function PUT(
 
     const nextImages =
       updateData.images !== undefined
-        ? sanitizeStringList(updateData.images)
+        ? sanitizeImageList(updateData.images)
         : (existing.images ?? []);
 
     const providedCoverImage =
-      typeof updateData.coverImage === 'string' ? updateData.coverImage.trim() : undefined;
-    const nextCoverImage = providedCoverImage || existing.coverImage || nextImages[0];
+      normalizeAssetReference(updateData.coverImage);
+    const nextCoverImage =
+      providedCoverImage ||
+      normalizeAssetReference(existing.coverImage) ||
+      nextImages[0];
     const nextContactDocument =
       typeof updateData.contactDocument === 'string'
         ? updateData.contactDocument.trim() || 'nao informado'
@@ -162,7 +173,7 @@ export async function PUT(
 
     const nextPastImages =
       pastPayload && 'images' in pastPayload
-        ? sanitizeStringList((pastPayload as { images?: unknown }).images)
+        ? sanitizeImageList((pastPayload as { images?: unknown }).images)
         : existingPastEvent?.images ?? nextImages;
     const nextPastVideos =
       pastPayload && 'videos' in pastPayload

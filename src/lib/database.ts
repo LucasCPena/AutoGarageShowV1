@@ -9,9 +9,7 @@ const useMysql =
   Boolean(process.env.MYSQL_HOST);
 
 const warnedFallbackOps = new Set<string>();
-const strictMysqlAll =
-  process.env.DB_STRICT_MYSQL_ALL === "true" ||
-  (process.env.DB_PROVIDER === "mysql" && process.env.DB_STRICT_MYSQL_ALL !== "false");
+const strictMysqlAll = process.env.DB_STRICT_MYSQL_ALL === "true";
 const strictMysqlPrefixes = ["dbMysql.users."];
 const mysqlRequiredErrorCode = "MYSQL_REQUIRED";
 

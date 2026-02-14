@@ -6,6 +6,7 @@ import Notice from "@/components/Notice";
 import Link from "next/link";
 import type { Event } from "@/lib/database";
 import { formatDateLong, formatTime } from "@/lib/date";
+import { normalizeAssetReference } from "@/lib/site-url";
 
 type Props = {
   events: Event[];
@@ -21,7 +22,7 @@ function formatDateTime(iso: string) {
 }
 
 function eventThumbnail(event: Event) {
-  return event.coverImage || event.images?.[0] || "/placeholders/event.svg";
+  return normalizeAssetReference(event.coverImage || event.images?.[0]) || "/placeholders/event.svg";
 }
 
 export default function AdminEventsPanel({ events, token }: Props) {
