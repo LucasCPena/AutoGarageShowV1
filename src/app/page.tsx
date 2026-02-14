@@ -137,13 +137,46 @@ export default function HomePage() {
     // Buscar todas as configurações e dados
     const fetchData = async () => {
       try {
-        const [settingsData, eventsData, listingsData, newsData, bannersData] = await Promise.all([
+        const requests = [
           fetchJson<{ settings?: any }>('/api/settings'),
           fetchJson<{ events?: Event[] }>('/api/events'),
           fetchJson<{ listings?: Listing[] }>('/api/listings'),
           fetchJson<{ news?: News[] }>('/api/noticias'),
           fetchJson<{ banners?: Banner[] }>('/api/banners')
-        ]);
+        ] as const;
+
+        const [settingsResult, eventsResult, listingsResult, newsResult, bannersResult] =
+          await Promise.allSettled(requests);
+
+        const failedRequests = [
+          ["settings", settingsResult],
+          ["events", eventsResult],
+          ["listings", listingsResult],
+          ["news", newsResult],
+          ["banners", bannersResult]
+        ].filter(([, result]) => result.status === "rejected");
+
+        failedRequests.forEach(([name, result]) => {
+          if (result.status === "rejected") {
+            console.error(`Falha ao carregar ${name}:`, result.reason);
+          }
+        });
+
+        if (failedRequests.length === requests.length) {
+          setError("Nao foi possivel carregar os dados no momento.");
+          return;
+        }
+
+        const settingsData =
+          settingsResult.status === "fulfilled" ? settingsResult.value : {};
+        const eventsData =
+          eventsResult.status === "fulfilled" ? eventsResult.value : {};
+        const listingsData =
+          listingsResult.status === "fulfilled" ? listingsResult.value : {};
+        const newsData =
+          newsResult.status === "fulfilled" ? newsResult.value : {};
+        const bannersData =
+          bannersResult.status === "fulfilled" ? bannersResult.value : {};
 
         const settings = settingsData.settings;
 
