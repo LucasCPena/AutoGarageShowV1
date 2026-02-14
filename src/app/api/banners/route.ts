@@ -1,6 +1,7 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db, isMysqlRequiredError } from '@/lib/database';
 import { requireAdmin } from '@/lib/auth-middleware';
+import { toPublicAssetUrl } from '@/lib/site-url';
 
 const DEFAULT_SECTIONS = ['home', 'events', 'listings'];
 
@@ -83,6 +84,7 @@ export async function POST(request: NextRequest) {
     const settings = await db.settings.get();
     const validSections = collectValidSections(settings?.banners?.sections);
     const normalizedSection = normalizeBannerSection(bannerData.section);
+    const normalizedImage = toPublicAssetUrl(bannerData.image, { uploadType: 'banner' });
 
     if (!validSections.includes(normalizedSection)) {
       return NextResponse.json(
@@ -91,8 +93,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!normalizedImage) {
+      return NextResponse.json(
+        { error: 'Imagem invalida para banner.' },
+        { status: 400 }
+      );
+    }
+
     const banner = await db.banners.create({
       ...bannerData,
+      image: normalizedImage,
       section: normalizedSection,
       status: 'active',
       startDate: bannerData.startDate || new Date().toISOString()

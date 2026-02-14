@@ -14,12 +14,25 @@ type EventItem = {
   status?: "pending" | "approved" | "completed";
 };
 
-type EventSlide = {
+type BannerItem = {
   id: string;
   title: string;
   image: string;
-  link: string;
+  link?: string;
+  section: string;
+  position: number;
+  status: "active" | "inactive";
+  startDate: string;
+  endDate?: string;
+};
+
+type Slide = {
+  id: string;
+  title: string;
+  image: string;
+  link?: string;
   startAt?: string;
+  position?: number;
 };
 
 type Props = {
@@ -28,29 +41,75 @@ type Props = {
   autoPlayMs?: number;
 };
 
+function isBannerActiveNow(banner: BannerItem, now: number) {
+  if (banner.status !== "active") return false;
+
+  const start = new Date(banner.startDate).getTime();
+  if (Number.isFinite(start) && start > now) return false;
+
+  const end = banner.endDate ? new Date(banner.endDate).getTime() : Number.POSITIVE_INFINITY;
+  if (Number.isFinite(end) && end < now) return false;
+
+  return true;
+}
+
 export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs = 5000 }: Props) {
   const [events, setEvents] = useState<EventItem[]>([]);
+  const [banners, setBanners] = useState<BannerItem[]>([]);
   const [current, setCurrent] = useState(0);
 
   useEffect(() => {
+    fetch(`/api/banners?section=${encodeURIComponent(section)}`)
+      .then((res) => res.json())
+      .then((data) => setBanners(Array.isArray(data.banners) ? data.banners : []))
+      .catch(() => setBanners([]));
+  }, [section]);
+
+  useEffect(() => {
+    if (section === "home") {
+      setEvents([]);
+      return;
+    }
+
     fetch("/api/events")
       .then((res) => res.json())
       .then((data) => setEvents(data.events || []))
       .catch(() => setEvents([]));
-  }, []);
+  }, [section]);
 
   const slides = useMemo(() => {
     const now = Date.now();
-    const filtered = events.filter((event) => {
-      if (event.status && event.status !== "approved") return false;
-      if (section === "home" && event.startAt) {
-        const time = new Date(event.startAt).getTime();
-        if (Number.isFinite(time)) return time >= now;
-      }
-      return true;
-    });
 
-    return filtered
+    const bannerSlides = banners
+      .filter((banner) => banner.section === section && isBannerActiveNow(banner, now))
+      .sort((a, b) => {
+        const byPosition = (a.position ?? 0) - (b.position ?? 0);
+        if (byPosition !== 0) return byPosition;
+
+        const aStart = new Date(a.startDate).getTime();
+        const bStart = new Date(b.startDate).getTime();
+        return bStart - aStart;
+      })
+      .map((banner) => {
+        const image = normalizeAssetReference(banner.image);
+        if (!image) return null;
+        return {
+          id: banner.id,
+          title: banner.title,
+          image,
+          link: banner.link,
+          startAt: banner.startDate,
+          position: banner.position
+        } as Slide;
+      })
+      .filter(Boolean)
+      .slice(0, maxSlides) as Slide[];
+
+    if (bannerSlides.length > 0) return bannerSlides;
+    if (section === "home") return [];
+
+    return events
+      .filter((event) => !event.status || event.status === "approved")
       .map((event) => {
         const image = normalizeAssetReference(event.coverImage || event.images?.[0]);
         if (!image) return null;
@@ -60,7 +119,7 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
           image,
           link: `/eventos/${event.slug}`,
           startAt: event.startAt
-        } as EventSlide;
+        } as Slide;
       })
       .filter(Boolean)
       .sort((a, b) => {
@@ -68,8 +127,8 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
         const bTime = b?.startAt ? new Date(b.startAt).getTime() : 0;
         return aTime - bTime;
       })
-      .slice(0, maxSlides) as EventSlide[];
-  }, [events, maxSlides, section]);
+      .slice(0, maxSlides) as Slide[];
+  }, [banners, events, maxSlides, section]);
 
   useEffect(() => {
     if (slides.length <= 1) return;
@@ -92,7 +151,7 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
   return (
     <div className="relative overflow-hidden rounded-2xl border border-slate-200 shadow-lg">
       <div
-        className="relative h-64 sm:h-80 w-full"
+        className="relative h-64 w-full sm:h-80"
         style={{
           backgroundImage: `url(${activeSlide.image})`,
           backgroundSize: "cover",
@@ -103,12 +162,14 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
         <div className="absolute bottom-4 left-4 right-4 text-white">
           <div className="text-sm uppercase tracking-wide text-slate-200">Destaque</div>
           <h3 className="text-2xl font-bold">{activeSlide.title}</h3>
-          <Link
-            href={activeSlide.link}
-            className="mt-3 inline-flex items-center gap-2 rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
-          >
-            Ver detalhes
-          </Link>
+          {activeSlide.link ? (
+            <Link
+              href={activeSlide.link}
+              className="mt-3 inline-flex items-center gap-2 rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+            >
+              Ver detalhes
+            </Link>
+          ) : null}
         </div>
       </div>
 
@@ -129,16 +190,16 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
           className="h-8 w-8 rounded-full bg-white/80 text-slate-800 shadow hover:bg-white"
           aria-label="Anterior"
         >
-          ‹
+          {"<"}
         </button>
       </div>
       <div className="absolute inset-y-0 right-2 flex items-center">
         <button
           onClick={() => setCurrent((c) => (c + 1) % slides.length)}
           className="h-8 w-8 rounded-full bg-white/80 text-slate-800 shadow hover:bg-white"
-          aria-label="Próximo"
+          aria-label="Proximo"
         >
-          ›
+          {">"}
         </button>
       </div>
     </div>

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getUserFromToken, requireAdmin } from "@/lib/auth-middleware";
 import { db, isMysqlRequiredError } from "@/lib/database";
-import { normalizeAssetReference } from "@/lib/site-url";
+import { toPublicAssetUrl } from "@/lib/site-url";
 
 const VALID_CATEGORIES = new Set(["eventos", "classificados", "geral", "dicas"]);
 
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     const content = body?.content?.toString().trim();
     const category = body?.category?.toString().trim();
     const coverImageRaw = body?.coverImage?.toString().trim();
-    const coverImage = normalizeAssetReference(coverImageRaw);
+    const coverImage = toPublicAssetUrl(coverImageRaw, { uploadType: "news" });
     const author = body?.author?.toString().trim() || user.name;
     const requestedStatus = body?.status?.toString().trim();
 

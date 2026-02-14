@@ -194,9 +194,37 @@ export default function HomePage() {
           }));
         }
 
+        const nowMs = Date.now();
         const bannerHome = (bannersData.banners || [])
-          .filter((b: Banner) => b.status === "active" && b.section === "home")
-          .sort((a: Banner, b: Banner) => (a.position ?? 0) - (b.position ?? 0))[0];
+          .filter((b: Banner) => {
+            if (b.status !== "active" || b.section !== "home") return false;
+
+            const start = new Date(b.startDate).getTime();
+            if (Number.isFinite(start) && start > nowMs) return false;
+
+            const end = b.endDate ? new Date(b.endDate).getTime() : Number.POSITIVE_INFINITY;
+            if (Number.isFinite(end) && end < nowMs) return false;
+
+            return true;
+          })
+          .sort((a: Banner, b: Banner) => {
+            const byPosition = (a.position ?? 0) - (b.position ?? 0);
+            if (byPosition !== 0) return byPosition;
+
+            const aUpdated = new Date(a.updatedAt).getTime();
+            const bUpdated = new Date(b.updatedAt).getTime();
+            if (Number.isFinite(aUpdated) && Number.isFinite(bUpdated)) {
+              return bUpdated - aUpdated;
+            }
+
+            const aCreated = new Date(a.createdAt).getTime();
+            const bCreated = new Date(b.createdAt).getTime();
+            if (Number.isFinite(aCreated) && Number.isFinite(bCreated)) {
+              return bCreated - aCreated;
+            }
+
+            return 0;
+          })[0];
 
         if (bannerHome) {
           setConfig((current) => ({

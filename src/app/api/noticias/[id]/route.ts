@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getUserFromToken, requireAdmin } from "@/lib/auth-middleware";
 import { db } from "@/lib/database";
-import { normalizeAssetReference } from "@/lib/site-url";
+import { toPublicAssetUrl } from "@/lib/site-url";
 
 const VALID_CATEGORIES = new Set(["eventos", "classificados", "geral", "dicas"]);
 
@@ -84,7 +84,7 @@ export async function PUT(
     }
 
     if (typeof body?.coverImage === "string" && body.coverImage.trim()) {
-      const normalizedCover = normalizeAssetReference(body.coverImage);
+      const normalizedCover = toPublicAssetUrl(body.coverImage, { uploadType: "news" });
       if (normalizedCover) {
         updates.coverImage = normalizedCover;
       }

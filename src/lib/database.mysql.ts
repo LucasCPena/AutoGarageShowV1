@@ -117,8 +117,8 @@ function mapEvent(row: Row): Event {
     status: row.status,
     recurrence: parseJson(row.recurrence, { type: "single" }),
     websiteUrl: row.website_url ?? undefined,
-    coverImage: toPublicAssetUrl(row.cover_image),
-    images: toPublicAssetUrls(parseJson(row.images, [])),
+    coverImage: toPublicAssetUrl(row.cover_image, { uploadType: "event" }),
+    images: toPublicAssetUrls(parseJson(row.images, []), { uploadType: "event" }),
     createdBy: row.created_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at
@@ -134,7 +134,7 @@ function mapPastEvent(row: Row): PastEvent {
     city: row.city,
     state: row.state,
     date: row.date,
-    images: toPublicAssetUrls(parseJson(row.images, [])),
+    images: toPublicAssetUrls(parseJson(row.images, []), { uploadType: "event" }),
     description: row.description ?? undefined,
     attendance: row.attendance ?? undefined,
     videos: parseJson(row.videos, []),
@@ -156,7 +156,7 @@ function mapListing(row: Row): Listing {
     year: Number(row.year ?? row.model_year),
     mileage: Number(row.mileage),
     price: Number(row.price),
-    images: toPublicAssetUrls(parseJson(row.images, [])),
+    images: toPublicAssetUrls(parseJson(row.images, []), { uploadType: "listing" }),
     contact: parseJson(row.contact, { name: "", email: "", phone: "" }),
     specifications: parseJson(row.specifications, {
       singleOwner: false,
@@ -196,7 +196,7 @@ function mapBanner(row: Row): Banner {
   return {
     id: row.id,
     title: row.title,
-    image: toPublicAssetUrl(row.image) || row.image,
+    image: toPublicAssetUrl(row.image, { uploadType: "banner" }) || row.image,
     link: row.link ?? undefined,
     section: row.section,
     position: Number(row.position),
@@ -216,7 +216,7 @@ function mapNews(row: Row): News {
     content: row.content,
     excerpt: row.excerpt,
     category: row.category,
-    coverImage: toPublicAssetUrl(row.cover_image) || row.cover_image,
+    coverImage: toPublicAssetUrl(row.cover_image, { uploadType: "news" }) || row.cover_image,
     author: row.author,
     status: row.status,
     createdAt: row.created_at,
@@ -808,8 +808,8 @@ export const dbMysql = {
       if (settings.branding) {
         settings.branding = {
           ...settings.branding,
-          logoUrl: toPublicAssetUrl(settings.branding.logoUrl),
-          faviconUrl: toPublicAssetUrl(settings.branding.faviconUrl)
+          logoUrl: toPublicAssetUrl(settings.branding.logoUrl, { uploadType: "site" }),
+          faviconUrl: toPublicAssetUrl(settings.branding.faviconUrl, { uploadType: "site" })
         };
       }
 

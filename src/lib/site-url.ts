@@ -2,6 +2,14 @@ const DEFAULT_SITE_URL = "https://www.autogarageshow.com.br";
 const LOCAL_HOSTS = new Set(["0.0.0.0", "127.0.0.1", "localhost", "::1", "[::1]"]);
 const URL_WITH_SCHEME = /^[a-z][a-z0-9+.-]*:\/\//i;
 const HOST_PATH = /^[a-z0-9.-]+(?::\d+)?\/.+$/i;
+const KNOWN_UPLOAD_TYPES = new Set(["listing", "event", "banner", "news", "site", "misc"]);
+const BARE_FILENAME = /^[^/\\]+\.[a-z0-9]{2,5}$/i;
+
+type AssetUploadType = "listing" | "event" | "banner" | "news" | "site" | "misc";
+
+type PublicAssetOptions = {
+  uploadType?: AssetUploadType;
+};
 
 function normalizeSiteUrl(url: string | undefined) {
   if (!url) return DEFAULT_SITE_URL;
@@ -91,13 +99,44 @@ export function toAbsoluteUrl(path: string) {
   return `${siteUrl}${normalizedPath}`;
 }
 
-export function toPublicAssetUrl(value: unknown) {
+function joinUploadsPath(pathname: string) {
+  return pathname.startsWith("/uploads/") ? pathname : `/uploads/${pathname}`;
+}
+
+function resolveUploadsPathFromRaw(
+  rawValue: string,
+  uploadType?: AssetUploadType
+) {
+  const trimmed = rawValue.trim().replace(/^\.\/+/, "");
+  if (!trimmed) return undefined;
+
+  if (trimmed.startsWith("/uploads/")) return trimmed;
+  if (trimmed.startsWith("uploads/")) return `/${trimmed}`;
+
+  const firstSegment = trimmed.split("/")[0]?.toLowerCase() || "";
+  if (KNOWN_UPLOAD_TYPES.has(firstSegment) && trimmed.includes("/")) {
+    return joinUploadsPath(trimmed);
+  }
+
+  if (uploadType && BARE_FILENAME.test(trimmed)) {
+    return `/uploads/${uploadType}/${trimmed}`;
+  }
+
+  return undefined;
+}
+
+export function toPublicAssetUrl(value: unknown, options: PublicAssetOptions = {}) {
+  if (typeof value !== "string") return normalizeAssetReference(value);
+
+  const uploadResolved = resolveUploadsPathFromRaw(value, options.uploadType);
+  if (uploadResolved) return uploadResolved;
+
   return normalizeAssetReference(value);
 }
 
-export function toPublicAssetUrls(value: unknown): string[] {
+export function toPublicAssetUrls(value: unknown, options: PublicAssetOptions = {}): string[] {
   if (!Array.isArray(value)) return [];
   return value
-    .map((item) => toPublicAssetUrl(item))
+    .map((item) => toPublicAssetUrl(item, options))
     .filter((item): item is string => Boolean(item));
 }
