@@ -9,6 +9,7 @@ import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { formatDateLong } from "@/lib/date";
 import { fetchJson } from "@/lib/fetch-json";
+import { normalizeAssetReference } from "@/lib/site-url";
 import { useAuth } from "@/lib/useAuth";
 
 interface News {
@@ -29,8 +30,7 @@ function byPublishedAtDesc(a: News, b: News) {
 }
 
 function getNewsCoverSrc(coverImage?: string) {
-  const value = coverImage?.trim();
-  return value || "/placeholders/news.svg";
+  return normalizeAssetReference(coverImage) || "/placeholders/news.svg";
 }
 
 export default function NewsPage() {

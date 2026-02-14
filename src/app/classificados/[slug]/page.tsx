@@ -11,6 +11,7 @@ import PageIntro from "@/components/PageIntro";
 import { formatCurrencyBRL } from "@/lib/format";
 import { db } from "@/lib/database";
 import { listingJsonLd } from "@/lib/schema";
+import { normalizeAssetReference } from "@/lib/site-url";
 
 type Props = {
   params: {
@@ -79,7 +80,8 @@ export default async function ListingDetailPage({ params }: Props) {
 
   const listingYear = listing.modelYear ?? listing.year ?? listing.manufactureYear;
   const listingYearLabel = listingYear ? String(listingYear) : "Ano não informado";
-  const images = listing.images?.length ? listing.images : ["/placeholders/car.svg"];
+  const images = (listing.images?.length ? listing.images : ["/placeholders/car.svg"])
+    .map((image) => normalizeAssetReference(image) || "/placeholders/car.svg");
   const locationLabel = formatLocation(listing.city, listing.state);
   const subtitleParts = [
     locationLabel,

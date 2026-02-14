@@ -9,6 +9,7 @@ import Container from "@/components/Container";
 import PageIntro from "@/components/PageIntro";
 import { formatDateLong } from "@/lib/date";
 import { fetchJson } from "@/lib/fetch-json";
+import { normalizeAssetReference } from "@/lib/site-url";
 
 interface News {
   id: string;
@@ -36,8 +37,7 @@ function toMetaDescription(text: string) {
 }
 
 function getNewsCoverSrc(coverImage?: string) {
-  const value = coverImage?.trim();
-  return value || "/placeholders/news.svg";
+  return normalizeAssetReference(coverImage) || "/placeholders/news.svg";
 }
 
 export default function NewsDetailPage({ params }: Props) {

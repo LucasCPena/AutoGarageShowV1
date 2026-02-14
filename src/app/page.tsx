@@ -9,6 +9,7 @@ import type { EventRecurrence } from "@/lib/database";
 import { formatDateLong, formatDateShort } from "@/lib/date";
 import { formatCurrencyBRL } from "@/lib/format";
 import { fetchJson } from "@/lib/fetch-json";
+import { normalizeAssetReference } from "@/lib/site-url";
 import CalendarWidget from "@/components/CalendarWidget";
 import { generateEventOccurrences } from "@/lib/eventRecurrence";
 import HeroSlider from "@/components/HeroSlider";
@@ -109,6 +110,10 @@ interface Banner {
 
 function byIsoDateDesc(a: { createdAt: string }, b: { createdAt: string }) {
   return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+}
+
+function safeImageSrc(value: string | undefined, fallback: string) {
+  return normalizeAssetReference(value) || fallback;
 }
 
 export default function HomePage() {
@@ -230,7 +235,10 @@ export default function HomePage() {
     .slice(0, 6);
 
   const latestNews = [...news].sort(byIsoDateDesc).slice(0, 3);
-  const heroBackgroundImage = config.bannerImage || "/placeholders/hero-top-custom.svg";
+  const heroBackgroundImage = safeImageSrc(
+    config.bannerImage,
+    "/placeholders/hero-top-custom.svg"
+  );
 
   return (
     <>
@@ -370,7 +378,7 @@ export default function HomePage() {
                 >
                   <div className="aspect-video relative">
                     <Image
-                      src={listing.images[0] || "/placeholders/car.svg"}
+                      src={safeImageSrc(listing.images[0], "/placeholders/car.svg")}
                       alt={listing.title}
                       fill
                       className="object-cover"
@@ -420,7 +428,7 @@ export default function HomePage() {
                 >
                   <div className="aspect-video relative">
                     <Image
-                      src={listing.images[0] || "/placeholders/car.svg"}
+                      src={safeImageSrc(listing.images[0], "/placeholders/car.svg")}
                       alt={listing.title}
                       fill
                       className="object-cover"

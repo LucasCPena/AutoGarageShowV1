@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getUserFromToken, requireAdmin } from "@/lib/auth-middleware";
 import { db } from "@/lib/database";
+import { normalizeAssetReference } from "@/lib/site-url";
 
 const VALID_CATEGORIES = new Set(["eventos", "classificados", "geral", "dicas"]);
 
@@ -83,7 +84,10 @@ export async function PUT(
     }
 
     if (typeof body?.coverImage === "string" && body.coverImage.trim()) {
-      updates.coverImage = body.coverImage.trim();
+      const normalizedCover = normalizeAssetReference(body.coverImage);
+      if (normalizedCover) {
+        updates.coverImage = normalizedCover;
+      }
     }
 
     if (typeof body?.author === "string" && body.author.trim()) {

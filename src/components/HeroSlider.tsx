@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { normalizeAssetReference } from "@/lib/site-url";
 
 type EventItem = {
   id: string;
@@ -51,7 +52,7 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
 
     return filtered
       .map((event) => {
-        const image = event.coverImage || event.images?.[0];
+        const image = normalizeAssetReference(event.coverImage || event.images?.[0]);
         if (!image) return null;
         return {
           id: event.id,

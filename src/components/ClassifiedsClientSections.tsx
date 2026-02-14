@@ -7,6 +7,7 @@ import Notice from "@/components/Notice";
 import { formatCurrencyBRL } from "@/lib/format";
 import { applyListingOverrides } from "@/lib/listingOverrides";
 import type { Listing } from "@/lib/mockData";
+import { normalizeAssetReference } from "@/lib/site-url";
 import { useListingOverrides } from "@/lib/useListingOverrides";
 import { useSiteSettings } from "@/lib/useSiteSettings";
 
@@ -64,7 +65,7 @@ function formatListingMeta(listing: Listing) {
 
 function getListingImageSrc(images: string[] | undefined) {
   const firstImage = images?.[0]?.trim();
-  return firstImage || "/placeholders/car.svg";
+  return normalizeAssetReference(firstImage) || "/placeholders/car.svg";
 }
 
 type Props = {
