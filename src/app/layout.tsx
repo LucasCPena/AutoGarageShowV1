@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import "./globals.css";
 
+import ChunkRecovery from "@/components/ChunkRecovery";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import { siteUrl } from "@/lib/site-url";
@@ -33,6 +34,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={inter.className}>
+        <ChunkRecovery />
         <SiteHeader />
         <main className="min-h-[calc(100vh-4rem)]">{children}</main>
         <SiteFooter />
