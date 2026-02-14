@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node scripts/start-hostinger.js",
     "lint": "next lint",
     "db:seed": "node scripts/seed-mysql.js",
     "db:check": "node scripts/check-mysql.js"
