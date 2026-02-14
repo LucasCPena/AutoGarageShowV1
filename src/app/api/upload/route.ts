@@ -9,7 +9,11 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const type = formData.get('type') as string; // 'listing', 'event', 'banner'
+    const rawType = formData.get('type');
+    const type =
+      typeof rawType === "string" && rawType.trim()
+        ? rawType.trim()
+        : "misc"; // 'listing', 'event', 'banner', 'site'
     
     if (!file) {
       return NextResponse.json(
@@ -20,7 +24,11 @@ export async function POST(request: NextRequest) {
 
     // Validar tipo de arquivo
     const settings = await db.settings.get();
-    const allowedTypes = settings?.events.allowedImageTypes || ['jpg', 'jpeg', 'png', 'webp'];
+    const baseAllowedTypes = settings?.events.allowedImageTypes || ['jpg', 'jpeg', 'png', 'webp'];
+    const allowedTypes =
+      type === "site"
+        ? Array.from(new Set([...baseAllowedTypes, "ico"]))
+        : baseAllowedTypes;
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
     
     if (!fileExtension || !allowedTypes.includes(fileExtension)) {

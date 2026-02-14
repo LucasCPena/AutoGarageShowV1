@@ -6,7 +6,7 @@ import Link from "next/link";
 
 import Container from "@/components/Container";
 import type { EventRecurrence } from "@/lib/database";
-import { formatDateLong, formatDateShort, formatTime } from "@/lib/date";
+import { formatDateLong, formatDateShort } from "@/lib/date";
 import { formatCurrencyBRL } from "@/lib/format";
 import { fetchJson } from "@/lib/fetch-json";
 import CalendarWidget from "@/components/CalendarWidget";
@@ -18,7 +18,6 @@ interface HomeConfig {
   heroSubtitle: string;
   youtubeEmbedUrl?: string;
   showUpcomingEvents: boolean;
-  showPastEvents: boolean;
   showFeaturedListings: boolean;
   showLatestListings: boolean;
   showLatestNews: boolean;
@@ -117,7 +116,6 @@ export default function HomePage() {
     heroTitle: "Auto Garage Show",
     heroSubtitle: "O maior portal de carros antigos do Brasil",
     showUpcomingEvents: true,
-    showPastEvents: true,
     showFeaturedListings: true,
     showLatestListings: true,
     showLatestNews: true
@@ -126,7 +124,6 @@ export default function HomePage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [listings, setListings] = useState<Listing[]>([]);
   const [news, setNews] = useState<News[]>([]);
-  const [pastEvents, setPastEvents] = useState<any[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -135,12 +132,11 @@ export default function HomePage() {
     // Buscar todas as configurações e dados
     const fetchData = async () => {
       try {
-        const [settingsData, eventsData, listingsData, newsData, pastEventsData, bannersData] = await Promise.all([
+        const [settingsData, eventsData, listingsData, newsData, bannersData] = await Promise.all([
           fetchJson<{ settings?: any }>('/api/settings'),
           fetchJson<{ events?: Event[] }>('/api/events'),
           fetchJson<{ listings?: Listing[] }>('/api/listings'),
           fetchJson<{ news?: News[] }>('/api/noticias'),
-          fetchJson<{ events?: any[] }>('/api/events/past'),
           fetchJson<{ banners?: Banner[] }>('/api/banners')
         ]);
 
@@ -169,7 +165,6 @@ export default function HomePage() {
         setEvents(eventsData.events || []);
         setListings(listingsData.listings || []);
         setNews(newsData.news || []);
-        setPastEvents(pastEventsData.events || []);
         setBanners(bannersData.banners || []);
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
@@ -235,16 +230,15 @@ export default function HomePage() {
     .slice(0, 6);
 
   const latestNews = [...news].sort(byIsoDateDesc).slice(0, 3);
-
-  const activeBanners = banners.filter(b => b.status === 'active');
+  const heroBackgroundImage = config.bannerImage || "/placeholders/hero-top-custom.svg";
 
   return (
     <>
       <section
-        className="border-b border-slate-200 bg-slate-900/80"
+        className="border-b border-brand-900/30 bg-slate-900/80"
         style={{
           backgroundImage:
-            "linear-gradient(to bottom, rgba(15,23,42,0.8), rgba(15,23,42,0.9)), url('https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=1600&q=80')",
+            `linear-gradient(110deg, rgba(10, 10, 10, 0.9), rgba(99, 27, 12, 0.72)), url('${heroBackgroundImage}')`,
           backgroundSize: "cover",
           backgroundPosition: "center"
         }}
@@ -286,7 +280,7 @@ export default function HomePage() {
 
       <Container className="py-10">
         {/* Resumo Estatístico */}
-        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
             <div className="text-xs font-semibold text-slate-600">Próximos Eventos</div>
             <div className="mt-2 text-2xl font-bold text-slate-900">{upcoming.length}</div>
@@ -298,10 +292,6 @@ export default function HomePage() {
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
             <div className="text-xs font-semibold text-slate-600">Notícias</div>
             <div className="mt-2 text-2xl font-bold text-slate-900">{latestNews.length}</div>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div className="text-xs font-semibold text-slate-600">Eventos Realizados</div>
-            <div className="mt-2 text-2xl font-bold text-slate-900">{pastEvents.length}</div>
           </div>
         </div>
 
@@ -473,10 +463,7 @@ export default function HomePage() {
                   href={`/noticias/${article.slug}`}
                   className="group block rounded-2xl border border-slate-200 bg-white p-6 hover:border-brand-200 transition-colors"
                 >
-                  <div className="text-xs font-semibold text-brand-700 capitalize">
-                    {article.category}
-                  </div>
-                  <h3 className="mt-2 text-lg font-semibold text-slate-900 group-hover:text-brand-800">
+                  <h3 className="text-lg font-semibold text-slate-900 group-hover:text-brand-800">
                     {article.title}
                   </h3>
                   <p className="mt-2 text-sm text-slate-600 line-clamp-2">
@@ -490,53 +477,8 @@ export default function HomePage() {
             </div>
           </section>
         )}
-
-        {/* Eventos Realizados */}
-        {config.showPastEvents && pastEvents.length > 0 && (
-          <section>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">Eventos Realizados</h2>
-              <Link
-                href="/realizados"
-                className="text-brand-600 hover:text-brand-800 font-semibold"
-              >
-                Ver Galeria Completa →
-              </Link>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {pastEvents.slice(0, 6).map((event) => (
-                <Link
-                  key={event.id}
-                  href={`/realizados/${event.slug}`}
-                  className="group block rounded-2xl border border-slate-200 bg-white overflow-hidden hover:border-brand-200 transition-colors"
-                >
-                  <div className="aspect-video relative">
-                    <Image
-                      src={event.images[0] || "/placeholders/event.svg"}
-                      alt={event.title}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 1200px"
-                    />
-                  </div>
-                  <div className="p-4">
-                    <div className="text-xs text-slate-500">
-                      {formatDateShort(event.date)} • {event.city}/{event.state}
-                    </div>
-                    <h3 className="mt-1 text-lg font-semibold text-slate-900 group-hover:text-brand-800">
-                      {event.title}
-                    </h3>
-                    <div className="mt-2 text-sm text-slate-600">
-                      {event.images.length} foto{event.images.length !== 1 ? 's' : ''}
-                      {event.attendance && ` • ${event.attendance} participantes`}
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
       </Container>
     </>
   );
 }
+

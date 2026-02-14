@@ -101,10 +101,7 @@ export default function NewsPage() {
                 className="h-48 w-full object-cover sm:h-auto sm:w-56"
               />
               <div className="flex-1 p-5">
-                <div className="text-xs font-semibold text-brand-700 capitalize">
-                  {article.category}
-                </div>
-                <div className="mt-1 text-lg font-semibold text-slate-900 group-hover:text-brand-800">
+                <div className="text-lg font-semibold text-slate-900 group-hover:text-brand-800">
                   {article.title}
                 </div>
                 <div className="mt-2 text-sm text-slate-600">{article.excerpt}</div>

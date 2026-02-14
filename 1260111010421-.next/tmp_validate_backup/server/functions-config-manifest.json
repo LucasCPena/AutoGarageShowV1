@@ -1,0 +1,1 @@
+{"version":1,"functions":{"/api/admin/events/pending":{},"/api/auth/me":{},"/api/admin/listings/pending":{},"/api/calendar":{},"/classificados/[slug]":{},"/classificados/anunciar":{},"/eventos/cadastrar":{},"/eventos":{},"/realizados/[slug]":{},"/eventos/[slug]":{}}}

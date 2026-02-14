@@ -151,6 +151,10 @@ export interface Settings {
   social?: {
     links: { platform: string; url: string }[];
   };
+  branding?: {
+    logoUrl?: string;
+    faviconUrl?: string;
+  };
 }
 
 export interface VehicleBrand {
