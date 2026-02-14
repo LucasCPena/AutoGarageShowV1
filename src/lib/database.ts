@@ -3,17 +3,19 @@ import { dbMysql } from "./database.mysql";
 
 export * from "./database.types";
 
+const dbProvider = (process.env.DB_PROVIDER || "").trim().toLowerCase();
+
 const useMysql =
-  process.env.DB_PROVIDER === "mysql" ||
-  Boolean(process.env.MYSQL_URL) ||
-  Boolean(process.env.MYSQL_HOST);
+  dbProvider === "mysql"
+    ? true
+    : dbProvider === "file"
+      ? false
+      : Boolean(process.env.MYSQL_URL) || Boolean(process.env.MYSQL_HOST);
 
 const warnedFallbackOps = new Set<string>();
 const strictMysqlAll = process.env.DB_STRICT_MYSQL_ALL === "true";
 const strictMysqlUsersFlag = process.env.DB_STRICT_MYSQL_USERS;
-const strictMysqlUsers =
-  strictMysqlUsersFlag === "true" ||
-  (strictMysqlUsersFlag !== "false" && process.env.NODE_ENV === "production");
+const strictMysqlUsers = strictMysqlUsersFlag === "true";
 const strictMysqlPrefixes = strictMysqlUsers ? ["dbMysql.users."] : [];
 const mysqlRequiredErrorCode = "MYSQL_REQUIRED";
 const readOnlyMethodPrefixes = ["get", "find", "list", "search", "count"];
