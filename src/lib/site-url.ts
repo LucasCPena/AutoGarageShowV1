@@ -1,39 +1,98 @@
 const DEFAULT_SITE_URL = "https://www.autogarageshow.com.br";
+const LOCAL_HOSTS = new Set(["0.0.0.0", "127.0.0.1", "localhost", "::1", "[::1]"]);
+const URL_WITH_SCHEME = /^[a-z][a-z0-9+.-]*:\/\//i;
+const HOST_PATH = /^[a-z0-9.-]+(?::\d+)?\/.+$/i;
 
 function normalizeSiteUrl(url: string | undefined) {
   if (!url) return DEFAULT_SITE_URL;
+
   const trimmed = url.trim();
   if (!trimmed) return DEFAULT_SITE_URL;
-  return trimmed.endsWith("/") ? trimmed.slice(0, -1) : trimmed;
+
+  const candidate = URL_WITH_SCHEME.test(trimmed) ? trimmed : `https://${trimmed}`;
+
+  try {
+    const parsed = new URL(candidate);
+    if (LOCAL_HOSTS.has(parsed.hostname.toLowerCase())) {
+      return DEFAULT_SITE_URL;
+    }
+    return parsed.origin;
+  } catch {
+    return DEFAULT_SITE_URL;
+  }
+}
+
+function normalizeHostPath(value: string) {
+  const [hostPort, ...rest] = value.split("/");
+  if (!hostPort || rest.length === 0) return undefined;
+
+  const hostname = hostPort.split(":")[0]?.toLowerCase() || "";
+  const pathname = `/${rest.join("/")}`;
+  if (!pathname || pathname === "/") return undefined;
+
+  if (LOCAL_HOSTS.has(hostname)) {
+    return pathname;
+  }
+
+  return `https://${hostPort}${pathname}`;
 }
 
 export const siteUrl = normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL);
 
-export function toAbsoluteUrl(path: string) {
-  if (path.startsWith("http://") || path.startsWith("https://")) return path;
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  return `${siteUrl}${normalizedPath}`;
-}
-
-export function toPublicAssetUrl(value: unknown) {
+export function normalizeAssetReference(value: unknown) {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
   if (!trimmed) return undefined;
 
-  if (
-    trimmed.startsWith("http://") ||
-    trimmed.startsWith("https://") ||
-    trimmed.startsWith("data:") ||
-    trimmed.startsWith("blob:")
-  ) {
+  if (trimmed.startsWith("data:") || trimmed.startsWith("blob:")) {
     return trimmed;
   }
 
-  if (trimmed.startsWith("/uploads/") || trimmed.startsWith("uploads/")) {
-    return toAbsoluteUrl(trimmed);
+  if (/^https?:\/\//i.test(trimmed)) {
+    try {
+      const parsed = new URL(trimmed);
+      if (LOCAL_HOSTS.has(parsed.hostname.toLowerCase())) {
+        return `${parsed.pathname}${parsed.search}${parsed.hash}` || undefined;
+      }
+      return parsed.toString();
+    } catch {
+      return undefined;
+    }
   }
 
-  return trimmed;
+  if (trimmed.startsWith("//")) {
+    return `https:${trimmed}`;
+  }
+
+  if (trimmed.startsWith("/")) {
+    return trimmed;
+  }
+
+  const withoutDotSlash = trimmed.replace(/^\.\//, "");
+
+  if (
+    withoutDotSlash.startsWith("uploads/") ||
+    withoutDotSlash.startsWith("placeholders/")
+  ) {
+    return `/${withoutDotSlash}`;
+  }
+
+  if (HOST_PATH.test(withoutDotSlash)) {
+    return normalizeHostPath(withoutDotSlash) || undefined;
+  }
+
+  return withoutDotSlash;
+}
+
+export function toAbsoluteUrl(path: string) {
+  const normalized = normalizeAssetReference(path) ?? path;
+  if (/^https?:\/\//i.test(normalized)) return normalized;
+  const normalizedPath = normalized.startsWith("/") ? normalized : `/${normalized}`;
+  return `${siteUrl}${normalizedPath}`;
+}
+
+export function toPublicAssetUrl(value: unknown) {
+  return normalizeAssetReference(value);
 }
 
 export function toPublicAssetUrls(value: unknown): string[] {

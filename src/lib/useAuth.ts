@@ -46,10 +46,8 @@ function readFromStorage(): { user: User | null; token: string | null } {
   if (typeof window === "undefined") return { user: null, token: null };
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    console.log('Lendo do localStorage:', stored);
     if (!stored) return { user: null, token: null };
     const parsed = JSON.parse(stored);
-    console.log('Dados lidos:', parsed);
     return {
       user: normalizeUser(parsed.user),
       token: parsed.token
@@ -64,11 +62,8 @@ function writeToStorage(user: User | null, token: string | null) {
   if (typeof window === "undefined") return;
   try {
     if (user && token) {
-      console.log('Salvando no localStorage:', { user, token });
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ user, token }));
-      console.log('Token salvo com sucesso');
     } else {
-      console.log('Removendo do localStorage');
       window.localStorage.removeItem(STORAGE_KEY);
     }
     window.dispatchEvent(new Event(AUTH_EVENT));

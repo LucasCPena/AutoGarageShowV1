@@ -1,4 +1,5 @@
 import type { Settings } from "@/lib/database.types";
+import { normalizeAssetReference } from "@/lib/site-url";
 
 export type SiteBranding = {
   logoUrl?: string;
@@ -8,15 +9,11 @@ export type SiteBranding = {
 export const SITE_BRANDING_EVENT = "ags-site-branding-update";
 
 function normalizeAssetUrl(value: unknown) {
-  if (typeof value !== "string") return undefined;
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
+  const normalized = normalizeAssetReference(value);
+  if (!normalized) return undefined;
 
-  if (
-    trimmed.startsWith("/") ||
-    /^https?:\/\//i.test(trimmed)
-  ) {
-    return trimmed;
+  if (normalized.startsWith("/") || /^https?:\/\//i.test(normalized)) {
+    return normalized;
   }
 
   return undefined;
@@ -38,4 +35,3 @@ export function normalizeSiteBranding(input: unknown): SiteBranding {
 export function getSiteBrandingFromSettings(settings: Settings | null | undefined) {
   return normalizeSiteBranding(settings?.branding);
 }
-
