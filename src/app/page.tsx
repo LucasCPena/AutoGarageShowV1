@@ -148,18 +148,25 @@ export default function HomePage() {
         const [settingsResult, eventsResult, listingsResult, newsResult, bannersResult] =
           await Promise.allSettled(requests);
 
-        const failedRequests = [
-          ["settings", settingsResult],
-          ["events", eventsResult],
-          ["listings", listingsResult],
-          ["news", newsResult],
-          ["banners", bannersResult]
-        ].filter(([, result]) => result.status === "rejected");
+        const failedRequests: Array<{ name: string; reason: unknown }> = [];
+        if (settingsResult.status === "rejected") {
+          failedRequests.push({ name: "settings", reason: settingsResult.reason });
+        }
+        if (eventsResult.status === "rejected") {
+          failedRequests.push({ name: "events", reason: eventsResult.reason });
+        }
+        if (listingsResult.status === "rejected") {
+          failedRequests.push({ name: "listings", reason: listingsResult.reason });
+        }
+        if (newsResult.status === "rejected") {
+          failedRequests.push({ name: "news", reason: newsResult.reason });
+        }
+        if (bannersResult.status === "rejected") {
+          failedRequests.push({ name: "banners", reason: bannersResult.reason });
+        }
 
-        failedRequests.forEach(([name, result]) => {
-          if (result.status === "rejected") {
-            console.error(`Falha ao carregar ${name}:`, result.reason);
-          }
+        failedRequests.forEach(({ name, reason }) => {
+          console.error(`Falha ao carregar ${name}:`, reason);
         });
 
         if (failedRequests.length === requests.length) {
