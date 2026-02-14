@@ -10,7 +10,11 @@ const useMysql =
 
 const warnedFallbackOps = new Set<string>();
 const strictMysqlAll = process.env.DB_STRICT_MYSQL_ALL === "true";
-const strictMysqlPrefixes = ["dbMysql.users."];
+const strictMysqlUsersFlag = process.env.DB_STRICT_MYSQL_USERS;
+const strictMysqlUsers =
+  strictMysqlUsersFlag === "true" ||
+  (strictMysqlUsersFlag !== "false" && process.env.NODE_ENV === "production");
+const strictMysqlPrefixes = strictMysqlUsers ? ["dbMysql.users."] : [];
 const mysqlRequiredErrorCode = "MYSQL_REQUIRED";
 const readOnlyMethodPrefixes = ["get", "find", "list", "search", "count"];
 
