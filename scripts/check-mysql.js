@@ -63,6 +63,32 @@ async function main() {
     });
     const [rows] = await conn.query("SELECT 1 AS ok");
     console.log("[db:check] Conexao OK:", rows[0]);
+    try {
+      const [countRows] = await conn.query("SELECT COUNT(*) AS total FROM events");
+      const total =
+        Array.isArray(countRows) && countRows[0] && "total" in countRows[0]
+          ? Number(countRows[0].total)
+          : 0;
+      console.log(`[db:check] events total: ${total}`);
+
+      const [sampleRows] = await conn.query(
+        "SELECT id, title, status, start_at FROM events ORDER BY created_at DESC LIMIT 3"
+      );
+      if (Array.isArray(sampleRows) && sampleRows.length > 0) {
+        console.log("[db:check] eventos (amostra):");
+        console.table(sampleRows);
+      } else {
+        console.log("[db:check] eventos (amostra): tabela vazia.");
+      }
+    } catch (eventsError) {
+      console.warn("[db:check] Nao foi possivel consultar tabela events.");
+      if (eventsError && typeof eventsError === "object" && "code" in eventsError) {
+        console.warn(`- code: ${String(eventsError.code)}`);
+      }
+      if (eventsError && typeof eventsError === "object" && "message" in eventsError) {
+        console.warn(`- message: ${String(eventsError.message)}`);
+      }
+    }
     await conn.end();
   } catch (error) {
     console.error("[db:check] Conexao FALHOU.");
