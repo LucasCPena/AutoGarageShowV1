@@ -6,6 +6,9 @@ import { siteUrl } from "@/lib/site-url";
 
 const baseUrl = siteUrl;
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   let events = [] as Awaited<ReturnType<typeof db.events.getAll>>;

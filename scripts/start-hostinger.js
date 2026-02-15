@@ -6,6 +6,7 @@ const { spawn } = require("node:child_process");
 const dotenv = require("dotenv");
 
 const rootDir = path.join(__dirname, "..");
+const lockedEnvKeys = new Set(Object.keys(process.env));
 
 function loadEnvFromFile(filename) {
   const filePath = path.join(rootDir, filename);
@@ -13,9 +14,9 @@ function loadEnvFromFile(filename) {
 
   const parsed = dotenv.parse(fs.readFileSync(filePath, "utf8"));
   for (const [key, value] of Object.entries(parsed)) {
-    if (process.env[key] === undefined || process.env[key] === "") {
-      process.env[key] = value;
-    }
+    // Keep values injected by shell/panel, but allow later files to override earlier files.
+    if (lockedEnvKeys.has(key)) continue;
+    process.env[key] = value;
   }
   return true;
 }
@@ -23,9 +24,9 @@ function loadEnvFromFile(filename) {
 const loadedFiles = [
   ".env",
   ".env.production",
+  "BD.env",
   ".env.local",
-  ".env.production.local",
-  "BD.env"
+  ".env.production.local"
 ].filter((file) => loadEnvFromFile(file));
 
 const host = process.env.HOST || "0.0.0.0";

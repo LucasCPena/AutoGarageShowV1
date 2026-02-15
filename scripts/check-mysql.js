@@ -5,12 +5,13 @@ const dotenv = require("dotenv");
 const mysql = require("mysql2/promise");
 
 function loadEnv() {
+  const lockedEnvKeys = new Set(Object.keys(process.env));
   const candidates = [
     ".env",
     ".env.production",
+    "BD.env",
     ".env.local",
-    ".env.production.local",
-    "BD.env"
+    ".env.production.local"
   ];
 
   for (const filename of candidates) {
@@ -18,9 +19,8 @@ function loadEnv() {
     if (!fs.existsSync(envPath)) continue;
     const parsed = dotenv.parse(fs.readFileSync(envPath, "utf8"));
     for (const [key, value] of Object.entries(parsed)) {
-      if (process.env[key] === undefined || process.env[key] === "") {
-        process.env[key] = value;
-      }
+      if (lockedEnvKeys.has(key)) continue;
+      process.env[key] = value;
     }
   }
 }
