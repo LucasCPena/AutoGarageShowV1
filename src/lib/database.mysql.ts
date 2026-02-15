@@ -25,8 +25,13 @@ function getPool() {
   const password = process.env.MYSQL_PASSWORD;
   const database = process.env.MYSQL_DATABASE;
   const port = Number(process.env.MYSQL_PORT || 3306);
+  const connectTimeoutMsRaw = Number(process.env.MYSQL_CONNECT_TIMEOUT_MS || 8000);
+  const connectTimeoutMs =
+    Number.isFinite(connectTimeoutMsRaw) && connectTimeoutMsRaw > 0
+      ? connectTimeoutMsRaw
+      : 8000;
   const normalizedHost =
-    host === "localhost" && process.env.MYSQL_FORCE_IPV4 !== "false"
+    host === "localhost" && process.env.MYSQL_FORCE_IPV4 === "true"
       ? "127.0.0.1"
       : host;
 
@@ -39,6 +44,7 @@ function getPool() {
       password,
       database,
       port,
+      connectTimeout: connectTimeoutMs,
       waitForConnections: true,
       connectionLimit: 10
     });
@@ -49,6 +55,7 @@ function getPool() {
   if (url) {
     pool = mysql.createPool({
       uri: url,
+      connectTimeout: connectTimeoutMs,
       waitForConnections: true,
       connectionLimit: 10
     });
