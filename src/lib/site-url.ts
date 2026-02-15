@@ -4,6 +4,7 @@ const URL_WITH_SCHEME = /^[a-z][a-z0-9+.-]*:\/\//i;
 const HOST_PATH = /^[a-z0-9.-]+(?::\d+)?\/.+$/i;
 const KNOWN_UPLOAD_TYPES = new Set(["listing", "event", "banner", "news", "site", "misc"]);
 const BARE_FILENAME = /^[^/\\]+\.[a-z0-9]{2,5}$/i;
+const IMAGE_DATA_URI = /^data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=\s]+$/i;
 
 type AssetUploadType = "listing" | "event" | "banner" | "news" | "site" | "misc";
 
@@ -30,6 +31,25 @@ function normalizeSiteUrl(url: string | undefined) {
   }
 }
 
+function normalizeOptionalOrigin(url: string | undefined) {
+  if (!url) return undefined;
+
+  const trimmed = url.trim();
+  if (!trimmed) return undefined;
+
+  const candidate = URL_WITH_SCHEME.test(trimmed) ? trimmed : `https://${trimmed}`;
+
+  try {
+    const parsed = new URL(candidate);
+    if (LOCAL_HOSTS.has(parsed.hostname.toLowerCase())) {
+      return undefined;
+    }
+    return parsed.origin;
+  } catch {
+    return undefined;
+  }
+}
+
 function normalizeHostPath(value: string) {
   const [hostPort, ...rest] = value.split("/");
   if (!hostPort || rest.length === 0) return undefined;
@@ -46,13 +66,26 @@ function normalizeHostPath(value: string) {
 }
 
 export const siteUrl = normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL);
+const uploadsBaseUrl = normalizeOptionalOrigin(
+  process.env.NEXT_PUBLIC_UPLOADS_BASE_URL || process.env.UPLOADS_BASE_URL
+);
+
+function applyUploadsBase(pathname: string) {
+  if (!uploadsBaseUrl) return pathname;
+  if (!pathname.startsWith("/uploads/")) return pathname;
+  return `${uploadsBaseUrl}${pathname}`;
+}
 
 export function normalizeAssetReference(value: unknown) {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
   if (!trimmed) return undefined;
 
-  if (trimmed.startsWith("data:") || trimmed.startsWith("blob:")) {
+  if (trimmed.startsWith("data:")) {
+    return IMAGE_DATA_URI.test(trimmed) ? trimmed : undefined;
+  }
+
+  if (trimmed.startsWith("blob:")) {
     return trimmed;
   }
 
@@ -73,7 +106,7 @@ export function normalizeAssetReference(value: unknown) {
   }
 
   if (trimmed.startsWith("/")) {
-    return trimmed;
+    return applyUploadsBase(trimmed);
   }
 
   const withoutDotSlash = trimmed.replace(/^\.\//, "");
@@ -82,7 +115,7 @@ export function normalizeAssetReference(value: unknown) {
     withoutDotSlash.startsWith("uploads/") ||
     withoutDotSlash.startsWith("placeholders/")
   ) {
-    return `/${withoutDotSlash}`;
+    return applyUploadsBase(`/${withoutDotSlash}`);
   }
 
   if (HOST_PATH.test(withoutDotSlash)) {
@@ -129,7 +162,7 @@ export function toPublicAssetUrl(value: unknown, options: PublicAssetOptions = {
   if (typeof value !== "string") return normalizeAssetReference(value);
 
   const uploadResolved = resolveUploadsPathFromRaw(value, options.uploadType);
-  if (uploadResolved) return uploadResolved;
+  if (uploadResolved) return applyUploadsBase(uploadResolved);
 
   return normalizeAssetReference(value);
 }
