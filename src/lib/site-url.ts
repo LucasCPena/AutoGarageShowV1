@@ -66,9 +66,7 @@ function normalizeHostPath(value: string) {
 }
 
 export const siteUrl = normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL);
-const uploadsBaseUrl = normalizeOptionalOrigin(
-  process.env.NEXT_PUBLIC_UPLOADS_BASE_URL || process.env.UPLOADS_BASE_URL
-);
+const uploadsBaseUrl = normalizeOptionalOrigin(process.env.UPLOADS_BASE_URL);
 
 function applyUploadsBase(pathname: string) {
   if (!uploadsBaseUrl) return pathname;

@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { db } from '@/lib/database';
+import { getUploadsStorageDir, resolveUploadPathFromUrlPath } from '@/lib/uploads-storage';
 
-const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads');
+const UPLOAD_DIR = getUploadsStorageDir();
 
 export async function POST(request: NextRequest) {
   try {
@@ -97,7 +98,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Remover prefixo /uploads/
-    const filePath = path.join(process.cwd(), 'public', url);
+    const filePath = resolveUploadPathFromUrlPath(url);
     
     try {
       await fs.unlink(filePath);
