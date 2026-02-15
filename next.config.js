@@ -22,6 +22,13 @@ if (siteHostname && !remotePatterns.some((item) => item.hostname === siteHostnam
 }
 
 const nextConfig = {
+  experimental: {
+    cpus: 1,
+    workerThreads: false,
+    parallelServerCompiles: false,
+    parallelServerBuildTraces: false
+  },
+  swcMinify: false,
   images: {
     unoptimized: true,
     formats: ["image/avif", "image/webp"],
