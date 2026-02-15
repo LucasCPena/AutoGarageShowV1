@@ -49,14 +49,22 @@ async function fetchFromLegacyAndCache(relativePath: string, targetPath: string)
   const legacyOrigin = getLegacyUploadsOrigin();
   if (!legacyOrigin) return null;
 
-  const remoteUrl = `${legacyOrigin}/uploads/${relativePath}`;
-  const response = await fetch(remoteUrl, { cache: "no-store" });
-  if (!response.ok) return null;
+  const candidateUrls = [
+    `${legacyOrigin}/uploads/${relativePath}`,
+    `${legacyOrigin}/public/uploads/${relativePath}`
+  ];
 
-  const bytes = Buffer.from(await response.arrayBuffer());
-  await fs.mkdir(path.dirname(targetPath), { recursive: true });
-  await fs.writeFile(targetPath, bytes);
-  return bytes;
+  for (const remoteUrl of candidateUrls) {
+    const response = await fetch(remoteUrl, { cache: "no-store" });
+    if (!response.ok) continue;
+
+    const bytes = Buffer.from(await response.arrayBuffer());
+    await fs.mkdir(path.dirname(targetPath), { recursive: true });
+    await fs.writeFile(targetPath, bytes);
+    return bytes;
+  }
+
+  return null;
 }
 
 type Params = { path?: string[] };
@@ -103,4 +111,3 @@ export async function HEAD(request: Request, context: { params: Params }) {
     headers: response.headers
   });
 }
-
