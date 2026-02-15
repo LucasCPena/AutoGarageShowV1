@@ -4,18 +4,25 @@ import { dbMysql } from "./database.mysql";
 export * from "./database.types";
 
 const dbProvider = (process.env.DB_PROVIDER || "").trim().toLowerCase();
+const isProduction = process.env.NODE_ENV === "production";
+const allowFileInProduction = process.env.DB_ALLOW_FILE_IN_PROD === "true";
+const hasMysqlConfig = Boolean(process.env.MYSQL_URL) || Boolean(process.env.MYSQL_HOST);
 
 const useMysql =
   dbProvider === "mysql"
     ? true
     : dbProvider === "file"
       ? false
-      : Boolean(process.env.MYSQL_URL) || Boolean(process.env.MYSQL_HOST);
+      : isProduction && !allowFileInProduction
+        ? true
+        : hasMysqlConfig;
 
 const warnedFallbackOps = new Set<string>();
-// If MySQL is explicitly selected, do not silently fall back to file storage.
+// In production, default to strict MySQL unless file mode is explicitly allowed.
 const strictMysqlAll =
-  dbProvider === "mysql" || process.env.DB_STRICT_MYSQL_ALL === "true";
+  dbProvider === "mysql" ||
+  (isProduction && dbProvider !== "file" && !allowFileInProduction) ||
+  process.env.DB_STRICT_MYSQL_ALL === "true";
 const strictMysqlUsersFlag = process.env.DB_STRICT_MYSQL_USERS;
 const strictMysqlUsers = strictMysqlUsersFlag === "true";
 const strictMysqlPrefixes = strictMysqlUsers ? ["dbMysql.users."] : [];
