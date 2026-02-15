@@ -12,12 +12,15 @@ import type {
   VehicleBrand
 } from "./database.types";
 import { toPublicAssetUrl, toPublicAssetUrls } from "./site-url";
+import { loadRuntimeEnvFiles } from "./runtime-env";
 
 type Row = Record<string, any>;
 
 let pool: mysql.Pool | null = null;
 
 function getPool() {
+  loadRuntimeEnvFiles();
+
   if (pool) return pool;
 
   const host = process.env.MYSQL_HOST;
