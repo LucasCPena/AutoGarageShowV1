@@ -15,6 +15,14 @@ const MIME_TYPES: Record<string, string> = {
   ".webp": "image/webp"
 };
 
+const PLACEHOLDER_BY_TYPE: Record<string, string> = {
+  banner: "banner.svg",
+  event: "event.svg",
+  news: "news.svg",
+  listing: "car.svg",
+  site: "banner.svg"
+};
+
 function getContentType(filePath: string) {
   const ext = path.extname(filePath).toLowerCase();
   return MIME_TYPES[ext] || "application/octet-stream";
@@ -45,6 +53,13 @@ async function readFileIfExists(filePath: string) {
   }
 }
 
+async function readPlaceholderFor(relativePath: string) {
+  const firstSegment = relativePath.split("/")[0]?.toLowerCase() || "";
+  const fileName = PLACEHOLDER_BY_TYPE[firstSegment] || "event.svg";
+  const placeholderPath = path.join(process.cwd(), "public", "placeholders", fileName);
+  return readFileIfExists(placeholderPath);
+}
+
 async function fetchFromLegacyAndCache(relativePath: string, targetPath: string) {
   const legacyOrigin = getLegacyUploadsOrigin();
   if (!legacyOrigin) return null;
@@ -67,6 +82,16 @@ async function fetchFromLegacyAndCache(relativePath: string, targetPath: string)
   return null;
 }
 
+async function readBundledUploadAndCache(relativePath: string, targetPath: string) {
+  const bundledPath = path.join(process.cwd(), "public", "uploads", relativePath);
+  const bundled = await readFileIfExists(bundledPath);
+  if (!bundled) return null;
+
+  await fs.mkdir(path.dirname(targetPath), { recursive: true });
+  await fs.writeFile(targetPath, bundled);
+  return bundled;
+}
+
 type Params = { path?: string[] };
 
 export async function GET(_request: Request, { params }: { params: Params }) {
@@ -85,6 +110,14 @@ export async function GET(_request: Request, { params }: { params: Params }) {
   let bytes = await readFileIfExists(filePath);
   if (!bytes) {
     try {
+      bytes = await readBundledUploadAndCache(relativePath, filePath);
+    } catch {
+      bytes = null;
+    }
+  }
+
+  if (!bytes) {
+    try {
       bytes = await fetchFromLegacyAndCache(relativePath, filePath);
     } catch {
       bytes = null;
@@ -92,7 +125,15 @@ export async function GET(_request: Request, { params }: { params: Params }) {
   }
 
   if (!bytes) {
-    return new Response("Not found", { status: 404 });
+    const placeholder = await readPlaceholderFor(relativePath);
+    if (!placeholder) return new Response("Not found", { status: 404 });
+    return new Response(placeholder, {
+      status: 200,
+      headers: {
+        "cache-control": "public, max-age=300",
+        "content-type": "image/svg+xml"
+      }
+    });
   }
 
   return new Response(bytes, {
