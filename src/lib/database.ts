@@ -13,7 +13,9 @@ const useMysql =
       : Boolean(process.env.MYSQL_URL) || Boolean(process.env.MYSQL_HOST);
 
 const warnedFallbackOps = new Set<string>();
-const strictMysqlAll = process.env.DB_STRICT_MYSQL_ALL === "true";
+// If MySQL is explicitly selected, do not silently fall back to file storage.
+const strictMysqlAll =
+  dbProvider === "mysql" || process.env.DB_STRICT_MYSQL_ALL === "true";
 const strictMysqlUsersFlag = process.env.DB_STRICT_MYSQL_USERS;
 const strictMysqlUsers = strictMysqlUsersFlag === "true";
 const strictMysqlPrefixes = strictMysqlUsers ? ["dbMysql.users."] : [];
