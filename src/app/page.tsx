@@ -360,7 +360,8 @@ export default function HomePage() {
 
       <Container className="py-10">
         {/* Resumo Estatístico */}
-        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {canViewHomeStats && (
+          <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
             <div className="text-xs font-semibold text-slate-600">Próximos Eventos</div>
             <div className="mt-2 text-2xl font-bold text-slate-900">{upcoming.length}</div>
@@ -373,7 +374,8 @@ export default function HomePage() {
             <div className="text-xs font-semibold text-slate-600">Notícias</div>
             <div className="mt-2 text-2xl font-bold text-slate-900">{latestNews.length}</div>
           </div>
-        </div>
+          </div>
+        )}
 
         {/* Calendário Interativo */}
         <div className="mb-12">
