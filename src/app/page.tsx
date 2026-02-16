@@ -10,6 +10,7 @@ import { formatDateLong, formatDateShort } from "@/lib/date";
 import { formatCurrencyBRL } from "@/lib/format";
 import { fetchJson } from "@/lib/fetch-json";
 import { normalizeAssetReference } from "@/lib/site-url";
+import { useAuth } from "@/lib/useAuth";
 import CalendarWidget from "@/components/CalendarWidget";
 import { generateEventOccurrences } from "@/lib/eventRecurrence";
 import HeroSlider from "@/components/HeroSlider";
@@ -117,6 +118,8 @@ function safeImageSrc(value: string | undefined, fallback: string) {
 }
 
 export default function HomePage() {
+  const { user } = useAuth();
+
   const [config, setConfig] = useState<HomeConfig>({
     heroTitle: "Auto Garage Show",
     heroSubtitle: "O maior portal de carros antigos do Brasil",
@@ -307,6 +310,7 @@ export default function HomePage() {
     config.bannerImage,
     "/placeholders/hero-top-custom.svg"
   );
+  const canViewHomeStats = user?.role === "admin";
 
   return (
     <>
