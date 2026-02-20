@@ -28,7 +28,10 @@ export default function ClassifiedsPage() {
       ? { Authorization: `Bearer ${token}` }
       : undefined;
 
-    fetchJson<{ listings?: Listing[] }>("/api/listings", { headers })
+    fetchJson<{ listings?: Listing[] }>("/api/listings", {
+      headers,
+      cache: "no-store"
+    })
       .then((data) => {
         if (cancelled) return;
         setListings(data.listings || []);

@@ -6,16 +6,15 @@ import PageIntro from "@/components/PageIntro";
 
 export const metadata: Metadata = {
   title: "Anunciar",
-  description:
-    "Cadastre gratuitamente um anúncio (10+ anos) para aprovação. Protótipo de formulário (apenas front-end)."
+  description: "Cadastre gratuitamente um anuncio de veiculo antigo."
 };
 
 export default function ListingSubmitPage() {
   return (
     <>
       <PageIntro
-        title="Anunciar veículo"
-        subtitle="Cadastro gratuito com aprovação manual. Protótipo (sem backend)."
+        title="Anunciar veiculo"
+        subtitle="Cadastro gratuito de classificado. Admin publica automaticamente; usuario comum passa por aprovacao."
       />
 
       <Container className="py-10">

@@ -45,7 +45,14 @@ export async function GET(request: NextRequest) {
 
     events.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    return NextResponse.json({ events });
+    return NextResponse.json(
+      { events },
+      {
+        headers: {
+          'Cache-Control': 'no-store'
+        }
+      }
+    );
   } catch (error) {
     console.error('Erro ao buscar eventos:', error);
     if (isMysqlRequiredError(error)) {
@@ -65,7 +72,13 @@ export async function POST(request: NextRequest) {
   try {
     const user = getUserFromToken(request);
     const eventData = await request.json();
-    const settings = await db.settings.get();
+    let settings = null;
+    try {
+      settings = await db.settings.get();
+    } catch (settingsError) {
+      // Nao bloquear o cadastro de evento se a tabela de settings estiver indisponivel.
+      console.error('Falha ao carregar configuracoes para evento:', settingsError);
+    }
 
     const requiredFields = ['title', 'description', 'city', 'state', 'location', 'startAt', 'contactName', 'contactPhone'];
     for (const field of requiredFields) {

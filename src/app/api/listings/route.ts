@@ -74,7 +74,14 @@ export async function GET(request: NextRequest) {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
-    return NextResponse.json({ listings });
+    return NextResponse.json(
+      { listings },
+      {
+        headers: {
+          "Cache-Control": "no-store"
+        }
+      }
+    );
   } catch (error) {
     console.error('Erro ao buscar classificados:', error);
     if (isMysqlRequiredError(error)) {
@@ -95,7 +102,7 @@ export async function POST(request: NextRequest) {
     const user = requireAuth(request);
     const listingData = await request.json();
 
-    const requiredFields = ['make', 'model', 'modelYear', 'manufactureYear', 'mileage', 'price', 'contact', 'document'];
+    const requiredFields = ['make', 'model', 'modelYear', 'manufactureYear', 'mileage', 'price', 'contact'];
     for (const field of requiredFields) {
       if (!listingData[field]) {
         return NextResponse.json(
@@ -103,6 +110,13 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+    }
+
+    if (user.role !== 'admin' && !listingData.document) {
+      return NextResponse.json(
+        { error: 'O campo document e obrigatorio' },
+        { status: 400 }
+      );
     }
 
     const rawDocument = String(listingData.document || '').trim();
@@ -186,7 +200,10 @@ export async function POST(request: NextRequest) {
       featured,
       featuredUntil: featured ? featuredUntil : undefined,
       createdBy: user.id,
-      document: normalizedDocument || rawDocument,
+      document:
+        normalizedDocument ||
+        rawDocument ||
+        (user.role === 'admin' ? `admin-${user.id}` : ''),
       images: listingData.images || [],
       specifications: {
         singleOwner: listingData.specifications?.singleOwner || false,

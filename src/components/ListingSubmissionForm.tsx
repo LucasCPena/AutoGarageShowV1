@@ -6,25 +6,43 @@ import { useEffect, useMemo, useState } from "react";
 import Notice from "@/components/Notice";
 import { validateCNPJ, validateCPF } from "@/lib/document";
 import { getVehicleMaxAllowedYear } from "@/lib/siteSettings";
+import { useAuth } from "@/lib/useAuth";
 import { useSiteSettings } from "@/lib/useSiteSettings";
 import { getModelsForMake, vehicleMakes } from "@/lib/vehicleCatalog";
 import type { VehicleBrand } from "@/lib/database";
 
 export default function ListingSubmissionForm() {
   const { settings, isReady } = useSiteSettings();
+  const { user, token } = useAuth();
+
   const [submitted, setSubmitted] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const [brands, setBrands] = useState<VehicleBrand[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
+
   const [documentType, setDocumentType] = useState<"cpf" | "cnpj">("cpf");
   const [documentValue, setDocumentValue] = useState("");
+
   const [make, setMake] = useState<string>("");
   const [customMake, setCustomMake] = useState<string>("");
   const [model, setModel] = useState<string>("");
   const [customModel, setCustomModel] = useState<string>("");
+
   const [yearManufacture, setYearManufacture] = useState<number | "">("");
   const [yearModel, setYearModel] = useState<number | "">("");
+  const [mileage, setMileage] = useState<number | "">("");
+  const [price, setPrice] = useState<number | "">("");
+
+  const [city, setCity] = useState("");
+  const [stateUf, setStateUf] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [description, setDescription] = useState("");
+
   const [photoCount, setPhotoCount] = useState(0);
 
   const maxAllowedYear = useMemo(
@@ -35,15 +53,15 @@ export default function ListingSubmissionForm() {
   useEffect(() => {
     const loadBrands = async () => {
       try {
-        const res = await fetch("/api/catalog/brands");
-        const data = await res.json();
-        if (data.brands?.length) {
+        const response = await fetch("/api/catalog/brands");
+        const data = await response.json();
+        if (Array.isArray(data.brands) && data.brands.length > 0) {
           setBrands(data.brands);
           setMake((current) => current || data.brands[0]?.id || "");
           return;
         }
-        throw new Error("Catálogo vazio");
-      } catch (error) {
+        throw new Error("Catalogo vazio");
+      } catch {
         const fallback = vehicleMakes.map((name) => ({
           id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
           name,
@@ -88,88 +106,172 @@ export default function ListingSubmissionForm() {
     return parts.join(" ");
   }, [normalizedMake, normalizedModel, yearManufacture, yearModel]);
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
+    if (!token) {
+      setError("Faca login para publicar o classificado.");
+      setSubmitted(false);
+      return;
+    }
+
     if (!generatedTitle.trim()) {
-      setError("Preencha os dados do veículo para gerar o título automaticamente.");
+      setError("Preencha marca, modelo e anos para gerar o titulo.");
       setSubmitted(false);
       return;
     }
 
-    if (typeof yearManufacture === "number" && yearManufacture > maxAllowedYear) {
-      setError(
-        `Apenas veículos com ${settings.vehicleMinAgeYears}+ anos. Para este ano, o máximo permitido é ${maxAllowedYear}.`
-      );
+    if (typeof yearManufacture !== "number" || typeof yearModel !== "number") {
+      setError("Informe anos de fabricacao e modelo.");
       setSubmitted(false);
       return;
     }
 
-    if (typeof yearModel === "number" && yearModel > maxAllowedYear) {
+    if (yearManufacture > maxAllowedYear || yearModel > maxAllowedYear) {
       setError(
-        `Apenas veículos com ${settings.vehicleMinAgeYears}+ anos. Para este ano, o máximo permitido é ${maxAllowedYear}.`
+        `Apenas veiculos com ${settings.vehicleMinAgeYears}+ anos. Maximo permitido: ${maxAllowedYear}.`
       );
       setSubmitted(false);
       return;
     }
 
     if (
-      typeof yearManufacture === "number" &&
-      yearManufacture < settings.vehicleModelYearMin
+      yearManufacture < settings.vehicleModelYearMin ||
+      yearModel < settings.vehicleModelYearMin
     ) {
-      setError(`Ano de fabricação mínimo: ${settings.vehicleModelYearMin}.`);
+      setError(`Ano minimo permitido: ${settings.vehicleModelYearMin}.`);
       setSubmitted(false);
       return;
     }
 
-    if (typeof yearModel === "number" && yearModel < settings.vehicleModelYearMin) {
-      setError(`Ano-modelo mínimo: ${settings.vehicleModelYearMin}.`);
+    if (typeof mileage !== "number" || mileage < 0) {
+      setError("Informe uma quilometragem valida.");
+      setSubmitted(false);
+      return;
+    }
+
+    if (typeof price !== "number" || price <= 0) {
+      setError("Informe um preco valido.");
+      setSubmitted(false);
+      return;
+    }
+
+    if (!city.trim() || !stateUf.trim()) {
+      setError("Informe cidade e UF.");
+      setSubmitted(false);
+      return;
+    }
+
+    if (!contactPhone.trim()) {
+      setError("Informe telefone para contato.");
+      setSubmitted(false);
+      return;
+    }
+
+    if (!description.trim()) {
+      setError("Informe a descricao.");
       setSubmitted(false);
       return;
     }
 
     if (photoCount > 10) {
-      setError("Você pode enviar no máximo 10 fotos por anúncio.");
+      setError("Voce pode enviar no maximo 10 fotos por anuncio.");
       setSubmitted(false);
       return;
     }
 
-    const documentValid =
-      documentType === "cpf"
-        ? validateCPF(documentValue)
-        : validateCNPJ(documentValue);
+    if (user?.role !== "admin") {
+      const validDocument =
+        documentType === "cpf"
+          ? validateCPF(documentValue)
+          : validateCNPJ(documentValue);
 
-    if (!documentValid) {
-      setError(documentType === "cpf" ? "CPF invalido." : "CNPJ invalido.");
-      setSubmitted(false);
-      return;
+      if (!validDocument) {
+        setError(documentType === "cpf" ? "CPF invalido." : "CNPJ invalido.");
+        setSubmitted(false);
+        return;
+      }
     }
 
+    setSubmitting(true);
     setError(null);
-    setSubmitted(true);
+
+    try {
+      const payload = {
+        make: normalizedMake,
+        model: normalizedModel,
+        modelYear: yearModel,
+        manufactureYear: yearManufacture,
+        year: yearModel,
+        mileage,
+        price,
+        city: city.trim(),
+        state: stateUf.trim().toUpperCase(),
+        description: description.trim(),
+        document: documentValue.trim(),
+        contact: {
+          name: contactName.trim() || user?.name || "Anunciante",
+          email: contactEmail.trim(),
+          phone: contactPhone.trim()
+        },
+        images: [],
+        status: user?.role === "admin" ? "active" : undefined
+      };
+
+      const response = await fetch("/api/listings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao publicar classificado.");
+      }
+
+      setSubmitted(true);
+      setSuccessMessage(
+        data.message ||
+          (user?.role === "admin"
+            ? "Classificado publicado com sucesso."
+            : "Classificado enviado com sucesso.")
+      );
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Erro ao publicar classificado."
+      );
+      setSubmitted(false);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
     <form onSubmit={onSubmit} className="grid gap-6">
       {submitted ? (
-        <Notice title="Anúncio enviado" variant="success">
-          Protótipo: envio simulado. No sistema final, anúncios passam por aprovação e só ficam públicos após validação de e-mail.
+        <Notice title="Classificado enviado" variant="success">
+          {successMessage || "Classificado processado com sucesso."}
         </Notice>
       ) : (
-        <Notice title="Regras (planejado)" variant="info">
-          Cadastro gratuito. Limites por documento: CPF até {settings.listingLimits.cpf} anúncios ativos, CNPJ até {settings.listingLimits.cnpj}. Apenas veículos com {settings.vehicleMinAgeYears}+ anos (ano máximo: {maxAllowedYear}). Até 10 fotos por anúncio.
+        <Notice title="Regras" variant="info">
+          Cadastro gratuito. Limites por documento: CPF ate {settings.listingLimits.cpf} anuncios ativos, CNPJ ate {settings.listingLimits.cnpj}. Apenas veiculos com {settings.vehicleMinAgeYears}+ anos (ano maximo: {maxAllowedYear}).
         </Notice>
       )}
 
       {error ? (
-        <Notice title="Validação" variant="warning">
+        <Notice title="Validacao" variant="warning">
           {error}
         </Notice>
       ) : null}
 
       {!isReady ? (
         <Notice title="Carregando" variant="info">
-          Lendo configurações salvas.
+          Lendo configuracoes salvas.
         </Notice>
       ) : null}
 
@@ -179,8 +281,8 @@ export default function ListingSubmissionForm() {
           <select
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             value={documentType}
-            onChange={(e) => {
-              setDocumentType(e.target.value as "cpf" | "cnpj");
+            onChange={(event) => {
+              setDocumentType(event.target.value as "cpf" | "cnpj");
               setError(null);
             }}
           >
@@ -190,24 +292,25 @@ export default function ListingSubmissionForm() {
         </label>
 
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Documento (mock)</span>
+          <span className="text-sm font-semibold text-slate-900">
+            Documento {user?.role === "admin" ? "(opcional para admin)" : ""}
+          </span>
           <input
-            required
+            required={user?.role !== "admin"}
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             inputMode="numeric"
             placeholder={documentType === "cpf" ? "CPF" : "CNPJ"}
             value={documentValue}
-            onChange={(e) => {
-              setDocumentValue(e.target.value);
+            onChange={(event) => {
+              setDocumentValue(event.target.value);
               setError(null);
             }}
           />
         </label>
 
         <label className="grid gap-1 md:col-span-2">
-          <span className="text-sm font-semibold text-slate-900">Título do anúncio (automático)</span>
+          <span className="text-sm font-semibold text-slate-900">Titulo do anuncio (automatico)</span>
           <input
-            required
             readOnly
             className="h-11 rounded-md border border-slate-300 bg-slate-50 px-3 text-sm"
             value={generatedTitle}
@@ -222,8 +325,8 @@ export default function ListingSubmissionForm() {
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             value={make}
             disabled={catalogLoading}
-            onChange={(e) => {
-              const next = e.target.value;
+            onChange={(event) => {
+              const next = event.target.value;
               setMake(next);
               setModel("");
               setCustomMake("");
@@ -231,7 +334,7 @@ export default function ListingSubmissionForm() {
               setError(null);
             }}
           >
-            <option value="">{catalogLoading ? "Carregando catálogo..." : "Selecione"}</option>
+            <option value="">{catalogLoading ? "Carregando catalogo..." : "Selecione"}</option>
             {brands.map((brand) => (
               <option key={brand.id} value={brand.id}>
                 {brand.name}
@@ -247,8 +350,8 @@ export default function ListingSubmissionForm() {
             required
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             value={model}
-            onChange={(e) => {
-              setModel(e.target.value);
+            onChange={(event) => {
+              setModel(event.target.value);
               setCustomModel("");
               setError(null);
             }}
@@ -272,8 +375,8 @@ export default function ListingSubmissionForm() {
               className="h-11 rounded-md border border-slate-300 px-3 text-sm"
               placeholder="Digite a marca"
               value={customMake}
-              onChange={(e) => {
-                setCustomMake(e.target.value);
+              onChange={(event) => {
+                setCustomMake(event.target.value);
                 setError(null);
               }}
             />
@@ -288,8 +391,8 @@ export default function ListingSubmissionForm() {
               className="h-11 rounded-md border border-slate-300 px-3 text-sm"
               placeholder="Digite o modelo"
               value={customModel}
-              onChange={(e) => {
-                setCustomModel(e.target.value);
+              onChange={(event) => {
+                setCustomModel(event.target.value);
                 setError(null);
               }}
             />
@@ -297,7 +400,7 @@ export default function ListingSubmissionForm() {
         ) : null}
 
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Ano de fabricação</span>
+          <span className="text-sm font-semibold text-slate-900">Ano de fabricacao</span>
           <input
             required
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
@@ -307,15 +410,12 @@ export default function ListingSubmissionForm() {
             max={maxAllowedYear}
             placeholder="1978"
             value={yearManufacture}
-            onChange={(e) => {
-              const value = e.target.value;
+            onChange={(event) => {
+              const value = event.target.value;
               setYearManufacture(value ? Number(value) : "");
               setError(null);
             }}
           />
-          <span className="text-xs text-slate-500">
-            Somente até {maxAllowedYear} ({settings.vehicleMinAgeYears}+ anos)
-          </span>
         </label>
 
         <label className="grid gap-1">
@@ -329,13 +429,12 @@ export default function ListingSubmissionForm() {
             max={maxAllowedYear}
             placeholder="1979"
             value={yearModel}
-            onChange={(e) => {
-              const value = e.target.value;
+            onChange={(event) => {
+              const value = event.target.value;
               setYearModel(value ? Number(value) : "");
               setError(null);
             }}
           />
-          <span className="text-xs text-slate-500">Mínimo: {settings.vehicleModelYearMin}</span>
         </label>
 
         <label className="grid gap-1">
@@ -347,104 +446,30 @@ export default function ListingSubmissionForm() {
             inputMode="numeric"
             min={0}
             placeholder="123456"
-            onChange={() => setError(null)}
+            value={mileage}
+            onChange={(event) => {
+              const value = event.target.value;
+              setMileage(value ? Number(value) : "");
+              setError(null);
+            }}
           />
         </label>
 
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Único dono</span>
-          <select
-            required
-            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-            defaultValue="no"
-            onChange={() => setError(null)}
-          >
-            <option value="no">Não</option>
-            <option value="yes">Sim</option>
-          </select>
-        </label>
-
-        <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Placa preta</span>
-          <select
-            required
-            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-            defaultValue="no"
-            onChange={() => setError(null)}
-          >
-            <option value="no">Não</option>
-            <option value="yes">Sim</option>
-          </select>
-        </label>
-
-        <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Carro de leilão</span>
-          <select
-            required
-            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-            defaultValue="no"
-            onChange={() => setError(null)}
-          >
-            <option value="no">Não</option>
-            <option value="yes">Sim</option>
-          </select>
-        </label>
-
-        <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">IPVA pago</span>
-          <select
-            required
-            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-            defaultValue="yes"
-            onChange={() => setError(null)}
-          >
-            <option value="yes">Sim</option>
-            <option value="no">Não</option>
-          </select>
-        </label>
-
-        <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Quitado ou alienado</span>
-          <select
-            required
-            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-            defaultValue="quitado"
-            onChange={() => setError(null)}
-          >
-            <option value="quitado">Quitado</option>
-            <option value="alienado">Alienado</option>
-          </select>
-        </label>
-
-        <div className="grid gap-2 md:col-span-2 md:grid-cols-2">
-          <label className="grid gap-1">
-            <span className="text-sm font-semibold text-slate-900">Placa</span>
-            <input
-              required
-              className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-              placeholder="ABC1D23"
-              onChange={() => setError(null)}
-            />
-          </label>
-
-          <label className="mt-7 inline-flex items-center gap-2 text-sm text-slate-700">
-            <input
-              type="checkbox"
-              className="h-4 w-4 rounded border-slate-300"
-              onChange={() => setError(null)}
-            />
-            Exibir placa no anúncio
-          </label>
-        </div>
-
-        <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Preço</span>
+          <span className="text-sm font-semibold text-slate-900">Preco</span>
           <input
             required
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             type="number"
-            placeholder="79000"
             step="0.01"
+            min={0}
+            placeholder="79000"
+            value={price}
+            onChange={(event) => {
+              const value = event.target.value;
+              setPrice(value ? Number(value) : "");
+              setError(null);
+            }}
           />
         </label>
 
@@ -454,6 +479,11 @@ export default function ListingSubmissionForm() {
             required
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="Cidade"
+            value={city}
+            onChange={(event) => {
+              setCity(event.target.value);
+              setError(null);
+            }}
           />
         </label>
 
@@ -464,6 +494,24 @@ export default function ListingSubmissionForm() {
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="SP"
             maxLength={2}
+            value={stateUf}
+            onChange={(event) => {
+              setStateUf(event.target.value.toUpperCase());
+              setError(null);
+            }}
+          />
+        </label>
+
+        <label className="grid gap-1">
+          <span className="text-sm font-semibold text-slate-900">Nome para contato</span>
+          <input
+            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+            placeholder="Seu nome"
+            value={contactName}
+            onChange={(event) => {
+              setContactName(event.target.value);
+              setError(null);
+            }}
           />
         </label>
 
@@ -474,6 +522,11 @@ export default function ListingSubmissionForm() {
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="(11) 99999-9999"
             type="tel"
+            value={contactPhone}
+            onChange={(event) => {
+              setContactPhone(event.target.value);
+              setError(null);
+            }}
           />
         </label>
 
@@ -483,15 +536,25 @@ export default function ListingSubmissionForm() {
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="contato@exemplo.com"
             type="email"
+            value={contactEmail}
+            onChange={(event) => {
+              setContactEmail(event.target.value);
+              setError(null);
+            }}
           />
         </label>
 
         <label className="grid gap-1 md:col-span-2">
-          <span className="text-sm font-semibold text-slate-900">Descrição</span>
+          <span className="text-sm font-semibold text-slate-900">Descricao</span>
           <textarea
             required
             className="min-h-32 rounded-md border border-slate-300 px-3 py-2 text-sm"
-            placeholder="Descreva estado geral, histórico, detalhes de mecânica/funilaria e documentação."
+            placeholder="Descreva estado geral, historico e documentacao."
+            value={description}
+            onChange={(event) => {
+              setDescription(event.target.value);
+              setError(null);
+            }}
           />
         </label>
 
@@ -502,23 +565,28 @@ export default function ListingSubmissionForm() {
             type="file"
             multiple
             accept="image/*"
-            onChange={(e) => {
-              const files = e.target.files;
+            onChange={(event) => {
+              const files = event.target.files;
               setPhotoCount(files?.length ?? 0);
               setError(null);
             }}
           />
           <span className="text-xs text-slate-500">
-            No sistema final: até 10 fotos, conversão automática para WEBP, lazy load e tamanhos 480/960/1600.
+            No backend atual as imagens do formulario publico ainda nao sao enviadas.
           </span>
         </label>
       </div>
 
       <button
         type="submit"
-        className="inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700"
+        disabled={submitting}
+        className="inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
       >
-        Enviar anúncio para aprovação
+        {submitting
+          ? "Publicando..."
+          : user?.role === "admin"
+            ? "Publicar classificado (admin)"
+            : "Enviar classificado"}
       </button>
     </form>
   );

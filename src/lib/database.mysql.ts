@@ -78,6 +78,29 @@ async function queryOne<T = Row>(sql: string, params: any[] = []): Promise<T | n
   return rows[0] ?? null;
 }
 
+const tableColumnsCache = new Map<string, Set<string> | null>();
+
+async function getTableColumnsSafe(table: string): Promise<Set<string> | null> {
+  if (tableColumnsCache.has(table)) {
+    return tableColumnsCache.get(table) ?? null;
+  }
+
+  try {
+    const rows = await query<Row>(`SHOW COLUMNS FROM \`${table}\``);
+    const columns = new Set(
+      rows
+        .map((row) => String(row.Field || row.COLUMN_NAME || "").toLowerCase())
+        .filter(Boolean)
+    );
+    tableColumnsCache.set(table, columns);
+    return columns;
+  } catch (error) {
+    console.warn(`[db] Falha ao mapear colunas da tabela ${table}:`, error);
+    tableColumnsCache.set(table, null);
+    return null;
+  }
+}
+
 function parseJson<T>(value: unknown, fallback: T): T {
   if (value == null) return fallback;
   if (typeof value === "object") return value as T;
@@ -327,6 +350,54 @@ export const dbMysql = {
         createdAt: now,
         updatedAt: now
       };
+
+      const columns = await getTableColumnsSafe("events");
+
+      if (columns) {
+        const insertColumns: string[] = [];
+        const values: unknown[] = [];
+        const add = (column: string, value: unknown) => {
+          if (!columns.has(column)) return;
+          insertColumns.push(column);
+          values.push(value);
+        };
+
+        add("id", newEvent.id);
+        add("slug", newEvent.slug);
+        add("title", newEvent.title);
+        add("description", newEvent.description);
+        add("city", newEvent.city);
+        add("state", newEvent.state);
+        add("location", newEvent.location);
+        add("contact_name", newEvent.contactName);
+        add("contact_document", newEvent.contactDocument ?? "nao informado");
+        add("contact_phone", newEvent.contactPhone ?? null);
+        add("contact_phone_secondary", newEvent.contactPhoneSecondary ?? null);
+        add("contact_email", newEvent.contactEmail ?? null);
+        add("start_at", newEvent.startAt);
+        add("end_at", newEvent.endAt ?? null);
+        add("status", newEvent.status);
+        add("recurrence", JSON.stringify(newEvent.recurrence ?? { type: "single" }));
+        add("website_url", newEvent.websiteUrl ?? null);
+        add("live_url", newEvent.liveUrl ?? null);
+        add("cover_image", newEvent.coverImage ?? null);
+        add("images", JSON.stringify(newEvent.images ?? []));
+        add("featured", newEvent.featured ? 1 : 0);
+        add("featured_until", newEvent.featuredUntil ?? null);
+        add("created_by", newEvent.createdBy);
+        add("created_at", newEvent.createdAt);
+        add("updated_at", newEvent.updatedAt);
+
+        if (insertColumns.length === 0) {
+          throw new Error("Tabela events sem colunas mapeadas para insercao.");
+        }
+
+        const placeholders = insertColumns.map(() => "?").join(", ");
+        const sql = `INSERT INTO events (${insertColumns.map((column) => `\`${column}\``).join(", ")}) VALUES (${placeholders})`;
+        await query(sql, values as any[]);
+        return newEvent;
+      }
+
       await query(
         `INSERT INTO events (id, slug, title, description, city, state, location, contact_name, contact_document, contact_phone, contact_phone_secondary, contact_email, start_at, end_at, status, recurrence, website_url, live_url, cover_image, images, featured, featured_until, created_by, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -368,6 +439,50 @@ export const dbMysql = {
         ...updates,
         updatedAt: nowIso()
       };
+      const columns = await getTableColumnsSafe("events");
+
+      if (columns) {
+        const assignments: string[] = [];
+        const values: unknown[] = [];
+        const set = (column: string, value: unknown) => {
+          if (!columns.has(column)) return;
+          assignments.push(`\`${column}\` = ?`);
+          values.push(value);
+        };
+
+        set("slug", next.slug);
+        set("title", next.title);
+        set("description", next.description);
+        set("city", next.city);
+        set("state", next.state);
+        set("location", next.location);
+        set("contact_name", next.contactName);
+        set("contact_document", next.contactDocument ?? "nao informado");
+        set("contact_phone", next.contactPhone ?? null);
+        set("contact_phone_secondary", next.contactPhoneSecondary ?? null);
+        set("contact_email", next.contactEmail ?? null);
+        set("start_at", next.startAt);
+        set("end_at", next.endAt ?? null);
+        set("status", next.status);
+        set("recurrence", JSON.stringify(next.recurrence ?? { type: "single" }));
+        set("website_url", next.websiteUrl ?? null);
+        set("live_url", next.liveUrl ?? null);
+        set("cover_image", next.coverImage ?? null);
+        set("images", JSON.stringify(next.images ?? []));
+        set("featured", next.featured ? 1 : 0);
+        set("featured_until", next.featuredUntil ?? null);
+        set("created_by", next.createdBy);
+        set("updated_at", next.updatedAt);
+
+        if (assignments.length > 0) {
+          values.push(id);
+          const sql = `UPDATE events SET ${assignments.join(", ")} WHERE id = ?`;
+          await query(sql, values as any[]);
+        }
+
+        return next;
+      }
+
       await query(
         `UPDATE events SET slug=?, title=?, description=?, city=?, state=?, location=?, contact_name=?, contact_document=?, contact_phone=?, contact_phone_secondary=?, contact_email=?, start_at=?, end_at=?, status=?, recurrence=?, website_url=?, live_url=?, cover_image=?, images=?, featured=?, featured_until=?, created_by=?, updated_at=? WHERE id=?`,
         [
