@@ -21,6 +21,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Pr
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [cpf, setCpf] = useState("");
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
@@ -32,6 +33,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Pr
   useEffect(() => {
     setError("");
     setSubmitted(false);
+    setCpf("");
   }, [mode]);
 
   // Evitar renderização no servidor se não estiver montado
@@ -45,13 +47,16 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Pr
     setEmail("");
     setPassword("");
     setName("");
+    setCpf("");
     router.push("/");
   }
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!email || !password || (mode === "register" && !name)) {
+    const shouldRequireCpf = mode === "register" && !email.toLowerCase().includes("admin");
+
+    if (!email || !password || (mode === "register" && !name) || (shouldRequireCpf && !cpf)) {
       setError("Preencha todos os campos.");
       return;
     }
@@ -59,7 +64,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Pr
     setSubmitted(true);
     
     if (mode === "register") {
-      register(name, email, password)
+      register(name, email, password, cpf)
         .then(() => {
           setTimeout(() => {
             finishSuccess();
@@ -119,19 +124,36 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Pr
       ) : (
         <form onSubmit={onSubmit} className="space-y-4">
   {mode === "register" && (
-    <div>
-      <label htmlFor="name" className="block text-sm font-semibold text-slate-900 mb-1">
-        Nome
-      </label>
-      <input
-        id="name"
-        required
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        className="h-11 w-full rounded-md border border-slate-300 px-3 text-sm"
-        placeholder="Seu nome"
-      />
-    </div>
+    <>
+      <div>
+        <label htmlFor="name" className="block text-sm font-semibold text-slate-900 mb-1">
+          Nome
+        </label>
+        <input
+          id="name"
+          required
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="h-11 w-full rounded-md border border-slate-300 px-3 text-sm"
+          placeholder="Seu nome"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="document" className="block text-sm font-semibold text-slate-900 mb-1">
+          CPF
+        </label>
+        <input
+          id="document"
+          required={!email.toLowerCase().includes("admin")}
+          value={cpf}
+          onChange={(e) => setCpf(e.target.value)}
+          className="h-11 w-full rounded-md border border-slate-300 px-3 text-sm"
+          placeholder={email.toLowerCase().includes("admin") ? "Opcional para admin" : "Digite seu CPF"}
+          inputMode="numeric"
+        />
+      </div>
+    </>
   )}
 
   <div>

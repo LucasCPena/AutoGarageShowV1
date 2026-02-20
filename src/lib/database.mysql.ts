@@ -121,14 +121,18 @@ function mapEvent(row: Row): Event {
     contactName: row.contact_name,
     contactDocument: row.contact_document ?? undefined,
     contactPhone: row.contact_phone ?? undefined,
+    contactPhoneSecondary: row.contact_phone_secondary ?? undefined,
     contactEmail: row.contact_email ?? undefined,
     startAt: row.start_at,
     endAt: row.end_at ?? undefined,
     status: row.status,
     recurrence: parseJson(row.recurrence, { type: "single" }),
     websiteUrl: row.website_url ?? undefined,
+    liveUrl: row.live_url ?? undefined,
     coverImage: toPublicAssetUrl(row.cover_image, { uploadType: "event" }),
     images: toPublicAssetUrls(parseJson(row.images, []), { uploadType: "event" }),
+    featured: Boolean(row.featured),
+    featuredUntil: row.featured_until ?? undefined,
     createdBy: row.created_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at
@@ -324,8 +328,8 @@ export const dbMysql = {
         updatedAt: now
       };
       await query(
-        `INSERT INTO events (id, slug, title, description, city, state, location, contact_name, contact_document, contact_phone, contact_email, start_at, end_at, status, recurrence, website_url, cover_image, images, created_by, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO events (id, slug, title, description, city, state, location, contact_name, contact_document, contact_phone, contact_phone_secondary, contact_email, start_at, end_at, status, recurrence, website_url, live_url, cover_image, images, featured, featured_until, created_by, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           newEvent.id,
           newEvent.slug,
@@ -337,14 +341,18 @@ export const dbMysql = {
           newEvent.contactName,
           newEvent.contactDocument ?? "",
           newEvent.contactPhone ?? null,
+          newEvent.contactPhoneSecondary ?? null,
           newEvent.contactEmail ?? null,
           newEvent.startAt,
           newEvent.endAt ?? null,
           newEvent.status,
           JSON.stringify(newEvent.recurrence),
           newEvent.websiteUrl ?? null,
+          newEvent.liveUrl ?? null,
           newEvent.coverImage ?? null,
           JSON.stringify(newEvent.images ?? []),
+          newEvent.featured ? 1 : 0,
+          newEvent.featuredUntil ?? null,
           newEvent.createdBy,
           newEvent.createdAt,
           newEvent.updatedAt
@@ -361,7 +369,7 @@ export const dbMysql = {
         updatedAt: nowIso()
       };
       await query(
-        `UPDATE events SET slug=?, title=?, description=?, city=?, state=?, location=?, contact_name=?, contact_document=?, contact_phone=?, contact_email=?, start_at=?, end_at=?, status=?, recurrence=?, website_url=?, cover_image=?, images=?, created_by=?, updated_at=? WHERE id=?`,
+        `UPDATE events SET slug=?, title=?, description=?, city=?, state=?, location=?, contact_name=?, contact_document=?, contact_phone=?, contact_phone_secondary=?, contact_email=?, start_at=?, end_at=?, status=?, recurrence=?, website_url=?, live_url=?, cover_image=?, images=?, featured=?, featured_until=?, created_by=?, updated_at=? WHERE id=?`,
         [
           next.slug,
           next.title,
@@ -372,14 +380,18 @@ export const dbMysql = {
           next.contactName,
           next.contactDocument ?? "",
           next.contactPhone ?? null,
+          next.contactPhoneSecondary ?? null,
           next.contactEmail ?? null,
           next.startAt,
           next.endAt ?? null,
           next.status,
           JSON.stringify(next.recurrence),
           next.websiteUrl ?? null,
+          next.liveUrl ?? null,
           next.coverImage ?? null,
           JSON.stringify(next.images ?? []),
+          next.featured ? 1 : 0,
+          next.featuredUntil ?? null,
           next.createdBy,
           next.updatedAt,
           id

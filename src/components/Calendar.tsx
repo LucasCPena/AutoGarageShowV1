@@ -50,6 +50,7 @@ function isToday(date: Date) {
 
 export default function Calendar({ events }: Props) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -135,7 +136,7 @@ export default function Calendar({ events }: Props) {
               </div>
 
               <div className="mt-1 space-y-1">
-                {dayEvents.slice(0, 3).map((event) => (
+                {(expandedDays[key] ? dayEvents : dayEvents.slice(0, 2)).map((event) => (
                   <Link
                     key={event.id}
                     href={`/eventos/${event.slug}`}
@@ -146,8 +147,19 @@ export default function Calendar({ events }: Props) {
                   </Link>
                 ))}
 
-                {dayEvents.length > 3 && (
-                  <div className="text-xs text-slate-500">+{dayEvents.length - 3}</div>
+                {dayEvents.length > 2 && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExpandedDays((prev) => ({
+                        ...prev,
+                        [key]: !prev[key]
+                      }))
+                    }
+                    className="text-xs font-semibold text-brand-700 hover:text-brand-800"
+                  >
+                    {expandedDays[key] ? "Mostrar menos" : `+${dayEvents.length - 2} mais`}
+                  </button>
                 )}
               </div>
             </div>

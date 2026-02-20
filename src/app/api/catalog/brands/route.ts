@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/database';
+import { db, isMysqlRequiredError } from '@/lib/database';
 import { requireAdmin } from '@/lib/auth-middleware';
+import { getModelsForMake, vehicleMakes } from '@/lib/vehicleCatalog';
+
+function fallbackBrands() {
+  return vehicleMakes.map((name) => ({
+    id: slugify(name),
+    name,
+    models: getModelsForMake(name)
+  }));
+}
 
 function slugify(text: string) {
   return text
@@ -17,6 +26,9 @@ export async function GET() {
     return NextResponse.json({ brands });
   } catch (error) {
     console.error('Erro ao buscar marcas:', error);
+    if (isMysqlRequiredError(error)) {
+      return NextResponse.json({ brands: fallbackBrands() });
+    }
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -54,6 +66,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ brand, brands }, { status: 201 });
   } catch (error) {
     console.error('Erro ao criar marca:', error);
+    if (isMysqlRequiredError(error)) {
+      return NextResponse.json({ error: 'Banco de dados indisponivel no momento.' }, { status: 503 });
+    }
     if (error instanceof Error && error.message === 'Acesso negado') {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 401 });
     }

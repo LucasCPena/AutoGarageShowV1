@@ -1,8 +1,10 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/database';
+
 import { getUserFromToken, requireAuth } from '@/lib/auth-middleware';
+import { db } from '@/lib/database';
 import { normalizeRecurrence } from '@/lib/eventRecurrence';
 import { normalizeAssetReference } from '@/lib/site-url';
+import { normalizeYouTubeUrl } from '@/lib/youtube';
 
 function slugify(input: string) {
   return input
@@ -30,6 +32,19 @@ function hasMedia(images: string[], videos: string[]) {
   return images.length > 0 || videos.length > 0;
 }
 
+function parseIsoDate(value: unknown) {
+  if (typeof value !== 'string' || !value.trim()) return undefined;
+  const parsed = new Date(value);
+  return Number.isFinite(parsed.getTime()) ? parsed.toISOString() : undefined;
+}
+
+function defaultFeaturedUntil(startAtIso: string) {
+  const date = new Date(startAtIso);
+  if (!Number.isFinite(date.getTime())) return undefined;
+  date.setDate(date.getDate() + 30);
+  return date.toISOString();
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -45,7 +60,6 @@ export async function GET(
       );
     }
 
-    // Apenas admin ou criador podem ver pendentes; publico so eventos aprovados
     if (
       event.status !== 'approved' &&
       user?.role !== 'admin' &&
@@ -109,7 +123,6 @@ export async function PUT(
         nextStatus = updateData.status;
       }
     } else {
-      // Edicao de usuario comum volta para pendente ate aprovacao
       nextStatus = 'pending';
     }
 
@@ -154,16 +167,77 @@ export async function PUT(
         ? sanitizeImageList(updateData.images)
         : (existing.images ?? []);
 
-    const providedCoverImage =
-      normalizeAssetReference(updateData.coverImage);
+    const providedCoverImage = normalizeAssetReference(updateData.coverImage);
     const nextCoverImage =
       providedCoverImage ||
       normalizeAssetReference(existing.coverImage) ||
       nextImages[0];
+
     const nextContactDocument =
       typeof updateData.contactDocument === 'string'
         ? updateData.contactDocument.trim() || 'nao informado'
         : (existing.contactDocument || 'nao informado');
+
+    const nextContactPhone =
+      typeof updateData.contactPhone === 'string'
+        ? updateData.contactPhone.trim()
+        : String(existing.contactPhone || '').trim();
+
+    if (!nextContactPhone) {
+      return NextResponse.json(
+        { error: 'Telefone principal e obrigatorio.' },
+        { status: 400 }
+      );
+    }
+
+    const nextContactPhoneSecondary =
+      updateData.contactPhoneSecondary === undefined
+        ? existing.contactPhoneSecondary
+        : String(updateData.contactPhoneSecondary || '').trim() || undefined;
+
+    const liveInput =
+      updateData.liveUrl === undefined
+        ? existing.liveUrl || ''
+        : String(updateData.liveUrl || '').trim();
+    const nextLiveUrl = liveInput ? normalizeYouTubeUrl(liveInput) : undefined;
+
+    if (liveInput && !nextLiveUrl) {
+      return NextResponse.json(
+        { error: 'URL de transmissao ao vivo invalida. Informe um link do YouTube.' },
+        { status: 400 }
+      );
+    }
+
+    const canManageFeatured = user.role === 'admin';
+    const nextFeatured = canManageFeatured
+      ? typeof updateData.featured === 'boolean'
+        ? updateData.featured
+        : Boolean(existing.featured)
+      : Boolean(existing.featured);
+
+    let nextFeaturedUntil = existing.featuredUntil;
+    if (canManageFeatured && updateData.featuredUntil !== undefined) {
+      if (!updateData.featuredUntil) {
+        nextFeaturedUntil = undefined;
+      } else {
+        const parsedFeaturedUntil = parseIsoDate(updateData.featuredUntil);
+        if (!parsedFeaturedUntil) {
+          return NextResponse.json(
+            { error: 'Data de destaque invalida.' },
+            { status: 400 }
+          );
+        }
+        nextFeaturedUntil = parsedFeaturedUntil;
+      }
+    }
+
+    if (nextFeatured && !nextFeaturedUntil) {
+      nextFeaturedUntil = defaultFeaturedUntil(baseStart.toISOString());
+    }
+
+    if (!nextFeatured) {
+      nextFeaturedUntil = undefined;
+    }
 
     const pastPayload =
       updateData.pastEvent && typeof updateData.pastEvent === 'object'
@@ -205,9 +279,14 @@ export async function PUT(
       slug: newSlug,
       status: nextStatus,
       contactDocument: nextContactDocument,
+      contactPhone: nextContactPhone,
+      contactPhoneSecondary: nextContactPhoneSecondary,
+      liveUrl: nextLiveUrl,
       images: nextImages,
       coverImage: nextCoverImage,
-      createdBy: existing.createdBy // impedir troca de autoria
+      featured: nextFeatured,
+      featuredUntil: nextFeaturedUntil,
+      createdBy: existing.createdBy
     } as Record<string, unknown>;
 
     delete sanitizedUpdates.pastEvent;
@@ -325,4 +404,3 @@ export async function DELETE(
     );
   }
 }
-

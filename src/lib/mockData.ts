@@ -40,13 +40,17 @@ export type Event = {
   contactName: string;
   contactDocument: string;
   contactPhone?: string;
+  contactPhoneSecondary?: string;
   contactEmail?: string;
   startAt: string;
   endAt?: string; // For multi-day events
   status: EventStatus;
   recurrence: EventRecurrence;
   websiteUrl?: string;
+  liveUrl?: string;
   coverImage?: string;
+  featured?: boolean;
+  featuredUntil?: string;
 };
 
 export type PastEvent = {
@@ -77,6 +81,11 @@ export type Listing = {
   featured: boolean;
   featuredUntil?: string;
   images: string[];
+  contact?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+  };
 };
 
 export type NewsArticle = {

@@ -74,6 +74,43 @@ export default function AdminEventsPanel({ events, token }: Props) {
     }
   }
 
+  async function handleDuplicate(eventId: string) {
+    try {
+      if (!token) {
+        setMessage({ type: "error", text: "Token de autenticaÃ§Ã£o nÃ£o encontrado." });
+        return;
+      }
+      setBusyId(`${eventId}-duplicate`);
+      const response = await fetch(`/api/events/${eventId}/duplicate`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao duplicar evento.");
+      }
+
+      setMessage({
+        type: "success",
+        text: data.message || "Evento duplicado com sucesso."
+      });
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 800);
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Erro ao duplicar evento."
+      });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6">
       <div className="mb-4">
@@ -163,6 +200,13 @@ export default function AdminEventsPanel({ events, token }: Props) {
                       Editar
                     </Link>
                     <button
+                      className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-70"
+                      disabled={busyId !== null}
+                      onClick={() => handleDuplicate(event.id)}
+                    >
+                      {busyId === `${event.id}-duplicate` ? "Duplicando..." : "Duplicar"}
+                    </button>
+                    <button
                       className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-70"
                       disabled={busyId !== null}
                       onClick={() => handleAction(event.id, "approve")}
@@ -218,6 +262,13 @@ export default function AdminEventsPanel({ events, token }: Props) {
                       Editar
                     </Link>
                     <button
+                      className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-70"
+                      disabled={busyId !== null}
+                      onClick={() => handleDuplicate(event.id)}
+                    >
+                      {busyId === `${event.id}-duplicate` ? "Duplicando..." : "Duplicar"}
+                    </button>
+                    <button
                       className="rounded-md bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-70"
                       disabled={busyId !== null}
                       onClick={() => handleAction(event.id, "complete")}
@@ -268,6 +319,13 @@ export default function AdminEventsPanel({ events, token }: Props) {
                     >
                       Editar
                     </Link>
+                  <button
+                    className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-70"
+                    disabled={busyId !== null}
+                    onClick={() => handleDuplicate(event.id)}
+                  >
+                    {busyId === `${event.id}-duplicate` ? "Duplicando..." : "Duplicar"}
+                  </button>
                   <button
                     className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-70"
                     disabled={busyId !== null}

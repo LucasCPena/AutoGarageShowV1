@@ -14,6 +14,7 @@ import { useAuth } from "@/lib/useAuth";
 import CalendarWidget from "@/components/CalendarWidget";
 import { generateEventOccurrences } from "@/lib/eventRecurrence";
 import HeroSlider from "@/components/HeroSlider";
+import { toYouTubeEmbedUrl } from "@/lib/youtube";
 
 interface HomeConfig {
   heroTitle: string;
@@ -39,11 +40,15 @@ interface Event {
   contactName: string;
   contactDocument?: string;
   contactPhone?: string;
+  contactPhoneSecondary?: string;
   contactEmail?: string;
   startAt: string;
   endAt?: string;
   status: 'pending' | 'approved' | 'completed';
   recurrence: EventRecurrence;
+  liveUrl?: string;
+  featured?: boolean;
+  featuredUntil?: string;
 }
 
 interface Listing {
@@ -115,6 +120,20 @@ function byIsoDateDesc(a: { createdAt: string }, b: { createdAt: string }) {
 
 function safeImageSrc(value: string | undefined, fallback: string) {
   return normalizeAssetReference(value) || fallback;
+}
+
+function isFeaturedListingActive(listing: Listing, now: number) {
+  if (!listing.featured) return false;
+  if (!listing.featuredUntil) return true;
+  const until = new Date(listing.featuredUntil).getTime();
+  return Number.isFinite(until) ? until > now : true;
+}
+
+function isFeaturedEventActive(event: Event, now: number) {
+  if (!event.featured) return false;
+  if (!event.featuredUntil) return true;
+  const until = new Date(event.featuredUntil).getTime();
+  return Number.isFinite(until) ? until > now : true;
 }
 
 export default function HomePage() {
@@ -275,7 +294,7 @@ export default function HomePage() {
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
   const windowStart = startOfToday.getTime();
-  const limit = now + 21 * 24 * 60 * 60 * 1000;
+  const limit = now + 30 * 24 * 60 * 60 * 1000;
 
   const upcoming = (
     events
@@ -291,13 +310,20 @@ export default function HomePage() {
       })
       .filter(Boolean) as { event: Event; nextOccurrence: string }[]
   )
-    .sort((a, b) => new Date(a.nextOccurrence).getTime() - new Date(b.nextOccurrence).getTime())
+    .sort((a, b) => {
+      const aFeatured = isFeaturedEventActive(a.event, now);
+      const bFeatured = isFeaturedEventActive(b.event, now);
+      if (aFeatured !== bFeatured) return aFeatured ? -1 : 1;
+      return new Date(a.nextOccurrence).getTime() - new Date(b.nextOccurrence).getTime();
+    })
     .slice(0, 6);
 
   const upcomingEventsOnly = upcoming.map(({ event }) => event);
+  const liveEvent = upcoming.find(({ event }) => Boolean(event.liveUrl))?.event;
+  const liveEmbedUrl = toYouTubeEmbedUrl(liveEvent?.liveUrl);
 
   const featured = listings
-    .filter((l) => (l.status === 'active' || l.status === 'approved') && l.featured)
+    .filter((l) => (l.status === 'active' || l.status === 'approved') && isFeaturedListingActive(l, now))
     .slice(0, 3);
 
   const latestListings = listings
@@ -378,6 +404,35 @@ export default function HomePage() {
         )}
 
         {/* Calendário Interativo */}
+        {liveEvent && liveEmbedUrl ? (
+          <section className="mb-12 rounded-2xl border border-red-200 bg-red-50 p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">Evento ao vivo agora</h2>
+                <p className="mt-1 text-sm text-slate-700">
+                  {liveEvent.title} • {liveEvent.city}/{liveEvent.state}
+                </p>
+              </div>
+              <Link
+                href={`/eventos/${liveEvent.slug}`}
+                className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+              >
+                Ver detalhes
+              </Link>
+            </div>
+            <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-black">
+              <iframe
+                className="aspect-video w-full"
+                src={liveEmbedUrl}
+                title={`Transmissao ao vivo: ${liveEvent.title}`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+              />
+            </div>
+          </section>
+        ) : null}
+
         <div className="mb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-slate-900">Calendário de Eventos</h2>
@@ -422,6 +477,18 @@ export default function HomePage() {
                   <h3 className="mt-2 text-lg font-semibold text-slate-900 group-hover:text-brand-800">
                     {event.title}
                   </h3>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {isFeaturedEventActive(event, now) ? (
+                      <span className="rounded-full bg-brand-100 px-2.5 py-1 text-xs font-semibold text-brand-800">
+                        Destaque
+                      </span>
+                    ) : null}
+                    {event.liveUrl ? (
+                      <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700">
+                        Ao vivo
+                      </span>
+                    ) : null}
+                  </div>
                   <p className="mt-2 text-sm text-slate-600 line-clamp-2">
                     {event.description}
                   </p>

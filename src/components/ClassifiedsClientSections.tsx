@@ -68,6 +68,15 @@ function getListingImageSrc(images: string[] | undefined) {
   return normalizeAssetReference(firstImage) || "/placeholders/car.svg";
 }
 
+function getContactInfo(listing: Listing) {
+  const email = listing.contact?.email?.trim();
+  const phone = listing.contact?.phone?.trim();
+  return {
+    email: email || null,
+    phone: phone || null
+  };
+}
+
 type Props = {
   listings: Listing[];
 };
@@ -123,35 +132,44 @@ export default function ClassifiedsClientSections({ listings }: Props) {
         </div>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {featuredActive.map((l) => (
-            <Link
-              key={l.id}
-              href={`/classificados/${l.slug}`}
-              className="group overflow-hidden rounded-2xl border border-slate-200 bg-white hover:border-brand-200"
-            >
-              <Image
-                src={getListingImageSrc(l.images)}
-                alt={l.title}
-                width={1200}
-                height={800}
-                className="h-44 w-full object-cover"
-              />
-              <div className="p-5">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-sm font-semibold text-slate-900 group-hover:text-brand-800">
-                    {l.title}
+          {featuredActive.map((l) => {
+            const contact = getContactInfo(l);
+            return (
+              <Link
+                key={l.id}
+                href={`/classificados/${l.slug}`}
+                className="group overflow-hidden rounded-2xl border border-slate-200 bg-white hover:border-brand-200"
+              >
+                <Image
+                  src={getListingImageSrc(l.images)}
+                  alt={l.title}
+                  width={1200}
+                  height={800}
+                  className="h-44 w-full object-cover"
+                />
+                <div className="p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm font-semibold text-slate-900 group-hover:text-brand-800">
+                      {l.title}
+                    </div>
+                    <span className="rounded-full bg-brand-100 px-2.5 py-1 text-xs font-semibold text-brand-800">
+                      Destaque
+                    </span>
                   </div>
-                  <span className="rounded-full bg-brand-100 px-2.5 py-1 text-xs font-semibold text-brand-800">
-                    Destaque
-                  </span>
+                  <div className="mt-1 text-sm text-slate-600">{formatListingMeta(l)}</div>
+                  <div className="mt-3 text-sm font-semibold text-slate-900">
+                    {formatCurrencyBRL(l.price)}
+                  </div>
+                  {(contact.email || contact.phone) ? (
+                    <div className="mt-2 space-y-1 text-xs text-slate-600">
+                      {contact.email ? <div>Email: {contact.email}</div> : null}
+                      {contact.phone ? <div>Telefone: {contact.phone}</div> : null}
+                    </div>
+                  ) : null}
                 </div>
-                <div className="mt-1 text-sm text-slate-600">{formatListingMeta(l)}</div>
-                <div className="mt-3 text-sm font-semibold text-slate-900">
-                  {formatCurrencyBRL(l.price)}
-                </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
 
           {featuredActive.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-600">
@@ -172,33 +190,42 @@ export default function ClassifiedsClientSections({ listings }: Props) {
         </div>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {latest.map((l) => (
-            <Link
-              key={l.id}
-              href={`/classificados/${l.slug}`}
-              className="group overflow-hidden rounded-2xl border border-slate-200 bg-white hover:border-brand-200"
-            >
-              <Image
-                src={getListingImageSrc(l.images)}
-                alt={l.title}
-                width={1200}
-                height={800}
-                className="h-44 w-full object-cover"
-                loading="lazy"
-              />
-              <div className="p-5">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-sm font-semibold text-slate-900 group-hover:text-brand-800">
-                    {l.title}
+          {latest.map((l) => {
+            const contact = getContactInfo(l);
+            return (
+              <Link
+                key={l.id}
+                href={`/classificados/${l.slug}`}
+                className="group overflow-hidden rounded-2xl border border-slate-200 bg-white hover:border-brand-200"
+              >
+                <Image
+                  src={getListingImageSrc(l.images)}
+                  alt={l.title}
+                  width={1200}
+                  height={800}
+                  className="h-44 w-full object-cover"
+                  loading="lazy"
+                />
+                <div className="p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm font-semibold text-slate-900 group-hover:text-brand-800">
+                      {l.title}
+                    </div>
                   </div>
+                  <div className="mt-1 text-sm text-slate-600">{formatListingMeta(l)}</div>
+                  <div className="mt-3 text-sm font-semibold text-slate-900">
+                    {formatCurrencyBRL(l.price)}
+                  </div>
+                  {(contact.email || contact.phone) ? (
+                    <div className="mt-2 space-y-1 text-xs text-slate-600">
+                      {contact.email ? <div>Email: {contact.email}</div> : null}
+                      {contact.phone ? <div>Telefone: {contact.phone}</div> : null}
+                    </div>
+                  ) : null}
                 </div>
-                <div className="mt-1 text-sm text-slate-600">{formatListingMeta(l)}</div>
-                <div className="mt-3 text-sm font-semibold text-slate-900">
-                  {formatCurrencyBRL(l.price)}
-                </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
 
           {latest.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-600">

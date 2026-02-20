@@ -228,16 +228,33 @@ export default async function ListingDetailPage({ params }: Props) {
 
             <div className="rounded-2xl border border-slate-200 bg-white p-6">
               <div className="text-sm font-semibold text-slate-900">Contato</div>
-              <p className="mt-2 text-sm text-slate-600">
-                Protótipo: dados de contato não exibidos. No sistema final, haverá
-                controles de segurança e políticas anti-fraude.
-              </p>
-              <button
-                type="button"
-                className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-              >
-                Mostrar contato (mock)
-              </button>
+              <div className="mt-3 grid gap-2 text-sm text-slate-700">
+                {listing.contact?.phone ? (
+                  <a
+                    href={`tel:${listing.contact.phone}`}
+                    className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    Telefone: {listing.contact.phone}
+                  </a>
+                ) : (
+                  <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-slate-500">
+                    Telefone nao informado.
+                  </div>
+                )}
+
+                {listing.contact?.email ? (
+                  <a
+                    href={`mailto:${listing.contact.email}`}
+                    className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    E-mail: {listing.contact.email}
+                  </a>
+                ) : (
+                  <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-slate-500">
+                    E-mail nao informado.
+                  </div>
+                )}
+              </div>
             </div>
           </aside>
         </div>

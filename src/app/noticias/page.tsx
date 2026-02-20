@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
+import AdminNewsPanel from "@/components/AdminNewsPanel";
 import Container from "@/components/Container";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
@@ -34,10 +35,11 @@ function getNewsCoverSrc(coverImage?: string) {
 }
 
 export default function NewsPage() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, token, isLoading: authLoading } = useAuth();
   const [news, setNews] = useState<News[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCrud, setShowCrud] = useState(false);
 
   useEffect(() => {
     fetchJson<{ news?: News[] }>('/api/noticias')
@@ -82,12 +84,19 @@ export default function NewsPage() {
       <Container className="py-10">
         {authLoading ? null : user?.role === "admin" ? (
           <div className="mb-6 flex justify-end">
-            <Link
-              href="/admin#admin-news-panel"
+            <button
+              type="button"
+              onClick={() => setShowCrud((current) => !current)}
               className="inline-flex h-10 items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700"
             >
-              Criar noticia
-            </Link>
+              {showCrud ? "Fechar editor" : "Nova noticia"}
+            </button>
+          </div>
+        ) : null}
+
+        {!authLoading && user?.role === "admin" && showCrud ? (
+          <div className="mb-8">
+            <AdminNewsPanel token={token} />
           </div>
         ) : null}
 

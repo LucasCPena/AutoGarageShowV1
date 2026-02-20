@@ -35,14 +35,18 @@ export interface Event {
   contactName: string;
   contactDocument?: string; // legado (nao obrigatorio para eventos)
   contactPhone?: string;
+  contactPhoneSecondary?: string;
   contactEmail?: string;
   startAt: string;
   endAt?: string;
   status: "pending" | "approved" | "completed";
   recurrence: EventRecurrence;
   websiteUrl?: string;
+  liveUrl?: string;
   coverImage?: string;
   images?: string[];
+  featured?: boolean;
+  featuredUntil?: string;
   createdBy: string; // User ID
   createdAt: string;
   updatedAt: string;

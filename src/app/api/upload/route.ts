@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { db } from '@/lib/database';
+import { db, isMysqlRequiredError } from '@/lib/database';
 import { getUploadsStorageDir, resolveUploadPathFromUrlPath } from '@/lib/uploads-storage';
 
 const UPLOAD_DIR = getUploadsStorageDir();
@@ -24,8 +24,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Validar tipo de arquivo
-    const settings = await db.settings.get();
-    const baseAllowedTypes = settings?.events.allowedImageTypes || ['jpg', 'jpeg', 'png', 'webp'];
+    let baseAllowedTypes = ['jpg', 'jpeg', 'png', 'webp'];
+    try {
+      const settings = await db.settings.get();
+      if (Array.isArray(settings?.events?.allowedImageTypes) && settings.events.allowedImageTypes.length > 0) {
+        baseAllowedTypes = settings.events.allowedImageTypes;
+      }
+    } catch (error) {
+      // Keep upload available even if settings storage is temporarily unavailable.
+      if (isMysqlRequiredError(error)) {
+        console.warn('[upload] settings indisponivel; usando tipos padrao de imagem.');
+      } else {
+        throw error;
+      }
+    }
+
     const allowedTypes =
       type === "site"
         ? Array.from(new Set([...baseAllowedTypes, "ico"]))

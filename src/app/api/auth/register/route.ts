@@ -1,15 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, isMysqlRequiredError } from '@/lib/database';
+import { onlyDigits, validateCPF } from '@/lib/document';
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password } = await request.json();
+    const { name, email, password, document } = await request.json();
     const normalizedName = typeof name === "string" ? name.trim() : "";
     const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+    const normalizedDocument = onlyDigits(typeof document === "string" ? document : "");
+    const role = normalizedEmail.includes("admin") ? "admin" : "user";
 
     if (!normalizedName || !normalizedEmail || !password) {
       return NextResponse.json(
         { error: 'Nome, email e senha sao obrigatorios' },
+        { status: 400 }
+      );
+    }
+
+    if (role !== "admin" && !validateCPF(normalizedDocument)) {
+      return NextResponse.json(
+        { error: "CPF invalido" },
         { status: 400 }
       );
     }
@@ -26,7 +36,8 @@ export async function POST(request: NextRequest) {
       name: normalizedName,
       email: normalizedEmail,
       password,
-      role: normalizedEmail.includes('admin') ? 'admin' : 'user'
+      role,
+      document: normalizedDocument || undefined
     });
 
     const { password: _, ...userWithoutPassword } = user;

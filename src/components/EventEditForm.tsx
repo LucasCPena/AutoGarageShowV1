@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -11,8 +11,8 @@ import { formatDateShort } from "@/lib/date";
 
 type RecurrenceType = "single" | "weekly" | "monthly" | "monthly_weekday" | "annual" | "specific";
 
-const weekDays = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
-const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+const weekDays = ["Domingo", "Segunda", "TerÃ§a", "Quarta", "Quinta", "Sexta", "SÃ¡bado"];
+const months = ["Janeiro", "Fevereiro", "MarÃ§o", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 const nthOptions = [1, 2, 3, 4, 5];
 
 type MessageState = { type: "success" | "error"; text: string } | null;
@@ -29,6 +29,14 @@ function isoToTime(iso: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
   return d.toISOString().slice(11, 16);
+}
+
+function isoToDateTimeLocal(iso?: string) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function sanitizeLinesToList(value: string) {
@@ -48,6 +56,8 @@ export default function EventEditForm({ eventId }: Props) {
   const [loading, setLoading] = useState(true);
   const [eventData, setEventData] = useState<Event | null>(null);
   const [status, setStatus] = useState<Event["status"]>("pending");
+  const [featured, setFeatured] = useState(false);
+  const [featuredUntil, setFeaturedUntil] = useState("");
   const [pastImages, setPastImages] = useState<string[]>([]);
   const [pastVideosText, setPastVideosText] = useState("");
   const [pastDescription, setPastDescription] = useState("");
@@ -57,7 +67,7 @@ export default function EventEditForm({ eventId }: Props) {
 
   const infoMessage = useMemo(
     () =>
-      "Edição de evento. Admin mantém status; criador comum volta para pendente.",
+      "EdiÃ§Ã£o de evento. Admin mantÃ©m status; criador comum volta para pendente.",
     []
   );
 
@@ -71,6 +81,8 @@ export default function EventEditForm({ eventId }: Props) {
         if (!res.ok) throw new Error(data.error || "Erro ao carregar evento.");
         setEventData(data.event);
         setStatus(data.event.status);
+        setFeatured(Boolean(data.event.featured));
+        setFeaturedUntil(isoToDateTimeLocal(data.event.featuredUntil));
         setRecurrenceType(data.event.recurrence.type as RecurrenceType);
         setIsMultiDay(Boolean(data.event.endAt));
         setCoverImagePreview(data.event.coverImage || null);
@@ -159,33 +171,37 @@ export default function EventEditForm({ eventId }: Props) {
       const location = form.get("location")?.toString().trim();
       const contactName = form.get("contactName")?.toString().trim();
       const contactPhone = form.get("contactPhone")?.toString().trim();
+      const contactPhoneSecondary = form.get("contactPhoneSecondary")?.toString().trim();
       const contactEmail = form.get("contactEmail")?.toString().trim();
+      const liveUrl = form.get("liveUrl")?.toString().trim();
       const startDate = form.get("startDate")?.toString();
       const startTime = form.get("startTime")?.toString() || "00:00";
+      const endTime = form.get("endTime")?.toString() || "";
 
-      if (!title || !description || !city || !state || !location || !startDate || !contactName) {
-        throw new Error("Preencha todos os campos obrigatórios.");
+      if (!title || !description || !city || !state || !location || !startDate || !contactName || !contactPhone) {
+        throw new Error("Preencha todos os campos obrigatÃ³rios.");
       }
 
       const startAt = new Date(`${startDate}T${startTime}`);
       if (Number.isNaN(startAt.getTime())) {
-        throw new Error("Data ou horário de início inválidos.");
+        throw new Error("Data ou horÃ¡rio de inÃ­cio invÃ¡lidos.");
       }
 
       let endAt: string | undefined;
-      if (isMultiDay) {
-        const endDate = form.get("endDate")?.toString();
-        const endTime = form.get("endTime")?.toString() || startTime;
-        if (endDate) {
-          const end = new Date(`${endDate}T${endTime}`);
-          if (Number.isNaN(end.getTime())) {
-            throw new Error("Data ou horário de término inválidos.");
-          }
-          if (end.getTime() < startAt.getTime()) {
-            throw new Error("A data de término não pode ser anterior ao início.");
-          }
-          endAt = end.toISOString();
+      if (!endTime) {
+        throw new Error("Informe o horario de termino.");
+      }
+
+      const endDate = isMultiDay ? form.get("endDate")?.toString() : startDate;
+      if (endDate) {
+        const end = new Date(`${endDate}T${endTime}`);
+        if (Number.isNaN(end.getTime())) {
+          throw new Error("Data ou horario de termino invalidos.");
         }
+        if (end.getTime() < startAt.getTime()) {
+          throw new Error("A data de termino nao pode ser anterior ao inicio.");
+        }
+        endAt = end.toISOString();
       }
 
       const recurrence = buildRecurrence(form);
@@ -203,14 +219,21 @@ export default function EventEditForm({ eventId }: Props) {
         state,
         location,
         contactName,
-        contactPhone: contactPhone || undefined,
+        contactPhone,
+        contactPhoneSecondary: contactPhoneSecondary || undefined,
         contactEmail: contactEmail || undefined,
         startAt: startAt.toISOString(),
-        endAt: isMultiDay ? endAt : null,
+        endAt: endAt || null,
         websiteUrl: form.get("websiteUrl")?.toString().trim() || undefined,
+        liveUrl: liveUrl || undefined,
         recurrence,
         coverImage: coverImagePreview || undefined,
         status: user?.role === "admin" ? status : undefined,
+        featured: user?.role === "admin" ? featured : undefined,
+        featuredUntil:
+          user?.role === "admin" && featured
+            ? featuredUntil || undefined
+            : undefined,
         ...(user?.role === "admin"
           ? {
               images: pastImages,
@@ -244,6 +267,8 @@ export default function EventEditForm({ eventId }: Props) {
       setMessage({ type: "success", text: data.message || "Evento atualizado com sucesso." });
       setEventData(data.event);
       setStatus(data.event.status);
+      setFeatured(Boolean(data.event.featured));
+      setFeaturedUntil(isoToDateTimeLocal(data.event.featuredUntil));
       if (data.pastEvent) {
         setPastImages(data.pastEvent.images || []);
         setPastVideosText((data.pastEvent.videos || []).join("\n"));
@@ -339,7 +364,7 @@ export default function EventEditForm({ eventId }: Props) {
   if (!eventData) {
     return (
       <Notice title="Erro" variant="warning">
-        Evento não encontrado ou sem permissão.
+        Evento nÃ£o encontrado ou sem permissÃ£o.
       </Notice>
     );
   }
@@ -351,20 +376,20 @@ export default function EventEditForm({ eventId }: Props) {
           {message.text}
         </Notice>
       ) : (
-        <Notice title="Edição" variant="info">
+        <Notice title="EdiÃ§Ã£o" variant="info">
           {infoMessage}
         </Notice>
       )}
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Título do evento</span>
+          <span className="text-sm font-semibold text-slate-900">TÃ­tulo do evento</span>
           <input
             required
             name="title"
             defaultValue={eventData.title}
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-            placeholder="Ex.: Encontro de Clássicos"
+            placeholder="Ex.: Encontro de ClÃ¡ssicos"
           />
         </label>
 
@@ -391,12 +416,23 @@ export default function EventEditForm({ eventId }: Props) {
         </label>
 
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Telefone (opcional)</span>
+          <span className="text-sm font-semibold text-slate-900">Telefone principal (obrigatorio)</span>
           <input
+            required
             name="contactPhone"
             defaultValue={eventData.contactPhone}
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="(11) 99999-9999"
+          />
+        </label>
+
+        <label className="grid gap-1">
+          <span className="text-sm font-semibold text-slate-900">Telefone secundario (opcional)</span>
+          <input
+            name="contactPhoneSecondary"
+            defaultValue={eventData.contactPhoneSecondary}
+            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+            placeholder="(11) 98888-8888"
           />
         </label>
 
@@ -408,6 +444,17 @@ export default function EventEditForm({ eventId }: Props) {
             type="email"
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="contato@evento.com"
+          />
+        </label>
+
+        <label className="grid gap-1">
+          <span className="text-sm font-semibold text-slate-900">URL do YouTube ao vivo (opcional)</span>
+          <input
+            name="liveUrl"
+            defaultValue={eventData.liveUrl}
+            type="url"
+            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+            placeholder="https://www.youtube.com/watch?v=..."
           />
         </label>
 
@@ -434,6 +481,34 @@ export default function EventEditForm({ eventId }: Props) {
           />
         </label>
 
+        {user?.role === "admin" ? (
+          <>
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={featured}
+                onChange={(e) => setFeatured(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300"
+              />
+              Destacar evento no site
+            </label>
+
+            <label className="grid gap-1">
+              <span className="text-sm font-semibold text-slate-900">Data de destaque ate</span>
+              <input
+                type="datetime-local"
+                className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+                value={featuredUntil}
+                onChange={(e) => setFeaturedUntil(e.target.value)}
+                disabled={!featured}
+              />
+              <span className="text-xs text-slate-500">
+                Deixe em branco para preencher automatico.
+              </span>
+            </label>
+          </>
+        ) : null}
+
         <label className="grid gap-1 md:col-span-2">
           <span className="text-sm font-semibold text-slate-900">Local</span>
           <input
@@ -441,12 +516,12 @@ export default function EventEditForm({ eventId }: Props) {
             name="location"
             defaultValue={eventData.location}
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-            placeholder="Nome do local / endereço"
+            placeholder="Nome do local / endereÃ§o"
           />
         </label>
 
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Data de início</span>
+          <span className="text-sm font-semibold text-slate-900">Data de inÃ­cio</span>
           <input
             required
             name="startDate"
@@ -457,11 +532,22 @@ export default function EventEditForm({ eventId }: Props) {
         </label>
 
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Horário de início</span>
+          <span className="text-sm font-semibold text-slate-900">HorÃ¡rio de inÃ­cio</span>
           <input
             required
             name="startTime"
             defaultValue={isoToTime(eventData.startAt)}
+            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+            type="time"
+          />
+        </label>
+
+        <label className="grid gap-1">
+          <span className="text-sm font-semibold text-slate-900">HorÃ¡rio de tÃ©rmino</span>
+          <input
+            required
+            name="endTime"
+            defaultValue={eventData.endAt ? isoToTime(eventData.endAt) : isoToTime(eventData.startAt)}
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             type="time"
           />
@@ -476,50 +562,37 @@ export default function EventEditForm({ eventId }: Props) {
               onChange={(e) => setIsMultiDay(e.target.checked)}
               className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
             />
-            <span className="text-sm font-semibold text-slate-900">Evento com múltiplos dias</span>
+            <span className="text-sm font-semibold text-slate-900">Evento com mÃºltiplos dias</span>
           </div>
         </label>
 
         {isMultiDay && (
-          <>
-            <label className="grid gap-1">
-              <span className="text-sm font-semibold text-slate-900">Data de término</span>
-              <input
-                required
-                name="endDate"
-                defaultValue={eventData.endAt ? isoToDate(eventData.endAt) : ""}
-                className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-                type="date"
-              />
-            </label>
-
-            <label className="grid gap-1">
-              <span className="text-sm font-semibold text-slate-900">Horário de término</span>
-              <input
-                required
-                name="endTime"
-                defaultValue={eventData.endAt ? isoToTime(eventData.endAt) : isoToTime(eventData.startAt)}
-                className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-                type="time"
-              />
-            </label>
-          </>
+          <label className="grid gap-1">
+            <span className="text-sm font-semibold text-slate-900">Data de tÃ©rmino</span>
+            <input
+              required
+              name="endDate"
+              defaultValue={eventData.endAt ? isoToDate(eventData.endAt) : ""}
+              className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+              type="date"
+            />
+          </label>
         )}
 
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Recorrência</span>
+          <span className="text-sm font-semibold text-slate-900">RecorrÃªncia</span>
           <select
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             value={recurrenceType}
             name="recurrenceType"
             onChange={(e) => setRecurrenceType(e.target.value as RecurrenceType)}
           >
-            <option value="single">Evento único</option>
+            <option value="single">Evento Ãºnico</option>
             <option value="weekly">Semanal</option>
             <option value="monthly">Mensal</option>
-            <option value="monthly_weekday">Mensal (ex.: 3º domingo)</option>
+            <option value="monthly_weekday">Mensal (ex.: 3Âº domingo)</option>
             <option value="annual">Anual</option>
-            <option value="specific">Datas específicas</option>
+            <option value="specific">Datas especÃ­ficas</option>
           </select>
         </label>
 
@@ -538,7 +611,7 @@ export default function EventEditForm({ eventId }: Props) {
 
         {recurrenceType === "monthly" && (
           <label className="grid gap-1">
-            <span className="text-sm font-semibold text-slate-900">Dia do mês</span>
+            <span className="text-sm font-semibold text-slate-900">Dia do mÃªs</span>
             <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="monthlyDay" defaultValue={eventData.recurrence.dayOfMonth ?? 1}>
               {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
                 <option key={day} value={day}>
@@ -552,11 +625,11 @@ export default function EventEditForm({ eventId }: Props) {
         {recurrenceType === "monthly_weekday" && (
           <>
             <label className="grid gap-1">
-              <span className="text-sm font-semibold text-slate-900">Semana do mês</span>
+              <span className="text-sm font-semibold text-slate-900">Semana do mÃªs</span>
               <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="monthlyWeekdayNth" defaultValue={(eventData.recurrence as any).nth ?? 1}>
                 {nthOptions.map((nth) => (
                   <option key={nth} value={nth}>
-                    {nth}º encontro do mês
+                    {nth}Âº encontro do mÃªs
                   </option>
                 ))}
               </select>
@@ -577,7 +650,7 @@ export default function EventEditForm({ eventId }: Props) {
         {recurrenceType === "annual" && (
           <>
             <label className="grid gap-1">
-              <span className="text-sm font-semibold text-slate-900">Mês</span>
+              <span className="text-sm font-semibold text-slate-900">MÃªs</span>
               <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="annualMonth" defaultValue={eventData.recurrence.month ?? 1}>
                 {months.map((month, i) => (
                   <option key={month} value={i + 1}>
@@ -602,7 +675,7 @@ export default function EventEditForm({ eventId }: Props) {
 
         {recurrenceType === "specific" && (
           <label className="grid gap-1 md:col-span-2">
-            <span className="text-sm font-semibold text-slate-900">Datas específicas (uma por linha, AAAA-MM-DD ou AAAA-MM-DD HH:MM)</span>
+            <span className="text-sm font-semibold text-slate-900">Datas especÃ­ficas (uma por linha, AAAA-MM-DD ou AAAA-MM-DD HH:MM)</span>
             <textarea
               required
               name="specificDates"
@@ -619,7 +692,7 @@ export default function EventEditForm({ eventId }: Props) {
 
         {recurrenceType !== "single" && recurrenceType !== "specific" && (
           <label className="grid gap-1">
-            <span className="text-sm font-semibold text-slate-900">Quantas ocorrências gerar?</span>
+            <span className="text-sm font-semibold text-slate-900">Quantas ocorrÃªncias gerar?</span>
             <input
               required
               name="occurrences"
@@ -646,6 +719,7 @@ export default function EventEditForm({ eventId }: Props) {
             onChange={onCoverImageChange}
             className="h-11 rounded-md border border-slate-300 px-3 text-sm file:mr-4 file:rounded file:border-0 file:bg-slate-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-700 hover:file:bg-slate-100"
           />
+          <span className="text-xs text-slate-500">Medida recomendada: 1200 x 675 px (16:9).</span>
           {coverImagePreview && (
             <div className="mt-2">
               <Image src={coverImagePreview} alt="Preview" className="h-32 w-48 rounded-lg object-cover border border-slate-200" width={192} height={128} unoptimized />
@@ -655,9 +729,9 @@ export default function EventEditForm({ eventId }: Props) {
 
         {user?.role === "admin" ? (
           <div className="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div className="text-sm font-semibold text-slate-900">Mídia do evento realizado</div>
+            <div className="text-sm font-semibold text-slate-900">MÃ­dia do evento realizado</div>
             <div className="mt-1 text-xs text-slate-600">
-              O evento só pode ficar como realizado quando houver foto ou vídeo.
+              O evento sÃ³ pode ficar como realizado quando houver foto ou vÃ­deo.
             </div>
 
             <label className="mt-4 grid gap-1">
@@ -671,7 +745,7 @@ export default function EventEditForm({ eventId }: Props) {
                 className="h-11 rounded-md border border-slate-300 px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-brand-100 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-brand-700"
               />
               <span className="text-xs text-slate-500">
-                Você pode adicionar várias fotos por evento.
+                VocÃª pode adicionar vÃ¡rias fotos por evento.
               </span>
             </label>
 
@@ -713,7 +787,7 @@ export default function EventEditForm({ eventId }: Props) {
             )}
 
             <label className="mt-4 grid gap-1">
-              <span className="text-sm font-semibold text-slate-900">Links de vídeo (1 por linha)</span>
+              <span className="text-sm font-semibold text-slate-900">Links de vÃ­deo (1 por linha)</span>
               <textarea
                 value={pastVideosText}
                 onChange={(e) => setPastVideosText(e.target.value)}
@@ -724,7 +798,7 @@ export default function EventEditForm({ eventId }: Props) {
 
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               <label className="grid gap-1">
-                <span className="text-sm font-semibold text-slate-900">Descrição da galeria (opcional)</span>
+                <span className="text-sm font-semibold text-slate-900">DescriÃ§Ã£o da galeria (opcional)</span>
                 <textarea
                   value={pastDescription}
                   onChange={(e) => setPastDescription(e.target.value)}
@@ -734,7 +808,7 @@ export default function EventEditForm({ eventId }: Props) {
               </label>
 
               <label className="grid gap-1">
-                <span className="text-sm font-semibold text-slate-900">Público estimado (opcional)</span>
+                <span className="text-sm font-semibold text-slate-900">PÃºblico estimado (opcional)</span>
                 <input
                   type="number"
                   min={0}
@@ -749,7 +823,7 @@ export default function EventEditForm({ eventId }: Props) {
         ) : null}
 
         <label className="grid gap-1 md:col-span-2">
-          <span className="text-sm font-semibold text-slate-900">Descrição</span>
+          <span className="text-sm font-semibold text-slate-900">DescriÃ§Ã£o</span>
           <textarea
             required
             name="description"
@@ -780,8 +854,9 @@ export default function EventEditForm({ eventId }: Props) {
         disabled={submitting || uploadingMedia}
         className="inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-70"
       >
-        {submitting ? "Salvando..." : uploadingMedia ? "Enviando mídias..." : "Salvar alterações"}
+        {submitting ? "Salvando..." : uploadingMedia ? "Enviando mÃ­dias..." : "Salvar alteraÃ§Ãµes"}
       </button>
     </form>
   );
 }
+

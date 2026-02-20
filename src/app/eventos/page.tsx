@@ -13,10 +13,17 @@ import HeroSlider from "@/components/HeroSlider";
 export const metadata: Metadata = {
   title: "Eventos",
   description:
-    "Calendario publico com eventos aprovados de carros antigos. Exibe apenas os proximos 21 dias."
+    "Calendario publico com eventos aprovados de carros antigos. Exibe apenas os proximos 30 dias."
 };
 
 export const dynamic = "force-dynamic";
+
+function isFeaturedActive(event: Event, now: number) {
+  if (!event.featured) return false;
+  if (!event.featuredUntil) return true;
+  const until = new Date(event.featuredUntil).getTime();
+  return Number.isFinite(until) ? until > now : true;
+}
 
 export default async function EventsPage() {
   let allEvents: Event[] = [];
@@ -30,7 +37,7 @@ export default async function EventsPage() {
   }
 
   const now = Date.now();
-  const limit = now + 21 * 24 * 60 * 60 * 1000;
+  const limit = now + 30 * 24 * 60 * 60 * 1000;
 
   const upcoming = (
     allEvents
@@ -45,13 +52,18 @@ export default async function EventsPage() {
         return { event, nextOccurrence };
       })
       .filter(Boolean) as { event: Event; nextOccurrence: string }[]
-  ).sort((a, b) => new Date(a.nextOccurrence).getTime() - new Date(b.nextOccurrence).getTime());
+  ).sort((a, b) => {
+    const aFeatured = isFeaturedActive(a.event, now);
+    const bFeatured = isFeaturedActive(b.event, now);
+    if (aFeatured !== bFeatured) return aFeatured ? -1 : 1;
+    return new Date(a.nextOccurrence).getTime() - new Date(b.nextOccurrence).getTime();
+  });
 
   return (
     <>
       <PageIntro
         title="Calendario de eventos"
-        subtitle="Mostrando apenas eventos aprovados nos proximos 21 dias (regra publica)."
+        subtitle="Mostrando apenas eventos aprovados nos proximos 30 dias (regra publica)."
       >
         <Link
           href="/eventos/cadastrar"
@@ -111,12 +123,18 @@ export default async function EventsPage() {
                   {formatRecurrence(event.recurrence, getSpanDays(event.startAt, event.endAt))}
                 </span>
               </div>
+
+              {isFeaturedActive(event, now) ? (
+                <div className="mt-3 inline-flex rounded-full bg-brand-100 px-2.5 py-1 text-xs font-semibold text-brand-800">
+                  Evento em destaque
+                </div>
+              ) : null}
             </article>
           ))}
 
           {upcoming.length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-600">
-              Nenhum evento aprovado nos proximos 21 dias.
+              Nenhum evento aprovado nos proximos 30 dias.
             </div>
           ) : null}
         </div>

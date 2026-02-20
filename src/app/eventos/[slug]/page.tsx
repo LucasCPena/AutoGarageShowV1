@@ -10,6 +10,7 @@ import { db } from "@/lib/database";
 import { formatRecurrence, generateEventOccurrences, getSpanDays } from "@/lib/eventRecurrence";
 import { eventJsonLd } from "@/lib/schema";
 import { normalizeAssetReference } from "@/lib/site-url";
+import { toYouTubeEmbedUrl } from "@/lib/youtube";
 
 type Props = {
   params: {
@@ -72,6 +73,7 @@ export default async function EventDetailPage({ params }: Props) {
   const heroImage =
     normalizeAssetReference(event.coverImage || event.images?.[0]) ||
     "/placeholders/event.svg";
+  const liveEmbedUrl = toYouTubeEmbedUrl(event.liveUrl);
 
   return (
     <>
@@ -102,7 +104,7 @@ export default async function EventDetailPage({ params }: Props) {
         />
 
         <Notice title="Regra de exibicao (publico)" variant="info">
-          No calendario publico aparecem apenas eventos aprovados dos proximos 21 dias. No admin, e possivel visualizar todos os cadastros.
+          No calendario publico aparecem apenas eventos aprovados dos proximos 30 dias. No admin, e possivel visualizar todos os cadastros.
         </Notice>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
@@ -118,6 +120,25 @@ export default async function EventDetailPage({ params }: Props) {
                 {event.description}
               </p>
             </section>
+
+            {liveEmbedUrl ? (
+              <section className="rounded-2xl border border-red-200 bg-red-50 p-6">
+                <h2 className="text-lg font-semibold text-slate-900">Evento ao vivo</h2>
+                <p className="mt-2 text-sm text-slate-700">
+                  Transmissao identificada automaticamente pelo link do YouTube.
+                </p>
+                <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-black">
+                  <iframe
+                    className="aspect-video w-full"
+                    src={liveEmbedUrl}
+                    title={`Transmissao ao vivo: ${event.title}`}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allowFullScreen
+                  />
+                </div>
+              </section>
+            ) : null}
 
             <section className="rounded-2xl border border-slate-200 bg-white p-6">
               <h2 className="text-lg font-semibold text-slate-900">Recorrencia</h2>
@@ -182,6 +203,14 @@ export default async function EventDetailPage({ params }: Props) {
                   <dt className="text-slate-500">Telefone</dt>
                   <dd className="mt-1 font-semibold text-slate-900">
                     {event.contactPhone}
+                  </dd>
+                </div>
+              ) : null}
+              {event.contactPhoneSecondary ? (
+                <div>
+                  <dt className="text-slate-500">Telefone 2</dt>
+                  <dd className="mt-1 font-semibold text-slate-900">
+                    {event.contactPhoneSecondary}
                   </dd>
                 </div>
               ) : null}

@@ -302,7 +302,7 @@ export default function AdminNewsPanel({ token }: Props) {
             onChange={handleImageFileChange}
           />
           <span className="text-xs text-slate-500">
-            Aceita jpg, jpeg, png e webp (ate 5MB).
+            Aceita jpg, jpeg, png e webp (ate 5MB). Medida recomendada: 1200 x 675 px.
           </span>
         </label>
 

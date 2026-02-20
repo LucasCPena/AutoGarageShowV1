@@ -3,13 +3,16 @@ import type { NewsArticle } from "@/lib/mockData";
 import { toAbsoluteUrl } from "@/lib/site-url";
 
 export function eventJsonLd(event: Event) {
+  const hasLiveStream = Boolean(event.liveUrl);
   return {
     "@context": "https://schema.org",
     "@type": "Event",
     name: event.title,
     description: event.description,
     startDate: event.startAt,
-    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    eventAttendanceMode: hasLiveStream
+      ? "https://schema.org/MixedEventAttendanceMode"
+      : "https://schema.org/OfflineEventAttendanceMode",
     eventStatus: "https://schema.org/EventScheduled",
     location: {
       "@type": "Place",

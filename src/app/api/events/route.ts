@@ -1,8 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db, isMysqlRequiredError } from '@/lib/database';
+﻿import { NextRequest, NextResponse } from 'next/server';
+
 import { getUserFromToken } from '@/lib/auth-middleware';
+import { db, isMysqlRequiredError } from '@/lib/database';
 import { normalizeRecurrence } from '@/lib/eventRecurrence';
 import { normalizeAssetReference } from '@/lib/site-url';
+import { normalizeYouTubeUrl } from '@/lib/youtube';
 
 function slugify(input: string) {
   return input
@@ -11,26 +13,38 @@ function slugify(input: string) {
     .replace(/(^-|-$)/g, '');
 }
 
+function parseIsoDate(value: unknown) {
+  if (typeof value !== 'string' || !value.trim()) return undefined;
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date.toISOString() : undefined;
+}
+
+function defaultFeaturedUntil(startAtIso: string) {
+  const date = new Date(startAtIso);
+  if (!Number.isFinite(date.getTime())) return undefined;
+  date.setDate(date.getDate() + 30);
+  return date.toISOString();
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const user = getUserFromToken(request);
-    
+
     let events = await db.events.getAll();
-    
-    // Admin enxerga tudo e pode filtrar por status; público vê apenas aprovados
+
+    // Admin enxerga tudo e pode filtrar por status; publico ve apenas aprovados.
     if (user?.role === 'admin') {
       if (status) {
-        events = events.filter(event => event.status === status);
+        events = events.filter((event) => event.status === status);
       }
     } else {
-      events = events.filter(event => event.status === 'approved');
+      events = events.filter((event) => event.status === 'approved');
     }
-    
-    // Ordenar por data de criação (mais recentes primeiro)
+
     events.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    
+
     return NextResponse.json({ events });
   } catch (error) {
     console.error('Erro ao buscar eventos:', error);
@@ -52,23 +66,21 @@ export async function POST(request: NextRequest) {
     const user = getUserFromToken(request);
     const eventData = await request.json();
     const settings = await db.settings.get();
-    
-    // Validar campos obrigatórios
-    const requiredFields = ['title', 'description', 'city', 'state', 'location', 'startAt', 'contactName'];
+
+    const requiredFields = ['title', 'description', 'city', 'state', 'location', 'startAt', 'contactName', 'contactPhone'];
     for (const field of requiredFields) {
       if (!eventData[field]) {
         return NextResponse.json(
-          { error: `O campo ${field} é obrigatório` },
+          { error: `O campo ${field} e obrigatorio` },
           { status: 400 }
         );
       }
     }
-    
-    // Validar data
+
     const startDate = new Date(eventData.startAt);
     if (Number.isNaN(startDate.getTime())) {
       return NextResponse.json(
-        { error: 'Data de início inválida' },
+        { error: 'Data de inicio invalida' },
         { status: 400 }
       );
     }
@@ -78,41 +90,60 @@ export async function POST(request: NextRequest) {
       const endDate = new Date(eventData.endAt);
       if (Number.isNaN(endDate.getTime())) {
         return NextResponse.json(
-          { error: 'Data de término inválida' },
+          { error: 'Data de termino invalida' },
           { status: 400 }
         );
       }
       if (endDate.getTime() < startDate.getTime()) {
         return NextResponse.json(
-          { error: 'A data de término não pode ser anterior ao início' },
+          { error: 'A data de termino nao pode ser anterior ao inicio' },
           { status: 400 }
         );
       }
       endAtIso = endDate.toISOString();
     }
-    
+
     const recurrence = normalizeRecurrence(eventData.recurrence, startDate.toISOString());
 
-    // Criar slug a partir do título e garantir unicidade
     let slug = slugify(eventData.title);
     const existingEvent = await db.events.findBySlug(slug);
     if (existingEvent) {
       slug = `${slug}-${crypto.randomUUID().slice(0, 6)}`;
     }
-    
+
     const requireApproval = settings?.events?.requireApproval ?? true;
     const shouldAutoApprove = user?.role === 'admin' || requireApproval === false;
     const status: 'approved' | 'pending' = shouldAutoApprove ? 'approved' : 'pending';
-    
+
     const images = Array.isArray(eventData.images)
       ? eventData.images
           .map((value: unknown) => normalizeAssetReference(value))
           .filter((value: string | undefined): value is string => Boolean(value))
       : [];
 
-    const coverImage =
-      normalizeAssetReference(eventData.coverImage) ||
-      images[0];
+    const coverImage = normalizeAssetReference(eventData.coverImage) || images[0];
+
+    const liveUrlInput = typeof eventData.liveUrl === 'string' ? eventData.liveUrl.trim() : '';
+    const liveUrl = liveUrlInput ? normalizeYouTubeUrl(liveUrlInput) : undefined;
+    if (liveUrlInput && !liveUrl) {
+      return NextResponse.json(
+        { error: 'URL de transmissao ao vivo invalida. Informe um link do YouTube.' },
+        { status: 400 }
+      );
+    }
+
+    const canManageFeatured = user?.role === 'admin';
+    const featured = canManageFeatured ? Boolean(eventData.featured) : false;
+    const parsedFeaturedUntil = canManageFeatured
+      ? parseIsoDate(eventData.featuredUntil)
+      : undefined;
+
+    if (featured && canManageFeatured && eventData.featuredUntil && !parsedFeaturedUntil) {
+      return NextResponse.json(
+        { error: 'Data de destaque invalida.' },
+        { status: 400 }
+      );
+    }
 
     const event = await db.events.create({
       ...eventData,
@@ -124,18 +155,24 @@ export async function POST(request: NextRequest) {
       createdBy: user?.id || 'anonymous',
       contactName: String(eventData.contactName || '').trim(),
       contactDocument: String(eventData.contactDocument || '').trim() || 'nao informado',
-      contactPhone: eventData.contactPhone,
-      contactEmail: eventData.contactEmail,
+      contactPhone: String(eventData.contactPhone || '').trim(),
+      contactPhoneSecondary: String(eventData.contactPhoneSecondary || '').trim() || undefined,
+      contactEmail: String(eventData.contactEmail || '').trim() || undefined,
       images,
-      coverImage
+      coverImage,
+      liveUrl,
+      featured,
+      featuredUntil: featured
+        ? parsedFeaturedUntil || defaultFeaturedUntil(startDate.toISOString())
+        : undefined
     });
-    
+
     return NextResponse.json(
-      { 
-        event, 
-        message: shouldAutoApprove 
-          ? 'Evento criado e aprovado automaticamente (admin ou aprovação desativada).' 
-          : 'Evento criado e enviado para aprovação.' 
+      {
+        event,
+        message: shouldAutoApprove
+          ? 'Evento criado e aprovado automaticamente (admin ou aprovacao desativada).'
+          : 'Evento criado e enviado para aprovacao.'
       },
       { status: 201 }
     );

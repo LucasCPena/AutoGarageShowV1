@@ -4,6 +4,7 @@ import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 import Notice from "@/components/Notice";
+import { validateCNPJ, validateCPF } from "@/lib/document";
 import { getVehicleMaxAllowedYear } from "@/lib/siteSettings";
 import { useSiteSettings } from "@/lib/useSiteSettings";
 import { getModelsForMake, vehicleMakes } from "@/lib/vehicleCatalog";
@@ -17,6 +18,7 @@ export default function ListingSubmissionForm() {
   const [brands, setBrands] = useState<VehicleBrand[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [documentType, setDocumentType] = useState<"cpf" | "cnpj">("cpf");
+  const [documentValue, setDocumentValue] = useState("");
   const [make, setMake] = useState<string>("");
   const [customMake, setCustomMake] = useState<string>("");
   const [model, setModel] = useState<string>("");
@@ -132,6 +134,17 @@ export default function ListingSubmissionForm() {
       return;
     }
 
+    const documentValid =
+      documentType === "cpf"
+        ? validateCPF(documentValue)
+        : validateCNPJ(documentValue);
+
+    if (!documentValid) {
+      setError(documentType === "cpf" ? "CPF invalido." : "CNPJ invalido.");
+      setSubmitted(false);
+      return;
+    }
+
     setError(null);
     setSubmitted(true);
   }
@@ -183,6 +196,11 @@ export default function ListingSubmissionForm() {
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             inputMode="numeric"
             placeholder={documentType === "cpf" ? "CPF" : "CNPJ"}
+            value={documentValue}
+            onChange={(e) => {
+              setDocumentValue(e.target.value);
+              setError(null);
+            }}
           />
         </label>
 
@@ -426,6 +444,7 @@ export default function ListingSubmissionForm() {
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             type="number"
             placeholder="79000"
+            step="0.01"
           />
         </label>
 
@@ -455,6 +474,15 @@ export default function ListingSubmissionForm() {
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="(11) 99999-9999"
             type="tel"
+          />
+        </label>
+
+        <label className="grid gap-1">
+          <span className="text-sm font-semibold text-slate-900">E-mail para contato (opcional)</span>
+          <input
+            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+            placeholder="contato@exemplo.com"
+            type="email"
           />
         </label>
 

@@ -9,6 +9,8 @@ type EventItem = {
   slug: string;
   title: string;
   startAt?: string;
+  featured?: boolean;
+  featuredUntil?: string;
   coverImage?: string;
   images?: string[];
   status?: "pending" | "approved" | "completed";
@@ -33,6 +35,7 @@ type Slide = {
   link?: string;
   startAt?: string;
   position?: number;
+  featuredRank?: number;
 };
 
 type Props = {
@@ -51,6 +54,13 @@ function isBannerActiveNow(banner: BannerItem, now: number) {
   if (Number.isFinite(end) && end < now) return false;
 
   return true;
+}
+
+function isEventFeaturedActive(event: EventItem, now: number) {
+  if (!event.featured) return false;
+  if (!event.featuredUntil) return true;
+  const until = new Date(event.featuredUntil).getTime();
+  return Number.isFinite(until) ? until > now : true;
 }
 
 export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs = 5000 }: Props) {
@@ -102,7 +112,7 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
           position: banner.position
         } as Slide;
       })
-      .filter(Boolean)
+      .filter((slide): slide is Slide => Boolean(slide))
       .slice(0, maxSlides) as Slide[];
 
     if (bannerSlides.length > 0) return bannerSlides;
@@ -118,11 +128,16 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
           title: event.title,
           image,
           link: `/eventos/${event.slug}`,
-          startAt: event.startAt
+          startAt: event.startAt,
+          featuredRank: isEventFeaturedActive(event, now) ? 1 : 0
         } as Slide;
       })
-      .filter(Boolean)
+      .filter((slide): slide is Slide => Boolean(slide))
       .sort((a, b) => {
+        const aFeatured = a.featuredRank ?? 0;
+        const bFeatured = b.featuredRank ?? 0;
+        if (aFeatured !== bFeatured) return bFeatured - aFeatured;
+
         const aTime = a?.startAt ? new Date(a.startAt).getTime() : 0;
         const bTime = b?.startAt ? new Date(b.startAt).getTime() : 0;
         return aTime - bTime;
