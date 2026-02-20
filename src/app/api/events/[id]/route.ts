@@ -25,7 +25,8 @@ function sanitizeImageList(value: unknown) {
   if (!Array.isArray(value)) return [] as string[];
   return value
     .map((item) => normalizeAssetReference(item))
-    .filter((item): item is string => Boolean(item));
+    .filter((item): item is string => Boolean(item))
+    .filter((item) => !item.startsWith('data:'));
 }
 
 function hasMedia(images: string[], videos: string[]) {
@@ -168,6 +169,12 @@ export async function PUT(
         : (existing.images ?? []);
 
     const providedCoverImage = normalizeAssetReference(updateData.coverImage);
+    if (typeof providedCoverImage === 'string' && providedCoverImage.startsWith('data:')) {
+      return NextResponse.json(
+        { error: 'Capa invalida. Envie a imagem via upload para gerar URL publica.' },
+        { status: 400 }
+      );
+    }
     const nextCoverImage =
       providedCoverImage ||
       normalizeAssetReference(existing.coverImage) ||

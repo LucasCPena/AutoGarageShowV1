@@ -51,6 +51,7 @@ export default function EventEditForm({ eventId }: Props) {
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>("single");
   const [isMultiDay, setIsMultiDay] = useState(false);
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
   const [message, setMessage] = useState<MessageState>(null);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -207,6 +208,9 @@ export default function EventEditForm({ eventId }: Props) {
       const recurrence = buildRecurrence(form);
       const parsedVideos = sanitizeLinesToList(pastVideosText);
       const parsedAttendance = Number(pastAttendance);
+      const uploadedCoverImage = coverImageFile
+        ? await uploadEventImage(coverImageFile)
+        : undefined;
 
       if (user?.role === "admin" && status === "completed" && pastImages.length === 0 && parsedVideos.length === 0) {
         throw new Error("Para marcar como realizado, adicione pelo menos uma foto ou link de video.");
@@ -227,7 +231,7 @@ export default function EventEditForm({ eventId }: Props) {
         websiteUrl: form.get("websiteUrl")?.toString().trim() || undefined,
         liveUrl: liveUrl || undefined,
         recurrence,
-        coverImage: coverImagePreview || undefined,
+        coverImage: uploadedCoverImage ?? eventData.coverImage ?? undefined,
         status: user?.role === "admin" ? status : undefined,
         featured: user?.role === "admin" ? featured : undefined,
         featuredUntil:
@@ -269,6 +273,8 @@ export default function EventEditForm({ eventId }: Props) {
       setStatus(data.event.status);
       setFeatured(Boolean(data.event.featured));
       setFeaturedUntil(isoToDateTimeLocal(data.event.featuredUntil));
+      setCoverImageFile(null);
+      setCoverImagePreview(data.event.coverImage || null);
       if (data.pastEvent) {
         setPastImages(data.pastEvent.images || []);
         setPastVideosText((data.pastEvent.videos || []).join("\n"));
@@ -292,10 +298,12 @@ export default function EventEditForm({ eventId }: Props) {
   function onCoverImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) {
+      setCoverImageFile(file);
       const reader = new FileReader();
       reader.onload = () => setCoverImagePreview(reader.result as string);
       reader.readAsDataURL(file);
     } else {
+      setCoverImageFile(null);
       setCoverImagePreview(null);
     }
   }

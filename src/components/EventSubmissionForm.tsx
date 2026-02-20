@@ -21,6 +21,7 @@ export default function EventSubmissionForm() {
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>("single");
   const [isMultiDay, setIsMultiDay] = useState(false);
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
   const [message, setMessage] = useState<MessageState>(null);
   const [submitting, setSubmitting] = useState(false);
   const [featured, setFeatured] = useState(false);
@@ -79,6 +80,25 @@ export default function EventSubmissionForm() {
     }
   }
 
+  async function uploadEventImage(file: File) {
+    const uploadForm = new FormData();
+    uploadForm.append("file", file);
+    uploadForm.append("type", "event");
+
+    const response = await fetch("/api/upload", {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: uploadForm
+    });
+    const data = await response.json();
+
+    if (!response.ok || typeof data.url !== "string" || !data.url.trim()) {
+      throw new Error(data?.error || "Erro ao enviar capa do evento.");
+    }
+
+    return data.url.trim();
+  }
+
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSubmitting(true);
@@ -129,6 +149,9 @@ export default function EventSubmissionForm() {
       }
 
       const recurrence = buildRecurrence(form);
+      const uploadedCoverImage = coverImageFile
+        ? await uploadEventImage(coverImageFile)
+        : undefined;
       const payload = {
         title,
         description,
@@ -144,7 +167,7 @@ export default function EventSubmissionForm() {
         websiteUrl: form.get("websiteUrl")?.toString().trim() || undefined,
         liveUrl: liveUrl || undefined,
         recurrence,
-        coverImage: coverImagePreview || undefined,
+        coverImage: uploadedCoverImage || undefined,
         featured: user?.role === "admin" ? featured : false,
         featuredUntil: user?.role === "admin" && featured ? featuredUntil || undefined : undefined
       };
@@ -171,6 +194,7 @@ export default function EventSubmissionForm() {
       setFeatured(false);
       setFeaturedUntil("");
       setCoverImagePreview(null);
+      setCoverImageFile(null);
     } catch (error) {
       setMessage({
         type: "error",
@@ -184,10 +208,12 @@ export default function EventSubmissionForm() {
   function onCoverImageChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) {
+      setCoverImageFile(file);
       const reader = new FileReader();
       reader.onload = () => setCoverImagePreview(reader.result as string);
       reader.readAsDataURL(file);
     } else {
+      setCoverImageFile(null);
       setCoverImagePreview(null);
     }
   }

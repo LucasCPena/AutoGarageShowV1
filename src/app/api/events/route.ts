@@ -132,9 +132,17 @@ export async function POST(request: NextRequest) {
       ? eventData.images
           .map((value: unknown) => normalizeAssetReference(value))
           .filter((value: string | undefined): value is string => Boolean(value))
+          .filter((value: string) => !value.startsWith('data:'))
       : [];
 
-    const coverImage = normalizeAssetReference(eventData.coverImage) || images[0];
+    const normalizedCoverImage = normalizeAssetReference(eventData.coverImage);
+    if (typeof normalizedCoverImage === 'string' && normalizedCoverImage.startsWith('data:')) {
+      return NextResponse.json(
+        { error: 'Capa invalida. Envie a imagem via upload para gerar URL publica.' },
+        { status: 400 }
+      );
+    }
+    const coverImage = normalizedCoverImage || images[0];
 
     const liveUrlInput = typeof eventData.liveUrl === 'string' ? eventData.liveUrl.trim() : '';
     const liveUrl = liveUrlInput ? normalizeYouTubeUrl(liveUrlInput) : undefined;

@@ -44,6 +44,7 @@ export default function ListingSubmissionForm() {
   const [description, setDescription] = useState("");
 
   const [photoCount, setPhotoCount] = useState(0);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
 
   const maxAllowedYear = useMemo(
     () => getVehicleMaxAllowedYear(settings),
@@ -105,6 +106,33 @@ export default function ListingSubmissionForm() {
 
     return parts.join(" ");
   }, [normalizedMake, normalizedModel, yearManufacture, yearModel]);
+
+  async function uploadListingImages(files: File[]) {
+    const uploadedUrls = await Promise.all(
+      files.map(async (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("type", "listing");
+
+        const response = await fetch("/api/upload", {
+          method: "POST",
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          body: formData
+        });
+
+        const data = await response.json();
+        if (!response.ok || typeof data.url !== "string" || !data.url.trim()) {
+          throw new Error(
+            data?.error || `Erro ao enviar imagem (${file.name}).`
+          );
+        }
+
+        return data.url.trim();
+      })
+    );
+
+    return uploadedUrls;
+  }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -197,6 +225,9 @@ export default function ListingSubmissionForm() {
     setError(null);
 
     try {
+      const uploadedImages =
+        photoFiles.length > 0 ? await uploadListingImages(photoFiles) : [];
+
       const payload = {
         make: normalizedMake,
         model: normalizedModel,
@@ -214,7 +245,7 @@ export default function ListingSubmissionForm() {
           email: contactEmail.trim(),
           phone: contactPhone.trim()
         },
-        images: [],
+        images: uploadedImages,
         status: user?.role === "admin" ? "active" : undefined
       };
 
@@ -239,6 +270,8 @@ export default function ListingSubmissionForm() {
             ? "Classificado publicado com sucesso."
             : "Classificado enviado com sucesso.")
       );
+      setPhotoFiles([]);
+      setPhotoCount(0);
     } catch (submitError) {
       setError(
         submitError instanceof Error
@@ -559,21 +592,23 @@ export default function ListingSubmissionForm() {
         </label>
 
         <label className="grid gap-1 md:col-span-2">
-          <span className="text-sm font-semibold text-slate-900">Fotos (mock)</span>
+          <span className="text-sm font-semibold text-slate-900">Fotos</span>
           <input
             className="h-11 rounded-md border border-slate-300 px-3 py-2 text-sm"
             type="file"
             multiple
             accept="image/*"
             onChange={(event) => {
-              const files = event.target.files;
-              setPhotoCount(files?.length ?? 0);
+              const files = event.target.files ? Array.from(event.target.files) : [];
+              setPhotoFiles(files);
+              setPhotoCount(files.length);
               setError(null);
             }}
           />
-          <span className="text-xs text-slate-500">
-            No backend atual as imagens do formulario publico ainda nao sao enviadas.
-          </span>
+          <span className="text-xs text-slate-500">As fotos serao enviadas no cadastro do anuncio.</span>
+          {photoCount > 0 ? (
+            <span className="text-xs text-slate-500">{photoCount} imagem(ns) selecionada(s).</span>
+          ) : null}
         </label>
       </div>
 

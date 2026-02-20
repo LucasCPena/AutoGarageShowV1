@@ -53,6 +53,7 @@ export default function ListingManagePage({ params }: Props) {
   const { token, user, isLoading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [formState, setFormState] = useState<FormState>({
@@ -161,6 +162,58 @@ export default function ListingManagePage({ params }: Props) {
             : value
       }));
     };
+  }
+
+  async function handleImageUpload(event: ChangeEvent<HTMLInputElement>) {
+    const files = event.target.files ? Array.from(event.target.files) : [];
+    event.target.value = "";
+
+    if (files.length === 0) return;
+    if (!token) {
+      setError("Token de autenticacao nao encontrado.");
+      return;
+    }
+
+    setUploadingImages(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const uploadedUrls = await Promise.all(
+        files.map(async (file) => {
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("type", "listing");
+
+          const response = await fetch("/api/upload", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData
+          });
+          const data = await response.json();
+
+          if (!response.ok || typeof data.url !== "string" || !data.url.trim()) {
+            throw new Error(data.error || `Erro ao enviar imagem (${file.name}).`);
+          }
+
+          return data.url.trim();
+        })
+      );
+
+      setFormState((prev) => ({
+        ...prev,
+        images: [prev.images, ...uploadedUrls].filter(Boolean).join("\n")
+      }));
+      setMessage(`${uploadedUrls.length} imagem(ns) enviada(s) com sucesso.`);
+    } catch (uploadError) {
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Erro ao enviar imagens."
+      );
+    } finally {
+      setUploadingImages(false);
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -473,6 +526,19 @@ export default function ListingManagePage({ params }: Props) {
                   value={formState.images}
                   onChange={updateField("images")}
                 />
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageUpload}
+                  disabled={uploadingImages || saving}
+                  className="h-10 rounded-md border border-slate-300 px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-slate-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-700"
+                />
+                <span className="text-xs text-slate-500">
+                  {uploadingImages
+                    ? "Enviando imagens..."
+                    : "Selecione imagens para enviar e adicionar automaticamente na lista acima."}
+                </span>
               </label>
             </div>
 
