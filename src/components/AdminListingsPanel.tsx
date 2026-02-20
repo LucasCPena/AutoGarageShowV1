@@ -269,12 +269,12 @@ export default function AdminListingsPanel({ listings, token, onListingsChange }
     if (!formState.make.trim()) missing.push("marca");
     if (!formState.model.trim()) missing.push("modelo");
     if (!formState.modelYear.trim()) missing.push("ano modelo");
-    if (!formState.manufactureYear.trim()) missing.push("ano fabricaÃ§Ã£o");
+    if (!formState.manufactureYear.trim()) missing.push("ano fabricação");
     if (!formState.mileage.trim()) missing.push("quilometragem");
-    if (!formState.price.trim()) missing.push("preÃ§o");
+    if (!formState.price.trim()) missing.push("preço");
     if (!formState.city.trim()) missing.push("cidade");
     if (!formState.state.trim()) missing.push("UF");
-    if (!formState.description.trim()) missing.push("descriÃ§Ã£o");
+    if (!formState.description.trim()) missing.push("descrição");
     if (!formState.document.trim()) missing.push("documento");
     if (!formState.contactName.trim()) missing.push("contato");
 
@@ -289,17 +289,17 @@ export default function AdminListingsPanel({ listings, token, onListingsChange }
     const price = Number(formState.price);
 
     if (!Number.isFinite(modelYear) || !Number.isFinite(manufactureYear)) {
-      setFormError("Ano modelo e ano de fabricaÃ§Ã£o precisam ser nÃºmeros vÃ¡lidos.");
+      setFormError("Ano modelo e ano de fabricação precisam ser números válidos.");
       return;
     }
 
     if (!Number.isFinite(mileage) || mileage < 0) {
-      setFormError("Quilometragem invÃ¡lida.");
+      setFormError("Quilometragem inválida.");
       return;
     }
 
     if (!Number.isFinite(price) || price <= 0) {
-      setFormError("PreÃ§o invÃ¡lido.");
+      setFormError("Preço inválido.");
       return;
     }
 
@@ -334,7 +334,7 @@ export default function AdminListingsPanel({ listings, token, onListingsChange }
     try {
       const authToken = getAuthToken();
       if (!authToken) {
-        throw new Error("Token de autenticaÃ§Ã£o nÃ£o encontrado.");
+        throw new Error("Token de autenticação não encontrado.");
       }
 
       if (formMode === "create") {
@@ -365,7 +365,7 @@ export default function AdminListingsPanel({ listings, token, onListingsChange }
 
         const data = await response.json();
         if (!response.ok) {
-          throw new Error(data.error || "Erro ao criar anÃºncio.");
+          throw new Error(data.error || "Erro ao criar anúncio.");
         }
 
         let createdListing: Listing = data.listing;
@@ -395,7 +395,7 @@ export default function AdminListingsPanel({ listings, token, onListingsChange }
         }
 
         updateListingsState((prev) => [createdListing, ...prev]);
-        setMessage({ type: "success", text: "AnÃºncio criado com sucesso." });
+        setMessage({ type: "success", text: "Anúncio criado com sucesso." });
         if (createdListing.status !== "pending") {
           setActiveTab("approved");
         }
@@ -411,29 +411,29 @@ export default function AdminListingsPanel({ listings, token, onListingsChange }
 
         const data = await response.json();
         if (!response.ok) {
-          throw new Error(data.error || "Erro ao atualizar anÃºncio.");
+          throw new Error(data.error || "Erro ao atualizar anúncio.");
         }
 
         updateListingsState((prev) =>
           prev.map((item) => (item.id === editingId ? data.listing : item))
         );
-        setMessage({ type: "success", text: "AnÃºncio atualizado com sucesso." });
+        setMessage({ type: "success", text: "Anúncio atualizado com sucesso." });
       }
 
       closeForm();
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Erro ao salvar anÃºncio.");
+      setFormError(error instanceof Error ? error.message : "Erro ao salvar anúncio.");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (listingId: string) => {
-    if (!confirm("Tem certeza que deseja excluir este anÃºncio?")) return;
+    if (!confirm("Tem certeza que deseja excluir este anúncio?")) return;
     try {
       const authToken = getAuthToken();
       if (!authToken) {
-        throw new Error("Token de autenticaÃ§Ã£o nÃ£o encontrado.");
+        throw new Error("Token de autenticação não encontrado.");
       }
 
       const response = await fetch(`/api/listings/${listingId}`, {
@@ -445,15 +445,15 @@ export default function AdminListingsPanel({ listings, token, onListingsChange }
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao excluir anÃºncio.");
+        throw new Error(data.error || "Erro ao excluir anúncio.");
       }
 
       updateListingsState((prev) => prev.filter((item) => item.id !== listingId));
-      setMessage({ type: "success", text: "AnÃºncio excluÃ­do com sucesso." });
+      setMessage({ type: "success", text: "Anúncio excluído com sucesso." });
     } catch (error) {
       setMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Erro ao excluir anÃºncio."
+        text: error instanceof Error ? error.message : "Erro ao excluir anúncio."
       });
     }
   };
@@ -608,20 +608,20 @@ export default function AdminListingsPanel({ listings, token, onListingsChange }
         </div>
       </div>
 
-      {/* AnÃºncios Pendentes */}
+      {/* Anúncios Pendentes */}
       {activeTab === 'pending' && (
         <div className="mt-6">
           {pending.length > 0 ? (
             <>
-              <h3 className="text-sm font-semibold text-slate-900 mb-3">AnÃºncios Pendentes de AprovaÃ§Ã£o</h3>
+              <h3 className="text-sm font-semibold text-slate-900 mb-3">Anúncios Pendentes de Aprovação</h3>
               <div className="overflow-hidden rounded-xl border border-slate-200">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-slate-50 text-xs font-semibold text-slate-600">
                     <tr>
-                      <th className="px-4 py-3">AnÃºncio</th>
+                      <th className="px-4 py-3">Anúncio</th>
                       <th className="px-4 py-3">Criado</th>
                       <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3">AÃ§Ãµes</th>
+                      <th className="px-4 py-3">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -630,7 +630,7 @@ export default function AdminListingsPanel({ listings, token, onListingsChange }
                         <td className="px-4 py-3">
                           <div className="font-semibold text-slate-900">{l.title}</div>
                           <div className="mt-1 text-xs text-slate-600">
-                            {l.city}/{l.state} â€¢ {getYearLabel(l)}
+                            {l.city}/{l.state} • {getYearLabel(l)}
                           </div>
                         </td>
 
@@ -685,21 +685,21 @@ export default function AdminListingsPanel({ listings, token, onListingsChange }
             </>
           ) : (
             <div className="rounded-xl border border-dashed border-slate-300 bg-white p-5 text-sm text-slate-600">
-              Nenhum anÃºncio pendente de aprovaÃ§Ã£o.
+              Nenhum anúncio pendente de aprovação.
             </div>
           )}
         </div>
       )}
 
-      {/* AnÃºncios Aprovados */}
+      {/* Anúncios Aprovados */}
       {activeTab === 'approved' && (
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-50 text-xs font-semibold text-slate-600">
             <tr>
-              <th className="px-4 py-3">AnÃºncio</th>
+              <th className="px-4 py-3">Anúncio</th>
               <th className="px-4 py-3">Criado</th>
               <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">AÃ§Ãµes</th>
+              <th className="px-4 py-3">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -714,7 +714,7 @@ export default function AdminListingsPanel({ listings, token, onListingsChange }
                   <td className="px-4 py-3">
                     <div className="font-semibold text-slate-900">{l.title}</div>
                     <div className="mt-1 text-xs text-slate-600">
-                      {l.city}/{l.state} â€¢ {getYearLabel(l)}
+                      {l.city}/{l.state} • {getYearLabel(l)}
                     </div>
                   </td>
 
@@ -809,8 +809,8 @@ export default function AdminListingsPanel({ listings, token, onListingsChange }
             {managed.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-4 py-6">
-                  <Notice title="Sem anÃºncios" variant="info">
-                    Nenhum anÃºncio para gerenciar.
+                  <Notice title="Sem anúncios" variant="info">
+                    Nenhum anúncio para gerenciar.
                   </Notice>
                 </td>
               </tr>

@@ -169,16 +169,16 @@ export async function PUT(
         : (existing.images ?? []);
 
     const providedCoverImage = normalizeAssetReference(updateData.coverImage);
-    if (typeof providedCoverImage === 'string' && providedCoverImage.startsWith('data:')) {
-      return NextResponse.json(
-        { error: 'Capa invalida. Envie a imagem via upload para gerar URL publica.' },
-        { status: 400 }
-      );
-    }
-    const nextCoverImage =
-      providedCoverImage ||
-      normalizeAssetReference(existing.coverImage) ||
-      nextImages[0];
+    const safeProvidedCoverImage =
+      typeof providedCoverImage === 'string' && !providedCoverImage.startsWith('data:')
+        ? providedCoverImage
+        : undefined;
+    const existingCoverImage = normalizeAssetReference(existing.coverImage);
+    const safeExistingCoverImage =
+      typeof existingCoverImage === 'string' && !existingCoverImage.startsWith('data:')
+        ? existingCoverImage
+        : undefined;
+    const nextCoverImage = safeProvidedCoverImage || safeExistingCoverImage || nextImages[0];
 
     const nextContactDocument =
       typeof updateData.contactDocument === 'string'
