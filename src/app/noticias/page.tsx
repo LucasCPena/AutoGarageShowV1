@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
 import AdminNewsPanel from "@/components/AdminNewsPanel";
 import Container from "@/components/Container";
+import NewsCrudActions from "@/components/NewsCrudActions";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { formatDateLong } from "@/lib/date";
@@ -18,10 +19,10 @@ interface News {
   slug: string;
   title: string;
   excerpt: string;
-  category: 'eventos' | 'classificados' | 'geral' | 'dicas';
+  category: "eventos" | "classificados" | "geral" | "dicas";
   coverImage: string;
   author: string;
-  status: 'draft' | 'published';
+  status: "draft" | "published";
   createdAt: string;
   updatedAt: string;
 }
@@ -42,22 +43,41 @@ export default function NewsPage() {
   const [showCrud, setShowCrud] = useState(false);
 
   useEffect(() => {
-    fetchJson<{ news?: News[] }>('/api/noticias')
-      .then(data => {
+    if (authLoading) return;
+
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+
+    const isAdmin = user?.role === "admin";
+    const url = isAdmin ? "/api/noticias?scope=all" : "/api/noticias";
+    const headers: HeadersInit | undefined =
+      isAdmin && token ? { Authorization: `Bearer ${token}` } : undefined;
+
+    fetchJson<{ news?: News[] }>(url, { headers })
+      .then((data) => {
+        if (cancelled) return;
         setNews(data.news || []);
         setLoading(false);
       })
-      .catch(err => {
-        console.error('Erro ao buscar notícias:', err);
-        setError('Erro ao carregar notícias');
+      .catch((fetchError) => {
+        if (cancelled) return;
+        console.error("Erro ao buscar noticias:", fetchError);
+        setError("Erro ao carregar noticias");
         setLoading(false);
       });
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, token, user?.role]);
+
+  const items = useMemo(() => [...news].sort(byPublishedAtDesc), [news]);
 
   if (loading) {
     return (
       <Container className="py-10">
-        <div>Carregando notícias...</div>
+        <div>Carregando noticias...</div>
       </Container>
     );
   }
@@ -72,13 +92,11 @@ export default function NewsPage() {
     );
   }
 
-  const items = [...news].sort(byPublishedAtDesc);
-
   return (
     <>
       <PageIntro
-        title="Notícias"
-        subtitle="Conteúdo sobre carros antigos, eventos e classificados."
+        title="Noticias"
+        subtitle="Conteudo sobre carros antigos, eventos e classificados."
       />
 
       <Container className="py-10">
@@ -102,28 +120,45 @@ export default function NewsPage() {
 
         <div className="mt-8 grid gap-4 lg:grid-cols-2">
           {items.map((article) => (
-            <Link
+            <article
               key={article.id}
-              href={`/noticias/${article.slug}`}
-              className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white hover:border-brand-200 sm:flex-row"
+              className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-0"
             >
-              <Image
-                src={getNewsCoverSrc(article.coverImage)}
-                alt={article.title}
-                width={1200}
-                height={800}
-                className="h-48 w-full object-cover sm:h-auto sm:w-56"
-              />
-              <div className="flex-1 p-5">
-                <div className="text-lg font-semibold text-slate-900 group-hover:text-brand-800">
-                  {article.title}
+              <Link href={`/noticias/${article.slug}`} className="group block sm:flex">
+                <Image
+                  src={getNewsCoverSrc(article.coverImage)}
+                  alt={article.title}
+                  width={1200}
+                  height={800}
+                  className="h-48 w-full object-cover sm:h-auto sm:w-56"
+                />
+                <div className="flex-1 p-5">
+                  <div className="text-lg font-semibold text-slate-900 group-hover:text-brand-800">
+                    {article.title}
+                  </div>
+                  <div className="mt-2 text-sm text-slate-600">{article.excerpt}</div>
+                  <div className="mt-4 text-xs text-slate-500">
+                    Por {article.author} • {formatDateLong(article.createdAt)}
+                  </div>
                 </div>
-                <div className="mt-2 text-sm text-slate-600">{article.excerpt}</div>
-                <div className="mt-4 text-xs text-slate-500">
-                  Por {article.author} • {formatDateLong(article.createdAt)}
+              </Link>
+
+              {user?.role === "admin" ? (
+                <div className="border-t border-slate-200 bg-slate-50 px-5 py-3">
+                  <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Status: {article.status}
+                  </div>
+                  <NewsCrudActions
+                    newsId={article.id}
+                    editHref={`/noticias/gerenciar/${article.id}`}
+                    compact
+                    onDeleted={() =>
+                      setNews((current) => current.filter((item) => item.id !== article.id))
+                    }
+                  />
                 </div>
-              </div>
-            </Link>
+              ) : null}
+            </article>
           ))}
         </div>
       </Container>

@@ -2,7 +2,7 @@
 import Link from "next/link";
 
 import Container from "@/components/Container";
-import EventsAdminSection from "@/components/EventsAdminSection";
+import EventCrudActions from "@/components/EventCrudActions";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { formatDateLong, formatTime } from "@/lib/date";
@@ -130,6 +130,12 @@ export default async function EventsPage() {
                   Evento em destaque
                 </div>
               ) : null}
+
+              <EventCrudActions
+                eventId={event.id}
+                editHref={`/eventos/gerenciar/${event.id}`}
+                compact
+              />
             </article>
           ))}
 
@@ -156,8 +162,6 @@ export default async function EventsPage() {
             </Link>
           </div>
         </div>
-
-        <EventsAdminSection />
       </Container>
     </>
   );

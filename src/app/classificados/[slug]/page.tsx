@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 
 import Container from "@/components/Container";
 import CommentsSection from "@/components/CommentsSection";
+import ListingCrudActions from "@/components/ListingCrudActions";
 import ListingFeaturePanel from "@/components/ListingFeaturePanel";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
@@ -127,6 +128,11 @@ export default async function ListingDetailPage({ params }: Props) {
           Para publicar, o usuário precisa validar e-mail. Haverá limites por CPF/CNPJ
           e aprovação manual antes de gerar URL pública.
         </Notice>
+
+        <ListingCrudActions
+          listingId={listing.id}
+          editHref={`/classificados/gerenciar/${listing.id}`}
+        />
 
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
           <div className="grid gap-6 lg:col-span-2">

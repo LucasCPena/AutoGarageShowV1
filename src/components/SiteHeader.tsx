@@ -102,7 +102,6 @@ export default function SiteHeader() {
     const items = [
       { href: "/eventos", label: "Eventos" },
       { href: "/eventos/calendario", label: "Calendario" },
-      { href: "/realizados", label: "Realizados" },
       { href: "/classificados", label: "Classificados" },
       { href: "/noticias", label: "Noticias" }
     ];

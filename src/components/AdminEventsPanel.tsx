@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 
-import Notice from "@/components/Notice";
 import Link from "next/link";
+
+import Notice from "@/components/Notice";
 import type { Event } from "@/lib/database";
 import { formatDateLong, formatTime } from "@/lib/date";
 import { normalizeAssetReference } from "@/lib/site-url";
@@ -22,25 +23,30 @@ function formatDateTime(iso: string) {
 }
 
 function eventThumbnail(event: Event) {
-  return normalizeAssetReference(event.coverImage || event.images?.[0]) || "/placeholders/event.svg";
+  return (
+    normalizeAssetReference(event.coverImage || event.images?.[0]) ||
+    "/placeholders/event.svg"
+  );
 }
 
 export default function AdminEventsPanel({ events, token }: Props) {
   const [message, setMessage] = useState<Message>(null);
-  const [activeTab, setActiveTab] = useState<"pending" | "approved" | "completed">("pending");
+  const [activeTab, setActiveTab] = useState<"pending" | "approved">("pending");
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const pending = events.filter((e) => e.status === "pending");
-  const approved = events.filter((e) => e.status === "approved");
-  const completed = events.filter((e) => e.status === "completed");
+  const pending = events.filter((event) => event.status === "pending");
+  const managed = events.filter(
+    (event) => event.status === "approved" || event.status === "completed"
+  );
 
-  async function handleAction(eventId: string, action: "approve" | "complete" | "delete") {
+  async function handleAction(eventId: string, action: "approve" | "delete") {
     try {
       if (!token) {
-        setMessage({ type: "error", text: "Token de autenticação não encontrado." });
+        setMessage({ type: "error", text: "Token de autenticacao nao encontrado." });
         return;
       }
       setBusyId(`${eventId}-${action}`);
+
       const response = await fetch(`/api/admin/events/${eventId}/approve`, {
         method: "POST",
         headers: {
@@ -60,10 +66,9 @@ export default function AdminEventsPanel({ events, token }: Props) {
         text: data.message || "Evento atualizado."
       });
 
-      // Atualizar visão rápida recarregando
       setTimeout(() => {
         window.location.reload();
-      }, 800);
+      }, 700);
     } catch (error) {
       setMessage({
         type: "error",
@@ -77,10 +82,11 @@ export default function AdminEventsPanel({ events, token }: Props) {
   async function handleDuplicate(eventId: string) {
     try {
       if (!token) {
-        setMessage({ type: "error", text: "Token de autenticaÃ§Ã£o nÃ£o encontrado." });
+        setMessage({ type: "error", text: "Token de autenticacao nao encontrado." });
         return;
       }
       setBusyId(`${eventId}-duplicate`);
+
       const response = await fetch(`/api/events/${eventId}/duplicate`, {
         method: "POST",
         headers: {
@@ -100,7 +106,7 @@ export default function AdminEventsPanel({ events, token }: Props) {
 
       setTimeout(() => {
         window.location.reload();
-      }, 800);
+      }, 700);
     } catch (error) {
       setMessage({
         type: "error",
@@ -111,12 +117,73 @@ export default function AdminEventsPanel({ events, token }: Props) {
     }
   }
 
+  function renderEventCard(event: Event, isPending: boolean) {
+    return (
+      <div key={event.id} className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="flex flex-wrap justify-between gap-2">
+          <div>
+            <img
+              src={eventThumbnail(event)}
+              alt={event.title}
+              className="mb-2 h-16 w-24 rounded-md border border-slate-200 object-cover"
+            />
+            <div className="text-sm text-slate-500">{formatDateTime(event.startAt)}</div>
+            <div className="text-base font-semibold text-slate-900">{event.title}</div>
+            <div className="text-sm text-slate-600">
+              {event.city}/{event.state} • {event.location}
+            </div>
+            <div className="text-xs text-slate-500">Organizador: {event.contactName}</div>
+            {!isPending && event.status === "completed" ? (
+              <div className="mt-2 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                Realizado
+              </div>
+            ) : null}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Link
+              className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+              href={`/eventos/gerenciar/${event.id}`}
+            >
+              Editar
+            </Link>
+            <button
+              className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-70"
+              disabled={busyId !== null}
+              onClick={() => handleDuplicate(event.id)}
+            >
+              {busyId === `${event.id}-duplicate` ? "Duplicando..." : "Duplicar"}
+            </button>
+
+            {isPending ? (
+              <button
+                className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-70"
+                disabled={busyId !== null}
+                onClick={() => handleAction(event.id, "approve")}
+              >
+                {busyId === `${event.id}-approve` ? "Aprovando..." : "Aprovar"}
+              </button>
+            ) : null}
+
+            <button
+              className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-70"
+              disabled={busyId !== null}
+              onClick={() => handleAction(event.id, "delete")}
+            >
+              {busyId === `${event.id}-delete` ? "Removendo..." : "Excluir"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6">
       <div className="mb-4">
         <div className="text-sm font-semibold text-slate-900">Eventos</div>
         <div className="mt-1 text-sm text-slate-600">
-          Aprovação, conclusão e remoção de eventos.
+          Aprovacao e remocao de eventos.
         </div>
       </div>
 
@@ -152,191 +219,29 @@ export default function AdminEventsPanel({ events, token }: Props) {
                 : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
             }`}
           >
-            Aprovados ({approved.length})
-          </button>
-          <button
-            onClick={() => setActiveTab("completed")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === "completed"
-                ? "border-brand-500 text-brand-600"
-                : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
-            }`}
-          >
-            Realizados ({completed.length})
+            Gerenciar ({managed.length})
           </button>
         </nav>
       </div>
 
-      {activeTab === "pending" && (
+      {activeTab === "pending" ? (
         <div className="grid gap-4">
           {pending.length === 0 ? (
             <Notice title="Nenhum evento pendente" variant="info">
-              Quando um usuário cadastrar um evento, ele aparecerá aqui para revisão.
+              Quando um usuario cadastrar um evento, ele aparecera aqui para revisao.
             </Notice>
           ) : (
-            pending.map((event) => (
-              <div key={event.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <div className="flex flex-wrap justify-between gap-2">
-                  <div>
-                    <img
-                      src={eventThumbnail(event)}
-                      alt={event.title}
-                      className="mb-2 h-16 w-24 rounded-md border border-slate-200 object-cover"
-                    />
-                    <div className="text-sm text-slate-500">{formatDateTime(event.startAt)}</div>
-                    <div className="text-base font-semibold text-slate-900">{event.title}</div>
-                    <div className="text-sm text-slate-600">
-                      {event.city}/{event.state} • {event.location}
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      Organizador: {event.contactName}
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Link
-                      className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-                      href={`/eventos/gerenciar/${event.id}`}
-                    >
-                      Editar
-                    </Link>
-                    <button
-                      className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-70"
-                      disabled={busyId !== null}
-                      onClick={() => handleDuplicate(event.id)}
-                    >
-                      {busyId === `${event.id}-duplicate` ? "Duplicando..." : "Duplicar"}
-                    </button>
-                    <button
-                      className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-70"
-                      disabled={busyId !== null}
-                      onClick={() => handleAction(event.id, "approve")}
-                    >
-                      {busyId === `${event.id}-approve` ? "Aprovando..." : "Aprovar"}
-                    </button>
-                    <button
-                      className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-70"
-                      disabled={busyId !== null}
-                      onClick={() => handleAction(event.id, "delete")}
-                    >
-                      {busyId === `${event.id}-delete` ? "Removendo..." : "Excluir"}
-                    </button>
-                  </div>
-                </div>
-                <p className="mt-3 text-sm text-slate-700">{event.description}</p>
-              </div>
-            ))
+            pending.map((event) => renderEventCard(event, true))
           )}
         </div>
-      )}
-
-      {activeTab === "approved" && (
-        <div className="space-y-3">
-          {approved.length === 0 ? (
-            <Notice title="Sem eventos aprovados" variant="info">
-              Aprove eventos pendentes para publicá-los.
+      ) : (
+        <div className="grid gap-4">
+          {managed.length === 0 ? (
+            <Notice title="Sem eventos para gerenciar" variant="info">
+              Nenhum evento aprovado/realizado no momento.
             </Notice>
           ) : (
-            approved.map((event) => (
-              <div key={event.id} className="rounded-xl border border-slate-200 bg-white p-4">
-                <div className="flex flex-wrap justify-between gap-2">
-                  <div>
-                    <img
-                      src={eventThumbnail(event)}
-                      alt={event.title}
-                      className="mb-2 h-16 w-24 rounded-md border border-slate-200 object-cover"
-                    />
-                    <div className="text-sm text-slate-500">{formatDateTime(event.startAt)}</div>
-                    <div className="text-base font-semibold text-slate-900">{event.title}</div>
-                    <div className="text-sm text-slate-600">
-                      {event.city}/{event.state} • {event.location}
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      Organizador: {event.contactName}
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Link
-                      className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-                      href={`/eventos/gerenciar/${event.id}`}
-                    >
-                      Editar
-                    </Link>
-                    <button
-                      className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-70"
-                      disabled={busyId !== null}
-                      onClick={() => handleDuplicate(event.id)}
-                    >
-                      {busyId === `${event.id}-duplicate` ? "Duplicando..." : "Duplicar"}
-                    </button>
-                    <button
-                      className="rounded-md bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-70"
-                      disabled={busyId !== null}
-                      onClick={() => handleAction(event.id, "complete")}
-                    >
-                      {busyId === `${event.id}-complete` ? "Atualizando..." : "Marcar como realizado"}
-                    </button>
-                    <button
-                      className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-70"
-                      disabled={busyId !== null}
-                      onClick={() => handleAction(event.id, "delete")}
-                    >
-                      {busyId === `${event.id}-delete` ? "Removendo..." : "Excluir"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      )}
-
-      {activeTab === "completed" && (
-        <div className="space-y-3">
-          {completed.length === 0 ? (
-            <Notice title="Nenhum evento marcado como realizado" variant="info">
-              Quando um evento terminar, marque-o aqui para enviá-lo à galeria de realizados.
-            </Notice>
-          ) : (
-            completed.map((event) => (
-              <div key={event.id} className="rounded-xl border border-slate-200 bg-white p-4">
-                <div className="flex flex-wrap justify-between gap-2">
-                  <div>
-                    <img
-                      src={eventThumbnail(event)}
-                      alt={event.title}
-                      className="mb-2 h-16 w-24 rounded-md border border-slate-200 object-cover"
-                    />
-                    <div className="text-sm text-slate-500">{formatDateTime(event.startAt)}</div>
-                    <div className="text-base font-semibold text-slate-900">{event.title}</div>
-                    <div className="text-xs text-slate-500">
-                      Organizador: {event.contactName}
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Link
-                      className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-                      href={`/eventos/gerenciar/${event.id}`}
-                    >
-                      Editar
-                    </Link>
-                  <button
-                    className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-70"
-                    disabled={busyId !== null}
-                    onClick={() => handleDuplicate(event.id)}
-                  >
-                    {busyId === `${event.id}-duplicate` ? "Duplicando..." : "Duplicar"}
-                  </button>
-                  <button
-                    className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-70"
-                    disabled={busyId !== null}
-                    onClick={() => handleAction(event.id, "delete")}
-                  >
-                    {busyId === `${event.id}-delete` ? "Removendo..." : "Excluir"}
-                  </button>
-                  </div>
-                </div>
-              </div>
-            ))
+            managed.map((event) => renderEventCard(event, false))
           )}
         </div>
       )}

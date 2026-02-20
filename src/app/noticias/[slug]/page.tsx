@@ -6,10 +6,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import Container from "@/components/Container";
+import NewsCrudActions from "@/components/NewsCrudActions";
 import PageIntro from "@/components/PageIntro";
 import { formatDateLong } from "@/lib/date";
 import { fetchJson } from "@/lib/fetch-json";
 import { normalizeAssetReference } from "@/lib/site-url";
+import { useAuth } from "@/lib/useAuth";
 
 interface News {
   id: string;
@@ -17,10 +19,10 @@ interface News {
   title: string;
   content: string;
   excerpt: string;
-  category: 'eventos' | 'classificados' | 'geral' | 'dicas';
+  category: "eventos" | "classificados" | "geral" | "dicas";
   coverImage: string;
   author: string;
-  status: 'draft' | 'published';
+  status: "draft" | "published";
   createdAt: string;
   updatedAt: string;
 }
@@ -31,38 +33,41 @@ type Props = {
   };
 };
 
-function toMetaDescription(text: string) {
-  const clean = text.replace(/\s+/g, " ").trim();
-  return clean.length > 160 ? `${clean.slice(0, 157)}...` : clean;
-}
-
 function getNewsCoverSrc(coverImage?: string) {
   return normalizeAssetReference(coverImage) || "/placeholders/news.svg";
 }
 
 export default function NewsDetailPage({ params }: Props) {
+  const { user, token, isLoading: authLoading } = useAuth();
   const [article, setArticle] = useState<News | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchJson<{ news?: News[] }>(`/api/noticias`)
-      .then(data => {
-        const foundArticle = data.news?.find((n: News) => n.slug === params.slug);
+    if (authLoading) return;
+
+    const isAdmin = user?.role === "admin";
+    const url = isAdmin ? "/api/noticias?scope=all" : "/api/noticias";
+    const headers: HeadersInit | undefined =
+      isAdmin && token ? { Authorization: `Bearer ${token}` } : undefined;
+
+    fetchJson<{ news?: News[] }>(url, { headers })
+      .then((data) => {
+        const foundArticle = data.news?.find((item) => item.slug === params.slug);
         if (foundArticle) {
           setArticle(foundArticle);
         }
         setLoading(false);
       })
-      .catch(err => {
-        console.error('Erro ao buscar notícia:', err);
+      .catch((error) => {
+        console.error("Erro ao buscar noticia:", error);
         setLoading(false);
       });
-  }, [params.slug]);
+  }, [authLoading, params.slug, token, user?.role]);
 
   if (loading) {
     return (
       <Container className="py-10">
-        <div>Carregando notícia...</div>
+        <div>Carregando noticia...</div>
       </Container>
     );
   }
@@ -73,7 +78,7 @@ export default function NewsDetailPage({ params }: Props) {
 
   const paragraphs = article.content
     .split("\n")
-    .map((p) => p.trim())
+    .map((paragraph) => paragraph.trim())
     .filter(Boolean);
 
   return (
@@ -89,7 +94,12 @@ export default function NewsDetailPage({ params }: Props) {
 
       <Container className="py-10">
         <div className="mx-auto max-w-3xl">
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          <NewsCrudActions
+            newsId={article.id}
+            editHref={`/noticias/gerenciar/${article.id}`}
+          />
+
+          <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white">
             <Image
               src={getNewsCoverSrc(article.coverImage)}
               alt={article.title}
@@ -109,8 +119,8 @@ export default function NewsDetailPage({ params }: Props) {
             </div>
 
             <div className="mt-6 grid gap-4 text-sm leading-relaxed text-slate-700">
-              {paragraphs.map((p) => (
-                <p key={p}>{p}</p>
+              {paragraphs.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
               ))}
             </div>
           </article>
@@ -119,4 +129,3 @@ export default function NewsDetailPage({ params }: Props) {
     </>
   );
 }
-

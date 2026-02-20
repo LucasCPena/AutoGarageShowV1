@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import Container from "@/components/Container";
+import EventCrudActions from "@/components/EventCrudActions";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { formatDateLong, formatTime } from "@/lib/date";
@@ -106,6 +107,11 @@ export default async function EventDetailPage({ params }: Props) {
         <Notice title="Regra de exibicao (publico)" variant="info">
           No calendario publico aparecem apenas eventos aprovados dos proximos 30 dias. No admin, e possivel visualizar todos os cadastros.
         </Notice>
+
+        <EventCrudActions
+          eventId={event.id}
+          editHref={`/eventos/gerenciar/${event.id}`}
+        />
 
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
           <div className="grid gap-6 lg:col-span-2">
