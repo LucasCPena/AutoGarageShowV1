@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { requireAuth } from "@/lib/auth-middleware";
-import { db } from "@/lib/database";
+import { db, type Listing } from "@/lib/database";
 
 export async function GET(
   request: NextRequest,
@@ -50,7 +50,66 @@ export async function PUT(
     }
 
     const updateData = await request.json();
-    const listing = await db.listings.update(params.id, updateData);
+    const nextData: Record<string, unknown> = { ...updateData };
+
+    if (user.role === "admin") {
+      const allowedStatus: Listing["status"][] = [
+        "pending",
+        "approved",
+        "active",
+        "inactive",
+        "sold",
+        "rejected"
+      ];
+
+      let nextStatus = existing.status;
+      if (
+        typeof updateData.status === "string" &&
+        allowedStatus.includes(updateData.status as Listing["status"])
+      ) {
+        nextStatus = updateData.status as Listing["status"];
+      }
+
+      const nextFeatured =
+        typeof updateData.featured === "boolean"
+          ? updateData.featured
+          : Boolean(existing.featured);
+
+      let nextFeaturedUntil: string | null | undefined = existing.featuredUntil;
+      if (nextFeatured) {
+        const rawFeaturedUntil =
+          updateData.featuredUntil === undefined
+            ? existing.featuredUntil
+            : updateData.featuredUntil;
+
+        if (rawFeaturedUntil) {
+          const parsed = new Date(String(rawFeaturedUntil));
+          if (!Number.isFinite(parsed.getTime())) {
+            return NextResponse.json(
+              { error: "Data de destaque invalida." },
+              { status: 400 }
+            );
+          }
+          nextFeaturedUntil = parsed.toISOString();
+        } else {
+          const fallback = new Date();
+          fallback.setDate(fallback.getDate() + 30);
+          nextFeaturedUntil = fallback.toISOString();
+        }
+
+        if (nextStatus === "pending" || nextStatus === "rejected") {
+          nextStatus = "active";
+        }
+      } else {
+        nextFeaturedUntil = undefined;
+      }
+
+      nextData.status = nextStatus;
+      nextData.featured = nextFeatured;
+      nextData.featuredUntil = nextFeaturedUntil;
+    }
+
+    const listing = await db.listings.update(params.id, nextData);
 
     if (!listing) {
       return NextResponse.json(

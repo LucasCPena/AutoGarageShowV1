@@ -1,15 +1,13 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 
 import Link from "next/link";
 
 import Notice from "@/components/Notice";
+import type { Event } from "@/lib/database";
+import { formatDateShort } from "@/lib/date";
 import { generateEventOccurrences } from "@/lib/eventRecurrence";
-import type { Event } from "@/lib/mockData";
-import { formatDateLong, formatDateShort, formatTime } from "@/lib/date";
-
-const DAY_MS = 1000 * 60 * 60 * 24;
 
 type Props = {
   events: Event[];
@@ -72,8 +70,7 @@ export default function Calendar({ events }: Props) {
     events.forEach((event) => {
       const occurrences = generateEventOccurrences(event.startAt, event.recurrence, event.endAt);
       occurrences.forEach((occ) => {
-        const occDate = new Date(occ);
-        const key = formatDateShort(occDate);
+        const key = formatDateShort(occ);
         if (!map.has(key)) map.set(key, []);
         map.get(key)!.push(event);
       });
@@ -89,13 +86,14 @@ export default function Calendar({ events }: Props) {
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <h2 className="text-xl font-bold text-slate-900">{monthLabel}</h2>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={() => changeMonth(-1)}
             className="h-8 w-8 rounded-md border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            aria-label="Mês anterior"
           >
             ‹
           </button>
@@ -103,13 +101,14 @@ export default function Calendar({ events }: Props) {
             type="button"
             onClick={() => changeMonth(1)}
             className="h-8 w-8 rounded-md border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            aria-label="Próximo mês"
           >
             ›
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-slate-600 mb-2">
+      <div className="mb-2 grid grid-cols-7 gap-1 text-center text-xs font-semibold text-slate-600">
         {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((d) => (
           <div key={d}>{d}</div>
         ))}
@@ -126,8 +125,8 @@ export default function Calendar({ events }: Props) {
             <div
               key={i}
               className={`
-                min-h-[80px] p-1 border rounded-lg
-                ${isCurrentMonth ? "bg-white border-slate-200" : "bg-slate-50 border-slate-100"}
+                min-h-[80px] rounded-lg border p-1
+                ${isCurrentMonth ? "border-slate-200 bg-white" : "border-slate-100 bg-slate-50"}
                 ${isCurrentDay ? "ring-2 ring-brand-500" : ""}
               `}
             >
@@ -140,7 +139,7 @@ export default function Calendar({ events }: Props) {
                   <Link
                     key={event.id}
                     href={`/eventos/${event.slug}`}
-                    className="block text-xs leading-tight rounded px-1 py-0.5 bg-brand-100 text-brand-800 hover:bg-brand-200 truncate"
+                    className="block truncate rounded bg-brand-100 px-1 py-0.5 text-xs leading-tight text-brand-800 hover:bg-brand-200"
                     title={event.title}
                   >
                     {event.title}

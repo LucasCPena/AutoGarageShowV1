@@ -87,17 +87,8 @@ export default function AdminPage() {
           <AdminBannersPanel
             token={token}
             fixedSection="home"
-            title="Banners Topo Home"
-            description="Gestao dos banners exibidos no topo da home."
-          />
-        </div>
-
-        <div className="mt-10">
-          <AdminBannersPanel
-            token={token}
-            fixedSection="listings"
-            title="Banners Anuncios"
-            description="Gestao dos banners da area de classificados."
+            title="Banner de Fundo da Home"
+            description="Use apenas para trocar a imagem de fundo do topo da Home."
           />
         </div>
       </Container>

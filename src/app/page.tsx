@@ -11,7 +11,6 @@ import { formatCurrencyBRL } from "@/lib/format";
 import { fetchJson } from "@/lib/fetch-json";
 import { normalizeAssetReference } from "@/lib/site-url";
 import { useAuth } from "@/lib/useAuth";
-import CalendarWidget from "@/components/CalendarWidget";
 import { generateEventOccurrences } from "@/lib/eventRecurrence";
 import HeroSlider from "@/components/HeroSlider";
 import { toYouTubeEmbedUrl } from "@/lib/youtube";
@@ -316,10 +315,7 @@ export default function HomePage() {
       if (aFeatured !== bFeatured) return aFeatured ? -1 : 1;
       return new Date(a.nextOccurrence).getTime() - new Date(b.nextOccurrence).getTime();
     })
-    .slice(0, 6);
-
-  const upcomingEventsOnly = upcoming.map(({ event }) => event);
-  const liveEvent = upcoming.find(({ event }) => Boolean(event.liveUrl))?.event;
+    .slice(0, 6);  const liveEvent = upcoming.find(({ event }) => Boolean(event.liveUrl))?.event;
   const liveEmbedUrl = toYouTubeEmbedUrl(liveEvent?.liveUrl);
 
   const featured = listings
@@ -341,7 +337,7 @@ export default function HomePage() {
   return (
     <>
       <section
-        className="border-b border-brand-900/30 bg-slate-900/80"
+        className="min-h-[420px] border-b border-brand-900/30 bg-slate-900/80"
         style={{
           backgroundImage:
             `linear-gradient(110deg, rgba(10, 12, 10, 0.9), rgba(67, 64, 3, 0.72)), url('${heroBackgroundImage}')`,
@@ -349,7 +345,7 @@ export default function HomePage() {
           backgroundPosition: "center"
         }}
       >
-        <Container className="py-14">
+        <Container className="py-16 md:py-20">
           <div className="grid gap-10 md:grid-cols-2 md:items-center">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white">
@@ -433,24 +429,7 @@ export default function HomePage() {
           </section>
         ) : null}
 
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-slate-900">Calendário de Eventos</h2>
-            <Link
-              href="/eventos/calendario"
-              className="text-brand-600 hover:text-brand-800 font-semibold"
-            >
-              Ver Calendário Completo →
-            </Link>
-          </div>
-          <CalendarWidget 
-            events={upcomingEventsOnly} 
-            onEventClick={(event) => {
-              // Redirecionar para a página do evento
-              window.location.href = `/eventos/${event.slug}`;
-            }}
-          />
-        </div>
+        
         
         {/* Próximos Eventos */}
         {config.showUpcomingEvents && upcoming.length > 0 && (
@@ -458,10 +437,10 @@ export default function HomePage() {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-slate-900">Próximos Eventos</h2>
               <Link
-                href="/eventos/calendario"
+                href="/eventos"
                 className="text-brand-600 hover:text-brand-800 font-semibold"
               >
-                Ver Calendário Completo →
+                Ver Eventos →
               </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

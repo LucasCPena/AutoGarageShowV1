@@ -71,10 +71,20 @@ export default function AdminBannersPanel({
     [banners, fixedSection]
   );
 
-  const panelTitle = title ?? "Destaques / Banners";
+  const backgroundMode = fixedSection === "home";
+  const bannersToRender = useMemo(() => {
+    if (!backgroundMode) return sorted;
+    const active = sorted.find((item) => item.status === "active");
+    return active ? [active] : sorted.slice(0, 1);
+  }, [backgroundMode, sorted]);
+
+  const panelTitle =
+    title ?? (backgroundMode ? "Banner de Fundo da Home" : "Destaques / Banners");
   const panelDescription =
     description ??
-    "Ate 3 imagens em destaque, com data de exposicao (start/end) e rotacao automatica no site.";
+    (backgroundMode
+      ? "Use esta area para trocar somente o banner de fundo do topo da home."
+      : "Ate 3 imagens em destaque, com data de exposicao (start/end) e rotacao automatica no site.");
 
   function authHeaders(): Record<string, string> {
     return token ? { Authorization: `Bearer ${token}` } : {};
@@ -154,21 +164,36 @@ export default function AdminBannersPanel({
         throw new Error("Informe a URL da imagem ou faca upload de um arquivo.");
       }
 
-      const res = await fetch("/api/banners", {
-        method: "POST",
+      const payload = {
+        ...form,
+        section: fixedSection ?? form.section,
+        image: form.image.trim(),
+        position: backgroundMode ? 1 : Number(form.position) || 1,
+        startDate: backgroundMode ? new Date().toISOString() : form.startDate || new Date().toISOString(),
+        endDate: backgroundMode ? undefined : form.endDate || undefined,
+        status: "active" as const
+      };
+
+      const existingBackground = backgroundMode
+        ? sorted.find((item) => item.status === "active") || sorted[0]
+        : undefined;
+      const endpoint = existingBackground ? `/api/banners/${existingBackground.id}` : "/api/banners";
+      const method = existingBackground ? "PUT" : "POST";
+
+      const res = await fetch(endpoint, {
+        method,
         headers: jsonHeaders(),
-        body: JSON.stringify({
-          ...form,
-          section: fixedSection ?? form.section,
-          image: form.image.trim(),
-          position: Number(form.position) || 1,
-          startDate: form.startDate || new Date().toISOString(),
-          endDate: form.endDate || undefined
-        })
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erro ao criar banner.");
-      setBanners((prev) => [...prev, data.banner]);
+      if (!res.ok) throw new Error(data.error || "Erro ao salvar banner.");
+
+      if (existingBackground) {
+        setBanners((prev) => prev.map((item) => (item.id === existingBackground.id ? data.banner : item)));
+      } else {
+        setBanners((prev) => [...prev, data.banner]);
+      }
+
       setForm({
         title: "",
         image: "",
@@ -179,11 +204,14 @@ export default function AdminBannersPanel({
         endDate: "",
         status: "active"
       });
-      setMessage({ type: "success", text: "Banner criado." });
+      setMessage({
+        type: "success",
+        text: backgroundMode ? "Banner de fundo atualizado." : "Banner criado."
+      });
     } catch (error) {
       setMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Erro ao criar banner."
+        text: error instanceof Error ? error.message : "Erro ao salvar banner."
       });
     } finally {
       setBusy(false);
@@ -309,69 +337,83 @@ export default function AdminBannersPanel({
           </div>
         ) : null}
 
-        {fixedSection ? (
-          <label className="grid gap-1">
-            <span className="text-sm font-semibold text-slate-900">Secao</span>
-            <input
-              readOnly
-              className="h-11 rounded-md border border-slate-300 bg-slate-50 px-3 text-sm text-slate-700"
-              value={sectionLabel(fixedSection)}
-            />
-          </label>
+        {backgroundMode ? (
+          <div className="md:col-span-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+            Este modulo altera apenas o banner de fundo do topo da Home.
+          </div>
         ) : (
-          <label className="grid gap-1">
-            <span className="text-sm font-semibold text-slate-900">Secao</span>
-            <select
-              className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-              value={form.section}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, section: e.target.value as BannerSection }))
-              }
-            >
-              <option value="home">Home</option>
-              <option value="events">Eventos</option>
-              <option value="listings">Classificados</option>
-            </select>
-          </label>
+          <>
+            {fixedSection ? (
+              <label className="grid gap-1">
+                <span className="text-sm font-semibold text-slate-900">Secao</span>
+                <input
+                  readOnly
+                  className="h-11 rounded-md border border-slate-300 bg-slate-50 px-3 text-sm text-slate-700"
+                  value={sectionLabel(fixedSection)}
+                />
+              </label>
+            ) : (
+              <label className="grid gap-1">
+                <span className="text-sm font-semibold text-slate-900">Secao</span>
+                <select
+                  className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+                  value={form.section}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, section: e.target.value as BannerSection }))
+                  }
+                >
+                  <option value="home">Home</option>
+                  <option value="events">Eventos</option>
+                  <option value="listings">Classificados</option>
+                </select>
+              </label>
+            )}
+
+            <label className="grid gap-1">
+              <span className="text-sm font-semibold text-slate-900">Posicao</span>
+              <input
+                type="number"
+                className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+                value={form.position}
+                onChange={(e) => setForm((f) => ({ ...f, position: Number(e.target.value) }))}
+                min={1}
+              />
+            </label>
+
+            <label className="grid gap-1">
+              <span className="text-sm font-semibold text-slate-900">Inicio (exposicao)</span>
+              <input
+                type="datetime-local"
+                className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+                value={form.startDate}
+                onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
+              />
+            </label>
+
+            <label className="grid gap-1">
+              <span className="text-sm font-semibold text-slate-900">Fim (exposicao)</span>
+              <input
+                type="datetime-local"
+                className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+                value={form.endDate}
+                onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
+              />
+            </label>
+          </>
         )}
-
-        <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Posicao</span>
-          <input
-            type="number"
-            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-            value={form.position}
-            onChange={(e) => setForm((f) => ({ ...f, position: Number(e.target.value) }))}
-            min={1}
-          />
-        </label>
-
-        <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Inicio (exposicao)</span>
-          <input
-            type="datetime-local"
-            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-            value={form.startDate}
-            onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
-          />
-        </label>
-
-        <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Fim (exposicao)</span>
-          <input
-            type="datetime-local"
-            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-            value={form.endDate}
-            onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
-          />
-        </label>
 
         <button
           type="submit"
           disabled={busy || uploadingImage}
           className="md:col-span-2 inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
         >
-          {busy ? "Salvando..." : uploadingImage ? "Enviando imagem..." : "Adicionar destaque"}
+          {busy
+            ? "Salvando..."
+            : uploadingImage
+              ? "Enviando imagem..."
+              : backgroundMode
+                ? "Salvar banner de fundo"
+                : "Adicionar destaque"}
         </button>
       </form>
 
@@ -383,12 +425,14 @@ export default function AdminBannersPanel({
             title={fixedSection ? `Nenhum banner em ${sectionLabel(fixedSection)}` : "Nenhum destaque"}
             variant="info"
           >
-            {fixedSection
-              ? "Crie banners para esta secao."
-              : "Crie ate 3 imagens para o carrossel."}
+            {backgroundMode
+              ? "Defina uma imagem para o fundo da home."
+              : fixedSection
+                ? "Crie banners para esta secao."
+                : "Crie ate 3 imagens para o carrossel."}
           </Notice>
         ) : (
-          sorted.map((banner) => (
+          bannersToRender.map((banner) => (
             <div
               key={banner.id}
               className="rounded-xl border border-slate-200 bg-slate-50 p-4 flex flex-wrap items-center gap-3 justify-between"
@@ -396,8 +440,9 @@ export default function AdminBannersPanel({
               <div className="min-w-[200px]">
                 <div className="text-sm font-semibold text-slate-900">{banner.title}</div>
                 <div className="text-xs text-slate-600">
-                  {banner.section} • posicao {banner.position} •{" "}
-                  {isActiveNow(banner) ? "Ativo agora" : banner.status}
+                  {backgroundMode
+                    ? `fundo home - ${isActiveNow(banner) ? "Ativo agora" : banner.status}`
+                    : `${banner.section} - posicao ${banner.position} - ${isActiveNow(banner) ? "Ativo agora" : banner.status}`}
                 </div>
                 <div className="text-xs text-slate-500">
                   {banner.startDate

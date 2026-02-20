@@ -1,15 +1,16 @@
 ﻿import type { Metadata } from "next";
 import Link from "next/link";
 
+import Calendar from "@/components/Calendar";
 import Container from "@/components/Container";
 import EventCrudActions from "@/components/EventCrudActions";
+import HeroSlider from "@/components/HeroSlider";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { formatDateLong, formatTime } from "@/lib/date";
 import { db, Event } from "@/lib/database";
 import { formatRecurrence, generateEventOccurrences, getSpanDays } from "@/lib/eventRecurrence";
 import { normalizeAssetReference } from "@/lib/site-url";
-import HeroSlider from "@/components/HeroSlider";
 
 export const metadata: Metadata = {
   title: "Eventos",
@@ -39,10 +40,10 @@ export default async function EventsPage() {
 
   const now = Date.now();
   const limit = now + 30 * 24 * 60 * 60 * 1000;
+  const approvedEvents = allEvents.filter((e) => e.status === "approved");
 
   const upcoming = (
-    allEvents
-      .filter((e) => e.status === "approved")
+    approvedEvents
       .map((event) => {
         const occurrences = generateEventOccurrences(event.startAt, event.recurrence, event.endAt);
         const nextOccurrence = occurrences.find((iso) => {
@@ -89,6 +90,10 @@ export default async function EventsPage() {
           Eventos enviados passam por aprovacao manual. Apenas eventos aprovados geram URL publica amigavel. Eventos
           recorrentes podem gerar datas automaticamente por ate 12 meses.
         </Notice>
+
+        <section className="mt-8">
+          <Calendar events={approvedEvents} />
+        </section>
 
         <div className="mt-8 grid gap-3">
           {upcoming.map(({ event, nextOccurrence }) => (

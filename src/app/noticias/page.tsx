@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
@@ -41,6 +41,7 @@ export default function NewsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCrud, setShowCrud] = useState(false);
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (authLoading) return;
@@ -119,47 +120,84 @@ export default function NewsPage() {
         ) : null}
 
         <div className="mt-8 grid gap-4 lg:grid-cols-2">
-          {items.map((article) => (
-            <article
-              key={article.id}
-              className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-0"
-            >
-              <Link href={`/noticias/${article.slug}`} className="group block sm:flex">
-                <Image
-                  src={getNewsCoverSrc(article.coverImage)}
-                  alt={article.title}
-                  width={1200}
-                  height={800}
-                  className="h-48 w-full object-cover sm:h-auto sm:w-56"
-                />
-                <div className="flex-1 p-5">
-                  <div className="text-lg font-semibold text-slate-900 group-hover:text-brand-800">
-                    {article.title}
-                  </div>
-                  <div className="mt-2 text-sm text-slate-600">{article.excerpt}</div>
-                  <div className="mt-4 text-xs text-slate-500">
-                    Por {article.author} • {formatDateLong(article.createdAt)}
-                  </div>
-                </div>
-              </Link>
+          {items.map((article) => {
+            const expanded = Boolean(expandedCards[article.id]);
+            const canExpand = article.excerpt.trim().length > 220;
 
-              {user?.role === "admin" ? (
-                <div className="border-t border-slate-200 bg-slate-50 px-5 py-3">
-                  <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Status: {article.status}
+            return (
+              <article
+                key={article.id}
+                className="overflow-hidden rounded-xl border border-slate-200 bg-white"
+              >
+                <div className="sm:flex">
+                  <Link href={`/noticias/${article.slug}`} className="group block shrink-0 sm:w-52">
+                    <Image
+                      src={getNewsCoverSrc(article.coverImage)}
+                      alt={article.title}
+                      width={1200}
+                      height={800}
+                      className="h-36 w-full object-cover sm:h-full sm:min-h-[190px]"
+                    />
+                  </Link>
+
+                  <div className="flex-1 p-4">
+                    <Link
+                      href={`/noticias/${article.slug}`}
+                      className="text-base font-semibold text-slate-900 hover:text-brand-800"
+                    >
+                      {article.title}
+                    </Link>
+
+                    <p className={`mt-2 text-sm text-slate-600 ${expanded ? "" : "line-clamp-4"}`}>
+                      {article.excerpt}
+                    </p>
+
+                    {canExpand ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedCards((current) => ({
+                            ...current,
+                            [article.id]: !current[article.id]
+                          }))
+                        }
+                        className="mt-1 text-xs font-semibold text-brand-700 hover:text-brand-800"
+                      >
+                        {expanded ? "Ler menos" : "Leia mais"}
+                      </button>
+                    ) : null}
+
+                    <div className="mt-3 text-xs text-slate-500">
+                      Por {article.author} • {formatDateLong(article.createdAt)}
+                    </div>
+
+                    <Link
+                      href={`/noticias/${article.slug}`}
+                      className="mt-2 inline-flex text-xs font-semibold text-brand-700 hover:text-brand-800"
+                    >
+                      Ler noticia completa
+                    </Link>
                   </div>
-                  <NewsCrudActions
-                    newsId={article.id}
-                    editHref={`/noticias/gerenciar/${article.id}`}
-                    compact
-                    onDeleted={() =>
-                      setNews((current) => current.filter((item) => item.id !== article.id))
-                    }
-                  />
                 </div>
-              ) : null}
-            </article>
-          ))}
+
+                {user?.role === "admin" ? (
+                  <div className="border-t border-slate-200 bg-slate-50 px-4 py-3">
+                    <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Status: {article.status}
+                    </div>
+                    <NewsCrudActions
+                      newsId={article.id}
+                      editHref={`/noticias/gerenciar/${article.id}`}
+                      compact
+                      onDeleted={() =>
+                        setNews((current) => current.filter((item) => item.id !== article.id))
+                      }
+                    />
+                  </div>
+                ) : null}
+              </article>
+            );
+          })}
         </div>
       </Container>
     </>

@@ -242,6 +242,10 @@ export async function PUT(
       nextFeaturedUntil = defaultFeaturedUntil(baseStart.toISOString());
     }
 
+    if (canManageFeatured && nextFeatured && nextStatus === 'pending') {
+      nextStatus = 'approved';
+    }
+
     if (!nextFeatured) {
       nextFeaturedUntil = undefined;
     }
