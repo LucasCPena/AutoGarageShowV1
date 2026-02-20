@@ -1,7 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 
-import { requireAuth } from '@/lib/auth-middleware';
-import { db, isMysqlRequiredError } from '@/lib/database';
+import { getUserFromToken, requireAuth } from '@/lib/auth-middleware';
+import { db, isMysqlRequiredError, type Listing } from '@/lib/database';
 import { onlyDigits, validateBrazilianDocument } from '@/lib/document';
 
 export async function GET(request: NextRequest) {
@@ -16,11 +16,23 @@ export async function GET(request: NextRequest) {
     const priceMin = searchParams.get('priceMin');
     const priceMax = searchParams.get('priceMax');
     const mileageMax = searchParams.get('mileageMax');
+    const user = getUserFromToken(request);
+    const isAdmin = user?.role === 'admin';
 
     let listings = await db.listings.getAll();
 
     if (status) {
-      listings = listings.filter((listing) => listing.status === status);
+      if (isAdmin) {
+        listings = listings.filter((listing) => listing.status === status);
+      } else if (status === 'approved' || status === 'active') {
+        listings = listings.filter((listing) => listing.status === status);
+      } else {
+        listings = [];
+      }
+    } else if (!isAdmin) {
+      listings = listings.filter(
+        (listing) => listing.status === 'approved' || listing.status === 'active'
+      );
     }
 
     if (featured === 'true') {
@@ -134,12 +146,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const validListingStatus: Listing['status'][] = [
+      'pending',
+      'approved',
+      'active',
+      'inactive',
+      'sold',
+      'rejected'
+    ];
+    const requestedStatusRaw =
+      typeof listingData.status === 'string' ? listingData.status : undefined;
+    const requestedStatus =
+      requestedStatusRaw &&
+      validListingStatus.includes(requestedStatusRaw as Listing['status'])
+        ? (requestedStatusRaw as Listing['status'])
+        : undefined;
+    const status = user.role === 'admin' ? requestedStatus || 'active' : 'pending';
+
+    const featured = user.role === 'admin' ? Boolean(listingData.featured) : false;
+    const featuredUntilInput =
+      user.role === 'admin' ? String(listingData.featuredUntil || '').trim() : '';
+    let featuredUntil: string | undefined;
+    if (featured && featuredUntilInput) {
+      const parsed = new Date(featuredUntilInput);
+      if (!Number.isFinite(parsed.getTime())) {
+        return NextResponse.json(
+          { error: 'Data de destaque invalida.' },
+          { status: 400 }
+        );
+      }
+      featuredUntil = parsed.toISOString();
+    }
+
     const listing = await db.listings.create({
       ...listingData,
       title,
       slug,
-      status: 'pending',
-      featured: false,
+      status,
+      featured,
+      featuredUntil: featured ? featuredUntil : undefined,
       createdBy: user.id,
       document: normalizedDocument || rawDocument,
       images: listingData.images || [],
@@ -154,7 +199,13 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(
-      { listing, message: 'Classificado criado com sucesso' },
+      {
+        listing,
+        message:
+          user.role === 'admin'
+            ? 'Classificado criado e publicado automaticamente (admin).'
+            : 'Classificado criado com sucesso'
+      },
       { status: 201 }
     );
   } catch (error) {

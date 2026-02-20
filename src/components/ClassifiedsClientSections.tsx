@@ -4,9 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 
 import Notice from "@/components/Notice";
+import type { Listing } from "@/lib/database";
 import { formatCurrencyBRL } from "@/lib/format";
 import { applyListingOverrides } from "@/lib/listingOverrides";
-import type { Listing } from "@/lib/mockData";
 import { normalizeAssetReference } from "@/lib/site-url";
 import { useListingOverrides } from "@/lib/useListingOverrides";
 import { useSiteSettings } from "@/lib/useSiteSettings";

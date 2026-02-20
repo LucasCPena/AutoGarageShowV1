@@ -27,7 +27,7 @@ export function requireAuth(request: NextRequest): User {
   const user = getUserFromToken(request);
   
   if (!user) {
-    throw new Error('Não autorizado');
+    throw new Error('Nao autorizado');
   }
   
   return user;

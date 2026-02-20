@@ -142,7 +142,7 @@ export default function AdminListingsPanel({ listings, token, onListingsChange }
     contactName: "",
     contactEmail: "",
     contactPhone: "",
-    status: "pending",
+    status: "active",
     featured: false,
     featuredUntil: "",
     images: ""
@@ -211,7 +211,7 @@ export default function AdminListingsPanel({ listings, token, onListingsChange }
       contactName: "",
       contactEmail: "",
       contactPhone: "",
-      status: "pending",
+      status: "active",
       featured: false,
       featuredUntil: "",
       images: ""
@@ -396,6 +396,9 @@ export default function AdminListingsPanel({ listings, token, onListingsChange }
 
         updateListingsState((prev) => [createdListing, ...prev]);
         setMessage({ type: "success", text: "AnÃºncio criado com sucesso." });
+        if (createdListing.status !== "pending") {
+          setActiveTab("approved");
+        }
       } else if (editingId) {
         const response = await fetch(`/api/listings/${editingId}`, {
           method: "PUT",
@@ -483,10 +486,25 @@ export default function AdminListingsPanel({ listings, token, onListingsChange }
         type: 'success',
         text: `Anúncio ${action === 'approve' ? 'aprovado' : 'rejeitado'} com sucesso!`
       });
+      // Atualiza o item alterado e em seguida sincroniza a lista completa com o backend.
       if (data.listing) {
         updateListingsState((prev) =>
           prev.map((item) => (item.id === listingId ? data.listing : item))
         );
+      }
+
+      const syncResponse = await fetch('/api/listings', {
+        headers: {
+          Authorization: `Bearer ${authToken}`
+        }
+      });
+      const syncData = await syncResponse.json();
+      if (syncResponse.ok && Array.isArray(syncData.listings)) {
+        updateListingsState(syncData.listings);
+      }
+
+      if (action === 'approve') {
+        setActiveTab('approved');
       }
 
     } catch (error) {

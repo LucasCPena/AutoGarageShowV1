@@ -2,6 +2,7 @@
 import Link from "next/link";
 
 import Container from "@/components/Container";
+import EventsAdminSection from "@/components/EventsAdminSection";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { formatDateLong, formatTime } from "@/lib/date";
@@ -155,6 +156,8 @@ export default async function EventsPage() {
             </Link>
           </div>
         </div>
+
+        <EventsAdminSection />
       </Container>
     </>
   );

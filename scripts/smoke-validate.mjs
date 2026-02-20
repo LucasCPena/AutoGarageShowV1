@@ -82,7 +82,7 @@ async function run() {
 
   // 3) Valid CPF accepted
   {
-    const { response, json } = await request("/api/auth/register", {
+    const register = await request("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -92,18 +92,23 @@ async function run() {
         document: "52998224725"
       })
     });
-    userToken = json?.token || null;
+    const login = await request("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: userEmail, password })
+    });
+    userToken = login.json?.token || null;
     addResult(
       "register_non_admin_valid_cpf",
-      response.status === 201 && Boolean(userToken),
-      response.status,
+      register.response.status === 201 && login.response.status === 200 && Boolean(userToken),
+      register.response.status,
       "Cadastro com CPF valido"
     );
   }
 
   // 4) Admin bypass CPF
   {
-    const { response, json } = await request("/api/auth/register", {
+    const register = await request("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -112,12 +117,17 @@ async function run() {
         password
       })
     });
-    adminToken = json?.token || null;
-    const isAdmin = json?.user?.role === "admin";
+    const login = await request("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: adminEmail, password })
+    });
+    adminToken = login.json?.token || null;
+    const isAdmin = login.json?.user?.role === "admin";
     addResult(
       "register_admin_without_cpf",
-      response.status === 201 && Boolean(adminToken) && isAdmin,
-      response.status,
+      register.response.status === 201 && login.response.status === 200 && Boolean(adminToken) && isAdmin,
+      register.response.status,
       "Admin sem CPF"
     );
   }
@@ -252,12 +262,16 @@ async function run() {
     });
   }
   {
-    const { response, bodyText } = await request("/eventos/calendario");
+    const calendarApi = await request("/api/calendar");
+    const events = Array.isArray(calendarApi.json?.events) ? calendarApi.json.events : [];
+    const created = events.filter((event) =>
+      String(event?.title || "").startsWith(`Evento Calendar ${ts}-`)
+    );
     addResult(
-      "calendar_has_more_button_text",
-      response.status === 200 && bodyText.includes("mais"),
-      response.status,
-      "Texto de expansao no calendario"
+      "calendar_more_than_two_events_data",
+      calendarApi.response.status === 200 && created.length >= 3,
+      calendarApi.response.status,
+      `eventos_mesmo_dia=${created.length}`
     );
   }
 
