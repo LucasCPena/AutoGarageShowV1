@@ -22,6 +22,31 @@ function isAuthError(error: unknown) {
   return message.includes("acesso negado") || message.includes("autoriz");
 }
 
+function organizersDbErrorMessage(error: unknown) {
+  const code =
+    typeof error === "object" && error && "code" in error
+      ? String((error as { code?: unknown }).code ?? "").toUpperCase()
+      : "";
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+
+  const isSchemaError =
+    code === "ER_NO_SUCH_TABLE" ||
+    (message.includes("table") && message.includes("organizers"));
+  if (isSchemaError) {
+    return "Tabela de organizadores ausente no banco. Execute a migracao do schema MySQL.";
+  }
+
+  const isPermissionError =
+    code === "ER_TABLEACCESS_DENIED_ERROR" ||
+    code === "ER_DBACCESS_DENIED_ERROR" ||
+    message.includes("access denied");
+  if (isPermissionError) {
+    return "Sem permissao no MySQL para criar/usar tabela de organizadores.";
+  }
+
+  return null;
+}
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: { id: string } }
@@ -34,6 +59,10 @@ export async function GET(
     return NextResponse.json({ organizer });
   } catch (error) {
     console.error("Erro ao buscar organizador:", error);
+    const dbMessage = organizersDbErrorMessage(error);
+    if (dbMessage) {
+      return NextResponse.json({ error: dbMessage }, { status: 500 });
+    }
     if (isMysqlRequiredError(error)) {
       return NextResponse.json(
         { error: "Banco de dados indisponivel no momento." },
@@ -96,6 +125,10 @@ export async function PUT(
     return NextResponse.json({ organizer, message: "Organizador atualizado com sucesso" });
   } catch (error) {
     console.error("Erro ao atualizar organizador:", error);
+    const dbMessage = organizersDbErrorMessage(error);
+    if (dbMessage) {
+      return NextResponse.json({ error: dbMessage }, { status: 500 });
+    }
     if (isMysqlRequiredError(error)) {
       return NextResponse.json(
         { error: "Banco de dados indisponivel no momento." },
@@ -123,6 +156,10 @@ export async function DELETE(
     return NextResponse.json({ message: "Organizador excluido com sucesso" });
   } catch (error) {
     console.error("Erro ao excluir organizador:", error);
+    const dbMessage = organizersDbErrorMessage(error);
+    if (dbMessage) {
+      return NextResponse.json({ error: dbMessage }, { status: 500 });
+    }
     if (isMysqlRequiredError(error)) {
       return NextResponse.json(
         { error: "Banco de dados indisponivel no momento." },

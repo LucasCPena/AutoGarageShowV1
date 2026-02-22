@@ -80,6 +80,7 @@ async function queryOne<T = Row>(sql: string, params: any[] = []): Promise<T | n
 }
 
 const tableColumnsCache = new Map<string, Set<string> | null>();
+let organizersTableEnsured = false;
 
 async function getTableColumnsSafe(table: string): Promise<Set<string> | null> {
   if (tableColumnsCache.has(table)) {
@@ -100,6 +101,20 @@ async function getTableColumnsSafe(table: string): Promise<Set<string> | null> {
     tableColumnsCache.set(table, null);
     return null;
   }
+}
+
+async function ensureOrganizersTable() {
+  if (organizersTableEnsured) return;
+  await query(
+    `CREATE TABLE IF NOT EXISTS organizers (
+      id VARCHAR(36) PRIMARY KEY,
+      logo VARCHAR(255) NOT NULL,
+      link VARCHAR(255),
+      created_at VARCHAR(32) NOT NULL,
+      updated_at VARCHAR(32) NOT NULL
+    )`
+  );
+  organizersTableEnsured = true;
 }
 
 function parseJson<T>(value: unknown, fallback: T): T {
@@ -883,12 +898,17 @@ export const dbMysql = {
     }
   },
   organizers: {
-    getAll: async () => (await query("SELECT * FROM organizers ORDER BY created_at DESC")).map(mapOrganizer),
+    getAll: async () => {
+      await ensureOrganizersTable();
+      return (await query("SELECT * FROM organizers ORDER BY created_at DESC")).map(mapOrganizer);
+    },
     findById: async (id: string) => {
+      await ensureOrganizersTable();
       const row = await queryOne("SELECT * FROM organizers WHERE id = ?", [id]);
       return row ? mapOrganizer(row) : null;
     },
     create: async (organizer: Omit<Organizer, "id" | "createdAt" | "updatedAt">) => {
+      await ensureOrganizersTable();
       const now = nowIso();
       const newOrganizer: Organizer = {
         ...organizer,
@@ -910,6 +930,7 @@ export const dbMysql = {
       return newOrganizer;
     },
     update: async (id: string, updates: Partial<Organizer>) => {
+      await ensureOrganizersTable();
       const current = await dbMysql.organizers.findById(id);
       if (!current) return null;
       const next: Organizer = {
@@ -929,6 +950,7 @@ export const dbMysql = {
       return next;
     },
     delete: async (id: string) => {
+      await ensureOrganizersTable();
       await query("DELETE FROM organizers WHERE id = ?", [id]);
       return true;
     }
