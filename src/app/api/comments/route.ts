@@ -30,13 +30,13 @@ export async function GET(request: NextRequest) {
     const comments = await db.comments.getAll();
     return NextResponse.json({ comments });
   } catch (error) {
-    console.error("Erro ao buscar comentarios:", error);
     if (error instanceof Error) {
       const lowerMessage = error.message.toLowerCase();
       if (lowerMessage.includes("nao autorizado") || lowerMessage.includes("acesso negado")) {
         return NextResponse.json({ error: error.message }, { status: 401 });
       }
     }
+    console.error("Erro ao buscar comentarios:", error);
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }

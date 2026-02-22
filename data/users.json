@@ -13,12 +13,22 @@
   {
     "id": "user-default",
     "name": "Usuário Teste",
-    "email": "user@teste.com", 
+    "email": "user@teste.com",
     "password": "user123",
     "role": "user",
     "document": "12345678909",
     "phone": "(21) 91234-5678",
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "name": "QA User 1771777189126",
+    "email": "qa.user.1771777189126@teste.com",
+    "password": "123456",
+    "role": "user",
+    "document": "52998224725",
+    "id": "2d5891db-2662-46e2-9aa9-34b71bd512a6",
+    "createdAt": "2026-02-22T16:19:49.310Z",
+    "updatedAt": "2026-02-22T16:19:49.310Z"
   }
 ]
