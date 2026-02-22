@@ -7,6 +7,7 @@ import ListingCrudActions from "@/components/ListingCrudActions";
 import Notice from "@/components/Notice";
 import type { Listing } from "@/lib/database";
 import { formatCurrencyBRL } from "@/lib/format";
+import { listingImageAlt } from "@/lib/image-alt";
 import { applyListingOverrides } from "@/lib/listingOverrides";
 import { normalizeAssetReference } from "@/lib/site-url";
 import { useAuth } from "@/lib/useAuth";
@@ -98,7 +99,7 @@ function ListingCard({
       >
         <Image
           src={getListingImageSrc(listing.images)}
-          alt={listing.title}
+          alt={listingImageAlt(listing.title)}
           width={1200}
           height={800}
           className="h-44 w-full object-cover"

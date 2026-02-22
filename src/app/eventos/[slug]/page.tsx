@@ -9,6 +9,7 @@ import PageIntro from "@/components/PageIntro";
 import { formatDateLong, formatTime } from "@/lib/date";
 import { db } from "@/lib/database";
 import { formatRecurrence, generateEventOccurrences, getSpanDays } from "@/lib/eventRecurrence";
+import { eventImageAlt } from "@/lib/image-alt";
 import { eventJsonLd } from "@/lib/schema";
 import { normalizeAssetReference } from "@/lib/site-url";
 import { toYouTubeEmbedUrl } from "@/lib/youtube";
@@ -118,7 +119,7 @@ export default async function EventDetailPage({ params }: Props) {
             <section className="rounded-2xl border border-slate-200 bg-white p-6">
               <img
                 src={heroImage}
-                alt={event.title}
+                alt={eventImageAlt(event.title)}
                 className="mb-4 h-52 w-full rounded-xl object-cover border border-slate-200"
               />
               <h2 className="text-lg font-semibold text-slate-900">Sobre o evento</h2>

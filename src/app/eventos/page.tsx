@@ -4,18 +4,18 @@ import Link from "next/link";
 import Calendar from "@/components/Calendar";
 import Container from "@/components/Container";
 import EventCrudActions from "@/components/EventCrudActions";
-import HeroSlider from "@/components/HeroSlider";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { formatDateLong, formatTime } from "@/lib/date";
 import { db, Event } from "@/lib/database";
 import { formatRecurrence, generateEventOccurrences, getSpanDays } from "@/lib/eventRecurrence";
+import { eventImageAlt } from "@/lib/image-alt";
 import { normalizeAssetReference } from "@/lib/site-url";
 
 export const metadata: Metadata = {
   title: "Eventos",
   description:
-    "Calendario publico com eventos aprovados de carros antigos. Exibe apenas os proximos 30 dias."
+    "Eventos aprovados de carros antigos com navegacao mensal por setas."
 };
 
 export const dynamic = "force-dynamic";
@@ -64,8 +64,8 @@ export default async function EventsPage() {
   return (
     <>
       <PageIntro
-        title="Calendario de eventos"
-        subtitle="Mostrando apenas eventos aprovados nos proximos 30 dias (regra publica)."
+        title="Eventos"
+        subtitle="No topo do calendario, navegue por mes com as setas para anterior e proximo."
       >
         <Link
           href="/eventos/cadastrar"
@@ -75,25 +75,21 @@ export default async function EventsPage() {
         </Link>
       </PageIntro>
 
-      <Container className="mt-6">
-        <HeroSlider section="events" />
-      </Container>
-
       <Container className="py-10">
+        <section>
+          <Calendar events={approvedEvents} />
+        </section>
+
         {dbError ? (
-          <Notice title="Banco indisponivel" variant="warning">
+          <Notice title="Banco indisponivel" variant="warning" className="mt-6">
             Nao foi possivel carregar os eventos agora. Tente novamente em instantes.
           </Notice>
         ) : null}
 
-        <Notice title="Como funciona" variant="info">
+        <Notice title="Como funciona" variant="info" className="mt-6">
           Eventos enviados passam por aprovacao manual. Apenas eventos aprovados geram URL publica amigavel. Eventos
           recorrentes podem gerar datas automaticamente por ate 12 meses.
         </Notice>
-
-        <section className="mt-8">
-          <Calendar events={approvedEvents} />
-        </section>
 
         <div className="mt-8 grid gap-3">
           {upcoming.map(({ event, nextOccurrence }) => (
@@ -108,7 +104,7 @@ export default async function EventsPage() {
                       normalizeAssetReference(event.coverImage || event.images?.[0]) ||
                       "/placeholders/event.svg"
                     }
-                    alt={event.title}
+                    alt={eventImageAlt(event.title)}
                     className="mb-3 h-28 w-full max-w-xs rounded-lg border border-slate-200 object-cover"
                   />
                   <div className="text-sm text-slate-500">

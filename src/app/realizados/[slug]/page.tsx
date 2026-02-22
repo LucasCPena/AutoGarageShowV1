@@ -7,6 +7,7 @@ import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { formatDateLong } from "@/lib/date";
 import { db } from "@/lib/database";
+import { eventImageAlt } from "@/lib/image-alt";
 import { normalizeAssetReference } from "@/lib/site-url";
 
 type Props = {
@@ -88,7 +89,7 @@ export default async function PastEventDetailPage({ params }: Props) {
             >
               <img
                 src={src}
-                alt={`${event.title} - foto ${index + 1}`}
+                alt={eventImageAlt(event.title, index + 1)}
                 className="h-56 w-full object-cover"
                 loading="lazy"
               />

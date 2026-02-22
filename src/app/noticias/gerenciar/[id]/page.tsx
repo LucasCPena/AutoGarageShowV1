@@ -26,6 +26,7 @@ export default function NewsManagePage({ params }: Props) {
   const { token, user, isLoading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [formState, setFormState] = useState<NewsForm>({
@@ -144,6 +145,52 @@ export default function NewsManagePage({ params }: Props) {
     }
   }
 
+  async function handleImageUpload(file: File) {
+    if (!token) {
+      setError("Token de autenticacao nao encontrado.");
+      return;
+    }
+
+    setUploadingImage(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", "news");
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: formData
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao enviar imagem.");
+      }
+
+      setFormState((current) => ({
+        ...current,
+        coverImage: data.url || ""
+      }));
+      setMessage("Imagem enviada com sucesso.");
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : "Erro ao enviar imagem.");
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
+  async function handleImageFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    await handleImageUpload(file);
+  }
+
   return (
     <>
       <PageIntro
@@ -256,6 +303,20 @@ export default function NewsManagePage({ params }: Props) {
               </label>
 
               <label className="grid gap-1">
+                <span className="text-xs font-semibold text-slate-600">Imagem da capa (arquivo)</span>
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                  onChange={handleImageFileChange}
+                  disabled={saving || uploadingImage}
+                  className="h-10 rounded-md border border-slate-300 px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-brand-100 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-brand-700"
+                />
+                <span className="text-xs text-slate-500">
+                  Aceita jpg, jpeg, png e webp (ate 5MB). Medida recomendada: 1200 x 675 px.
+                </span>
+              </label>
+
+              <label className="grid gap-1">
                 <span className="text-xs font-semibold text-slate-600">URL da capa</span>
                 <input
                   className="h-10 rounded-md border border-slate-300 px-3 text-sm"
@@ -269,10 +330,10 @@ export default function NewsManagePage({ params }: Props) {
             <div className="flex justify-end">
               <button
                 type="submit"
-                disabled={saving}
+                disabled={saving || uploadingImage}
                 className="h-10 rounded-md bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
               >
-                {saving ? "Salvando..." : "Salvar"}
+                {saving ? "Salvando..." : uploadingImage ? "Enviando imagem..." : "Salvar"}
               </button>
             </div>
           </form>

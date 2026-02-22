@@ -313,7 +313,10 @@ export default function AdminBannersPanel({
             disabled={busy || uploadingImage}
             onChange={handleImageFileChange}
           />
-          <span className="text-xs text-slate-500">Aceita jpg, jpeg, png e webp (ate 5MB).</span>
+          <span className="text-xs text-slate-500">
+            Aceita jpg, jpeg, png e webp (ate 5MB).
+            {backgroundMode ? " Medida recomendada para o topo da home: 1920 x 640 px." : ""}
+          </span>
         </label>
 
         <label className="grid gap-1">

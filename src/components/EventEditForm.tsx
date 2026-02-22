@@ -8,6 +8,7 @@ import Notice from "@/components/Notice";
 import { useAuth } from "@/lib/useAuth";
 import type { Event, EventRecurrence, PastEvent } from "@/lib/database";
 import { formatDateShort } from "@/lib/date";
+import { eventImageAlt } from "@/lib/image-alt";
 
 type RecurrenceType = "single" | "weekly" | "monthly" | "monthly_weekday" | "annual" | "specific";
 
@@ -735,7 +736,14 @@ export default function EventEditForm({ eventId }: Props) {
           <span className="text-xs text-slate-500">Medida recomendada: 1200 x 675 px (16:9).</span>
           {coverImagePreview && (
             <div className="mt-2">
-              <Image src={coverImagePreview} alt="Preview" className="h-32 w-48 rounded-lg object-cover border border-slate-200" width={192} height={128} unoptimized />
+              <Image
+                src={coverImagePreview}
+                alt={eventImageAlt(eventData?.title || "capa do evento")}
+                className="h-32 w-48 rounded-lg object-cover border border-slate-200"
+                width={192}
+                height={128}
+                unoptimized
+              />
             </div>
           )}
         </label>
@@ -780,9 +788,13 @@ export default function EventEditForm({ eventId }: Props) {
 
             {pastImages.length > 0 ? (
               <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {pastImages.map((image) => (
+                {pastImages.map((image, index) => (
                   <div key={image} className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-                    <img src={image} alt="Foto do evento" className="h-28 w-full object-cover" />
+                    <img
+                      src={image}
+                      alt={eventImageAlt(eventData?.title, index + 1)}
+                      className="h-28 w-full object-cover"
+                    />
                     <button
                       type="button"
                       className="w-full border-t border-slate-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50"

@@ -11,6 +11,7 @@ import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { formatCurrencyBRL } from "@/lib/format";
 import { db } from "@/lib/database";
+import { listingImageAlt } from "@/lib/image-alt";
 import { listingJsonLd } from "@/lib/schema";
 import { normalizeAssetReference } from "@/lib/site-url";
 
@@ -139,7 +140,7 @@ export default async function ListingDetailPage({ params }: Props) {
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
               <Image
                 src={images[0]}
-                alt={listing.title}
+                alt={listingImageAlt(listing.title)}
                 width={1200}
                 height={800}
                 className="h-80 w-full object-cover"
@@ -155,7 +156,7 @@ export default async function ListingDetailPage({ params }: Props) {
                 >
                   <Image
                     src={src}
-                    alt={`${listing.title} - foto ${index + 2}`}
+                    alt={listingImageAlt(listing.title, index + 2)}
                     width={1200}
                     height={800}
                     className="h-48 w-full object-cover"

@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import Image from "next/image";
 
 import Notice from "@/components/Notice";
+import { eventImageAlt } from "@/lib/image-alt";
 import { useAuth } from "@/lib/useAuth";
 
 type RecurrenceType = "single" | "weekly" | "monthly" | "monthly_weekday" | "annual" | "specific";
@@ -548,7 +549,14 @@ export default function EventSubmissionForm() {
           <span className="text-xs text-slate-500">Medida recomendada da capa: 1200 x 675 px (16:9).</span>
           {coverImagePreview && (
             <div className="mt-2">
-              <Image src={coverImagePreview} alt="Preview" className="h-32 w-48 rounded-lg border border-slate-200 object-cover" width={192} height={128} unoptimized />
+              <Image
+                src={coverImagePreview}
+                alt={eventImageAlt("capa do evento")}
+                className="h-32 w-48 rounded-lg border border-slate-200 object-cover"
+                width={192}
+                height={128}
+                unoptimized
+              />
             </div>
           )}
         </label>

@@ -11,6 +11,7 @@ import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { formatDateLong } from "@/lib/date";
 import { fetchJson } from "@/lib/fetch-json";
+import { newsImageAlt } from "@/lib/image-alt";
 import { normalizeAssetReference } from "@/lib/site-url";
 import { useAuth } from "@/lib/useAuth";
 
@@ -133,7 +134,7 @@ export default function NewsPage() {
                   <Link href={`/noticias/${article.slug}`} className="group block shrink-0 sm:w-52">
                     <Image
                       src={getNewsCoverSrc(article.coverImage)}
-                      alt={article.title}
+                      alt={newsImageAlt(article.title)}
                       width={1200}
                       height={800}
                       className="h-36 w-full object-cover sm:h-full sm:min-h-[190px]"

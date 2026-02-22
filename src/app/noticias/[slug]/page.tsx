@@ -10,6 +10,7 @@ import NewsCrudActions from "@/components/NewsCrudActions";
 import PageIntro from "@/components/PageIntro";
 import { formatDateLong } from "@/lib/date";
 import { fetchJson } from "@/lib/fetch-json";
+import { newsImageAlt } from "@/lib/image-alt";
 import { normalizeAssetReference } from "@/lib/site-url";
 import { useAuth } from "@/lib/useAuth";
 
@@ -102,7 +103,7 @@ export default function NewsDetailPage({ params }: Props) {
           <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white">
             <Image
               src={getNewsCoverSrc(article.coverImage)}
-              alt={article.title}
+              alt={newsImageAlt(article.title)}
               width={1200}
               height={800}
               className="h-72 w-full object-cover"

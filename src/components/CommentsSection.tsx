@@ -1,88 +1,113 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import Notice from "@/components/Notice";
-import ReplyForm from "@/components/ReplyForm";
 import { formatDateLong } from "@/lib/date";
-import type { CommentDraft } from "@/lib/comments";
-import { useComments } from "@/lib/useComments";
 
 type Props = {
   listingId: string;
 };
 
+type CommentItem = {
+  id: string;
+  listingId: string;
+  name: string;
+  email: string;
+  message: string;
+  status: "pending" | "approved" | "rejected";
+  createdAt: string;
+  updatedAt: string;
+};
+
 export default function CommentsSection({ listingId }: Props) {
-  const { comments, addComment, getCommentsByListing } = useComments();
-
-  const approved = useMemo(
-    () => getCommentsByListing(listingId, "approved"),
-    [listingId, getCommentsByListing]
-  );
-
+  const [comments, setComments] = useState<CommentItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [author, setAuthor] = useState("");
+  const [email, setEmail] = useState("");
   const [content, setContent] = useState("");
   const [submitted, setSubmitted] = useState(false);
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
-  function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!author.trim() || !content.trim()) return;
-    addComment({ listingId, author: author.trim(), content: content.trim() });
-    setAuthor("");
-    setContent("");
-    setSubmitted(true);
+  async function loadApprovedComments() {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/comments?listingId=${encodeURIComponent(listingId)}`, {
+        cache: "no-store"
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao carregar comentarios.");
+      }
+      setComments(Array.isArray(data.comments) ? data.comments : []);
+    } catch (fetchError) {
+      setError(fetchError instanceof Error ? fetchError.message : "Erro ao carregar comentarios.");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function renderComment(c: any, depth = 0) {
-    return (
-      <div key={c.id} className={`${depth > 0 ? "ml-6 border-l-2 border-slate-200 pl-4" : ""}`}>
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="text-sm font-semibold text-slate-900">{c.author}</div>
-              <div className="mt-1 text-xs text-slate-600">{formatDateLong(c.createdAt)}</div>
-            </div>
-          </div>
-          <p className="mt-3 text-sm text-slate-700 whitespace-pre-wrap">{c.content}</p>
-          {depth === 0 && (
-            <button
-              type="button"
-              onClick={() => setReplyingTo(replyingTo === c.id ? null : c.id)}
-              className="mt-3 text-xs text-brand-700 hover:text-brand-800"
-            >
-              {replyingTo === c.id ? "Cancelar" : "Responder"}
-            </button>
-          )}
-        </div>
-        {replyingTo === c.id && (
-          <ReplyForm
-            listingId={listingId}
-            parentCommentId={c.id}
-            onCancel={() => setReplyingTo(null)}
-          />
-        )}
-        {c.replies && c.replies.length > 0 && (
-          <div className="mt-2 space-y-2">
-            {c.replies.map((r: any) => renderComment(r, depth + 1))}
-          </div>
-        )}
-      </div>
-    );
+  useEffect(() => {
+    loadApprovedComments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listingId]);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!author.trim() || !email.trim() || !content.trim()) return;
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/comments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          listingId,
+          name: author.trim(),
+          email: email.trim(),
+          message: content.trim()
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao enviar comentario.");
+      }
+
+      setAuthor("");
+      setEmail("");
+      setContent("");
+      setSubmitted(true);
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Erro ao enviar comentario.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6">
-      <div className="text-sm font-semibold text-slate-900">Comentários</div>
+      <div className="text-sm font-semibold text-slate-900">Comentarios</div>
       <p className="mt-2 text-sm text-slate-600">
-        Deixe uma pergunta ou comentário. Apenas comentários aprovados são exibidos.
+        Deixe uma pergunta ou comentario. Apenas comentarios aprovados sao exibidos.
       </p>
 
-      {submitted && (
+      {submitted ? (
         <Notice title="Enviado" variant="success" className="mt-4">
-          Seu comentário foi enviado e aguarda aprovação.
+          Seu comentario foi enviado e aguarda aprovacao.
         </Notice>
-      )}
+      ) : null}
+
+      {error ? (
+        <Notice title="Erro" variant="warning" className="mt-4">
+          {error}
+        </Notice>
+      ) : null}
 
       <form onSubmit={onSubmit} className="mt-6 grid gap-4">
         <label className="grid gap-1">
@@ -97,7 +122,19 @@ export default function CommentsSection({ listingId }: Props) {
         </label>
 
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Comentário</span>
+          <span className="text-sm font-semibold text-slate-900">Seu e-mail</span>
+          <input
+            required
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+            placeholder="voce@email.com"
+          />
+        </label>
+
+        <label className="grid gap-1">
+          <span className="text-sm font-semibold text-slate-900">Comentario</span>
           <textarea
             required
             value={content}
@@ -109,17 +146,28 @@ export default function CommentsSection({ listingId }: Props) {
 
         <button
           type="submit"
-          className="inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700"
+          disabled={submitting}
+          className="inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
         >
-          Enviar comentário
+          {submitting ? "Enviando..." : "Enviar comentario"}
         </button>
       </form>
 
       <div className="mt-8 space-y-4">
-        {approved.length === 0 ? (
-          <div className="text-sm text-slate-600">Nenhum comentário aprovado ainda.</div>
+        {loading ? (
+          <div className="text-sm text-slate-600">Carregando comentarios...</div>
+        ) : comments.length === 0 ? (
+          <div className="text-sm text-slate-600">Nenhum comentario aprovado ainda.</div>
         ) : (
-          approved.map((c) => renderComment(c))
+          comments.map((comment) => (
+            <div key={comment.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div>
+                <div className="text-sm font-semibold text-slate-900">{comment.name}</div>
+                <div className="mt-1 text-xs text-slate-600">{formatDateLong(comment.createdAt)}</div>
+              </div>
+              <p className="mt-3 whitespace-pre-wrap text-sm text-slate-700">{comment.message}</p>
+            </div>
+          ))
         )}
       </div>
     </div>

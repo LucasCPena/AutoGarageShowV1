@@ -9,6 +9,7 @@ import type { EventRecurrence } from "@/lib/database";
 import { formatDateLong, formatDateShort } from "@/lib/date";
 import { formatCurrencyBRL } from "@/lib/format";
 import { fetchJson } from "@/lib/fetch-json";
+import { listingImageAlt } from "@/lib/image-alt";
 import { normalizeAssetReference } from "@/lib/site-url";
 import { useAuth } from "@/lib/useAuth";
 import { generateEventOccurrences } from "@/lib/eventRecurrence";
@@ -499,7 +500,7 @@ export default function HomePage() {
                   <div className="aspect-video relative">
                     <Image
                       src={safeImageSrc(listing.images[0], "/placeholders/car.svg")}
-                      alt={listing.title}
+                      alt={listingImageAlt(listing.title)}
                       fill
                       className="object-cover"
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 1200px"
@@ -549,7 +550,7 @@ export default function HomePage() {
                   <div className="aspect-video relative">
                     <Image
                       src={safeImageSrc(listing.images[0], "/placeholders/car.svg")}
-                      alt={listing.title}
+                      alt={listingImageAlt(listing.title)}
                       fill
                       className="object-cover"
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 1200px"

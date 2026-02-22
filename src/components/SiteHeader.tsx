@@ -102,7 +102,8 @@ export default function SiteHeader() {
     const items = [
       { href: "/eventos", label: "Eventos" },
       { href: "/classificados", label: "Classificados" },
-      { href: "/noticias", label: "Noticias" }
+      { href: "/noticias", label: "Noticias" },
+      { href: "/classificados/anunciar", label: "Anuncie seu veiculo" }
     ];
     if (mounted && user?.role === "admin") {
       items.push({ href: "/admin", label: "Admin" });
@@ -136,11 +137,18 @@ export default function SiteHeader() {
           )}
         </Link>
 
-        <nav className="hidden items-center gap-6 text-sm font-medium text-slate-200 md:flex">
-          {navItems.map((item) => (
-            <Link key={item.href} href={item.href} className="text-slate-200 hover:text-white">
-              {item.label}
-            </Link>
+        <nav className="hidden items-center gap-3 text-sm font-medium text-slate-200 md:flex">
+          {navItems.map((item, index) => (
+            <div key={item.href} className="flex items-center gap-3">
+              {index > 0 ? (
+                <span className="text-slate-500" aria-hidden>
+                  |
+                </span>
+              ) : null}
+              <Link href={item.href} className="text-slate-200 hover:text-white">
+                {item.label}
+              </Link>
+            </div>
           ))}
         </nav>
 

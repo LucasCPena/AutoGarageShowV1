@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import AdminBannersPanel from "@/components/AdminBannersPanel";
 import AdminCatalogPanel from "@/components/AdminCatalogPanel";
+import AdminCommentsPanel from "@/components/AdminCommentsPanel";
 import AdminSettingsPanel from "@/components/AdminSettingsPanel";
 import Container from "@/components/Container";
 import Notice from "@/components/Notice";
@@ -90,6 +91,10 @@ export default function AdminPage() {
             title="Banner de Fundo da Home"
             description="Use apenas para trocar a imagem de fundo do topo da Home."
           />
+        </div>
+
+        <div className="mt-10">
+          <AdminCommentsPanel token={token} />
         </div>
       </Container>
     </>

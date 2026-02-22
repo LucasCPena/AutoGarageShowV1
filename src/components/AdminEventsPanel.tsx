@@ -7,6 +7,7 @@ import Link from "next/link";
 import Notice from "@/components/Notice";
 import type { Event } from "@/lib/database";
 import { formatDateLong, formatTime } from "@/lib/date";
+import { eventImageAlt } from "@/lib/image-alt";
 import { normalizeAssetReference } from "@/lib/site-url";
 
 type Props = {
@@ -124,7 +125,7 @@ export default function AdminEventsPanel({ events, token }: Props) {
           <div>
             <img
               src={eventThumbnail(event)}
-              alt={event.title}
+              alt={eventImageAlt(event.title)}
               className="mb-2 h-16 w-24 rounded-md border border-slate-200 object-cover"
             />
             <div className="text-sm text-slate-500">{formatDateTime(event.startAt)}</div>

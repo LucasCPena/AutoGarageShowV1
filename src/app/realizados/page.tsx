@@ -9,6 +9,7 @@ import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { formatDateShort } from "@/lib/date";
 import { fetchJson } from "@/lib/fetch-json";
+import { eventImageAlt } from "@/lib/image-alt";
 import { normalizeAssetReference } from "@/lib/site-url";
 
 interface PastEvent {
@@ -81,7 +82,7 @@ export default function PastEventsPage() {
               >
                 <Image
                   src={normalizeAssetReference(event.images[0]) || "/placeholders/event.svg"}
-                  alt={event.title}
+                  alt={eventImageAlt(event.title)}
                   width={1200}
                   height={800}
                   className="h-44 w-full object-cover"
