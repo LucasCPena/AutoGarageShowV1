@@ -64,7 +64,7 @@ function formatListingMeta(listing: Listing) {
       : "";
   if (yearLabel) parts.push(yearLabel);
 
-  return parts.join(" â€¢ ");
+  return parts.join(" | ");
 }
 
 function getListingImageSrc(images: string[] | undefined) {

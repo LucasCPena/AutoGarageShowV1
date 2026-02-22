@@ -157,7 +157,7 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Buscar todas as configuraÃ§Ãµes e dados
+    // Buscar todas as configuracoes e dados
     const fetchData = async () => {
       try {
         const requests = [
@@ -213,7 +213,7 @@ export default function HomePage() {
         if (settings?.settings?.events?.requireApproval === true) {
           setConfig((current) => ({
             ...current,
-            heroSubtitle: "Portal de carros antigos com aprovaÃ§Ã£o manual"
+            heroSubtitle: "Portal de carros antigos com aprovacao manual"
           }));
         }
 
@@ -408,7 +408,7 @@ export default function HomePage() {
                   href="/classificados/anunciar"
                   className="rounded-md bg-brand-600 px-6 py-3 text-base font-semibold text-white hover:bg-brand-700"
                 >
-                  Anunciar VeÃ­culo
+                  Anunciar Veiculo
                 </Link>
                 <Link
                   href="/eventos"
@@ -425,7 +425,7 @@ export default function HomePage() {
       </section>
 
       <Container className="py-10">
-        {/* Resumo EstatÃ­stico */}
+        {/* Resumo Estatistico */}
         {canViewHomeStats ? (
           <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -451,14 +451,14 @@ export default function HomePage() {
           </div>
         ) : null}
 
-        {/* CalendÃ¡rio Interativo */}
+        {/* Calendario Interativo */}
         {liveEvent && liveEmbedUrl ? (
           <section className="mb-12 rounded-2xl border border-red-200 bg-red-50 p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-bold text-slate-900">Evento ao vivo agora</h2>
                 <p className="mt-1 text-sm text-slate-700">
-                  {liveEvent.title} â€¢ {liveEvent.city}/{liveEvent.state}
+                  {liveEvent.title} | {liveEvent.city}/{liveEvent.state}
                 </p>
               </div>
               <Link
@@ -483,16 +483,16 @@ export default function HomePage() {
 
         
         
-        {/* PrÃ³ximos Eventos */}
+        {/* Proximos Eventos */}
         {config.showUpcomingEvents && upcoming.length > 0 && (
           <section className="mb-12">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">PrÃ³ximos Eventos</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Proximos Eventos</h2>
               <Link
                 href="/eventos"
                 className="text-brand-600 hover:text-brand-800 font-semibold"
               >
-                Ver Eventos â†’
+                Ver Eventos
               </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -503,7 +503,7 @@ export default function HomePage() {
                   className="group block rounded-2xl border border-slate-200 bg-white p-6 hover:border-brand-200 transition-colors"
                 >
                   <div className="text-xs font-semibold text-brand-700">
-                    {formatDateShort(nextOccurrence)} â€¢ {event.city}/{event.state}
+                    {formatDateShort(nextOccurrence)} | {event.city}/{event.state}
                   </div>
                   <h3 className="mt-2 text-lg font-semibold text-slate-900 group-hover:text-brand-800">
                     {event.title}
@@ -533,12 +533,12 @@ export default function HomePage() {
         {config.showFeaturedListings && featured.length > 0 && (
           <section className="mb-12">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">AnÃºncios em Destaque</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Anuncios em Destaque</h2>
               <Link
                 href="/classificados"
                 className="text-brand-600 hover:text-brand-800 font-semibold"
               >
-                Ver Todos â†’
+                Ver Todos
               </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -564,7 +564,7 @@ export default function HomePage() {
                   </div>
                   <div className="p-4">
                     <div className="text-xs font-semibold text-brand-700">
-                      {listing.make} {listing.model} â€¢ {listing.modelYear}
+                      {listing.make} {listing.model} | {listing.modelYear}
                     </div>
                     <h3 className="mt-1 text-lg font-semibold text-slate-900 group-hover:text-brand-800">
                       {listing.title}
@@ -579,16 +579,16 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* Ãšltimos Classificados */}
+        {/* Ultimos Classificados */}
         {config.showLatestListings && latestListings.length > 0 && (
           <section className="mb-12">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">Ãšltimos AnÃºncios</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Ultimos Anuncios</h2>
               <Link
                 href="/classificados"
                 className="text-brand-600 hover:text-brand-800 font-semibold"
               >
-                Ver Todos â†’
+                Ver Todos
               </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -609,7 +609,7 @@ export default function HomePage() {
                   </div>
                   <div className="p-4">
                     <div className="text-xs font-semibold text-slate-700">
-                      {listing.make} {listing.model} â€¢ {listing.modelYear}
+                      {listing.make} {listing.model} | {listing.modelYear}
                     </div>
                     <h3 className="mt-1 text-lg font-semibold text-slate-900 group-hover:text-brand-800">
                       {listing.title}
@@ -624,16 +624,16 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* Ãšltimas NotÃ­cias */}
+        {/* Ultimas Noticias */}
         {config.showLatestNews && latestNews.length > 0 && (
           <section className="mb-12">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">Ãšltimas NotÃ­cias</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Ultimas Noticias</h2>
               <Link
                 href="/noticias"
                 className="text-brand-600 hover:text-brand-800 font-semibold"
               >
-                Ver Todas â†’
+                Ver Todas
               </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
