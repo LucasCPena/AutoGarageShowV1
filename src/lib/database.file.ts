@@ -5,6 +5,7 @@ import type {
   Banner,
   Comment,
   Event,
+  Organizer,
   News,
   PastEvent,
   Settings,
@@ -258,6 +259,44 @@ export const dbFile = {
       const banners = await readData<Banner>('banners.json');
       const filtered = banners.filter(b => b.id !== id);
       await writeData('banners.json', filtered);
+      return true;
+    }
+  },
+  organizers: {
+    getAll: () => readData<Organizer>('organizers.json'),
+    findById: (id: string) =>
+      readData<Organizer>('organizers.json').then((organizers) =>
+        organizers.find((organizer) => organizer.id === id)
+      ),
+    create: async (organizer: Omit<Organizer, 'id' | 'createdAt' | 'updatedAt'>) => {
+      const organizers = await readData<Organizer>('organizers.json');
+      const now = new Date().toISOString();
+      const newOrganizer: Organizer = {
+        ...organizer,
+        id: crypto.randomUUID(),
+        createdAt: now,
+        updatedAt: now
+      };
+      organizers.push(newOrganizer);
+      await writeData('organizers.json', organizers);
+      return newOrganizer;
+    },
+    update: async (id: string, updates: Partial<Organizer>) => {
+      const organizers = await readData<Organizer>('organizers.json');
+      const index = organizers.findIndex((organizer) => organizer.id === id);
+      if (index === -1) return null;
+      organizers[index] = {
+        ...organizers[index],
+        ...updates,
+        updatedAt: new Date().toISOString()
+      };
+      await writeData('organizers.json', organizers);
+      return organizers[index];
+    },
+    delete: async (id: string) => {
+      const organizers = await readData<Organizer>('organizers.json');
+      const filtered = organizers.filter((organizer) => organizer.id !== id);
+      await writeData('organizers.json', filtered);
       return true;
     }
   },

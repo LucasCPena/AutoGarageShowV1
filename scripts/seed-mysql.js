@@ -50,6 +50,7 @@ async function seed() {
   const listings = (await readJson("listings.json")) || [];
   const comments = (await readJson("comments.json")) || [];
   const banners = (await readJson("banners.json")) || [];
+  const organizers = (await readJson("organizers.json")) || [];
   const news = (await readJson("news.json")) || [];
   const pastEvents = (await readJson("pastEvents.json")) || [];
   const settings = await readJson("settings.json");
@@ -192,6 +193,23 @@ async function seed() {
         banner.status || "active",
         banner.startDate,
         banner.endDate || null,
+        createdAt,
+        updatedAt
+      ]
+    );
+  }
+
+  for (const organizer of organizers) {
+    const createdAt = organizer.createdAt || nowIso();
+    const updatedAt = organizer.updatedAt || createdAt;
+    await pool.query(
+      `INSERT INTO organizers (id, logo, link, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE logo=VALUES(logo), link=VALUES(link), updated_at=VALUES(updated_at)`,
+      [
+        organizer.id,
+        organizer.logo,
+        organizer.link || null,
         createdAt,
         updatedAt
       ]

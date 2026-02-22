@@ -132,6 +132,14 @@ export interface Banner {
   updatedAt: string;
 }
 
+export interface Organizer {
+  id: string;
+  logo: string;
+  link?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Settings {
   listings: {
     maxYearOffset: number;

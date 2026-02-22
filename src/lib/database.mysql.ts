@@ -6,6 +6,7 @@ import type {
   Event,
   Listing,
   News,
+  Organizer,
   PastEvent,
   Settings,
   User,
@@ -241,6 +242,16 @@ function mapBanner(row: Row): Banner {
     status: row.status,
     startDate: row.start_date,
     endDate: row.end_date ?? undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
+function mapOrganizer(row: Row): Organizer {
+  return {
+    id: row.id,
+    logo: toPublicAssetUrl(row.logo, { uploadType: "event" }) || row.logo,
+    link: row.link ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
@@ -868,6 +879,57 @@ export const dbMysql = {
     },
     delete: async (id: string) => {
       await query("DELETE FROM banners WHERE id = ?", [id]);
+      return true;
+    }
+  },
+  organizers: {
+    getAll: async () => (await query("SELECT * FROM organizers ORDER BY created_at DESC")).map(mapOrganizer),
+    findById: async (id: string) => {
+      const row = await queryOne("SELECT * FROM organizers WHERE id = ?", [id]);
+      return row ? mapOrganizer(row) : null;
+    },
+    create: async (organizer: Omit<Organizer, "id" | "createdAt" | "updatedAt">) => {
+      const now = nowIso();
+      const newOrganizer: Organizer = {
+        ...organizer,
+        id: crypto.randomUUID(),
+        createdAt: now,
+        updatedAt: now
+      };
+      await query(
+        `INSERT INTO organizers (id, logo, link, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?)`,
+        [
+          newOrganizer.id,
+          newOrganizer.logo,
+          newOrganizer.link ?? null,
+          newOrganizer.createdAt,
+          newOrganizer.updatedAt
+        ]
+      );
+      return newOrganizer;
+    },
+    update: async (id: string, updates: Partial<Organizer>) => {
+      const current = await dbMysql.organizers.findById(id);
+      if (!current) return null;
+      const next: Organizer = {
+        ...current,
+        ...updates,
+        updatedAt: nowIso()
+      };
+      await query(
+        `UPDATE organizers SET logo=?, link=?, updated_at=? WHERE id=?`,
+        [
+          next.logo,
+          next.link ?? null,
+          next.updatedAt,
+          id
+        ]
+      );
+      return next;
+    },
+    delete: async (id: string) => {
+      await query("DELETE FROM organizers WHERE id = ?", [id]);
       return true;
     }
   },
