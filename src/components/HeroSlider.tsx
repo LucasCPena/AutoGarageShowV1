@@ -76,7 +76,7 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
   }, [section]);
 
   useEffect(() => {
-    if (section === "home") {
+    if (section !== "events") {
       setEvents([]);
       return;
     }
@@ -116,7 +116,7 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
       .slice(0, maxSlides) as Slide[];
 
     if (bannerSlides.length > 0) return bannerSlides;
-    if (section === "home") return [];
+    if (section !== "events") return [];
 
     return events
       .filter((event) => !event.status || event.status === "approved")

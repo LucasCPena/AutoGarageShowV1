@@ -14,7 +14,6 @@ type Props = {
 
 type NewsForm = {
   title: string;
-  excerpt: string;
   content: string;
   category: "eventos" | "classificados" | "geral" | "dicas";
   coverImage: string;
@@ -31,7 +30,6 @@ export default function NewsManagePage({ params }: Props) {
   const [message, setMessage] = useState<string | null>(null);
   const [formState, setFormState] = useState<NewsForm>({
     title: "",
-    excerpt: "",
     content: "",
     category: "geral",
     coverImage: "",
@@ -59,7 +57,6 @@ export default function NewsManagePage({ params }: Props) {
         if (cancelled) return;
         setFormState({
           title: data.news.title || "",
-          excerpt: data.news.excerpt || "",
           content: data.news.content || "",
           category: data.news.category || "geral",
           coverImage: data.news.coverImage || "",
@@ -117,7 +114,6 @@ export default function NewsManagePage({ params }: Props) {
     try {
       const payload = {
         title: formState.title.trim(),
-        excerpt: formState.excerpt.trim(),
         content: formState.content.trim(),
         category: formState.category,
         coverImage: formState.coverImage.trim(),
@@ -241,16 +237,6 @@ export default function NewsManagePage({ params }: Props) {
                 className="h-10 rounded-md border border-slate-300 px-3 text-sm"
                 value={formState.title}
                 onChange={updateField("title")}
-                required
-              />
-            </label>
-
-            <label className="grid gap-1">
-              <span className="text-xs font-semibold text-slate-600">Resumo</span>
-              <textarea
-                className="min-h-[80px] rounded-md border border-slate-300 px-3 py-2 text-sm"
-                value={formState.excerpt}
-                onChange={updateField("excerpt")}
                 required
               />
             </label>

@@ -23,6 +23,8 @@ export default function EventSubmissionForm() {
   const [isMultiDay, setIsMultiDay] = useState(false);
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [organizerLogoPreview, setOrganizerLogoPreview] = useState<string | null>(null);
+  const [organizerLogoFile, setOrganizerLogoFile] = useState<File | null>(null);
   const [message, setMessage] = useState<MessageState>(null);
   const [submitting, setSubmitting] = useState(false);
   const [featured, setFeatured] = useState(false);
@@ -153,6 +155,9 @@ export default function EventSubmissionForm() {
       const uploadedCoverImage = coverImageFile
         ? await uploadEventImage(coverImageFile)
         : undefined;
+      const uploadedOrganizerLogo = organizerLogoFile
+        ? await uploadEventImage(organizerLogoFile)
+        : undefined;
       const payload = {
         title,
         description,
@@ -167,6 +172,10 @@ export default function EventSubmissionForm() {
         endAt,
         websiteUrl: form.get("websiteUrl")?.toString().trim() || undefined,
         liveUrl: liveUrl || undefined,
+        organizerLogo:
+          uploadedOrganizerLogo ||
+          form.get("organizerLogoUrl")?.toString().trim() ||
+          undefined,
         recurrence,
         coverImage: uploadedCoverImage || undefined,
         featured: user?.role === "admin" ? featured : false,
@@ -196,6 +205,8 @@ export default function EventSubmissionForm() {
       setFeaturedUntil("");
       setCoverImagePreview(null);
       setCoverImageFile(null);
+      setOrganizerLogoPreview(null);
+      setOrganizerLogoFile(null);
     } catch (error) {
       setMessage({
         type: "error",
@@ -216,6 +227,19 @@ export default function EventSubmissionForm() {
     } else {
       setCoverImageFile(null);
       setCoverImagePreview(null);
+    }
+  }
+
+  function onOrganizerLogoChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      setOrganizerLogoFile(file);
+      const reader = new FileReader();
+      reader.onload = () => setOrganizerLogoPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setOrganizerLogoFile(null);
+      setOrganizerLogoPreview(null);
     }
   }
 
@@ -259,6 +283,16 @@ export default function EventSubmissionForm() {
             name="contactName"
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="Nome do organizador"
+          />
+        </label>
+
+        <label className="grid gap-1">
+          <span className="text-sm font-semibold text-slate-900">Logo do organizador (URL opcional)</span>
+          <input
+            name="organizerLogoUrl"
+            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+            placeholder="https://... ou /uploads/event/..."
+            type="text"
           />
         </label>
 
@@ -559,6 +593,30 @@ export default function EventSubmissionForm() {
               />
             </div>
           )}
+        </label>
+
+        <label className="grid gap-1 md:col-span-2">
+          <span className="text-sm font-semibold text-slate-900">Logo do organizador (arquivo opcional)</span>
+          <input
+            type="file"
+            accept="image/*"
+            name="organizerLogoFile"
+            onChange={onOrganizerLogoChange}
+            className="h-11 rounded-md border border-slate-300 px-3 text-sm file:mr-4 file:rounded file:border-0 file:bg-slate-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-700 hover:file:bg-slate-100"
+          />
+          <span className="text-xs text-slate-500">Medida recomendada: 400 x 400 px.</span>
+          {organizerLogoPreview ? (
+            <div className="mt-2">
+              <Image
+                src={organizerLogoPreview}
+                alt={eventImageAlt("logo do organizador")}
+                className="h-24 w-24 rounded-lg border border-slate-200 object-cover"
+                width={96}
+                height={96}
+                unoptimized
+              />
+            </div>
+          ) : null}
         </label>
 
         <label className="grid gap-1 md:col-span-2">

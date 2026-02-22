@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import ClassifiedsClientSections from "@/components/ClassifiedsClientSections";
 import Container from "@/components/Container";
+import HeroSlider from "@/components/HeroSlider";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import type { Listing } from "@/lib/database";
@@ -82,6 +83,10 @@ export default function ClassifiedsPage() {
       </PageIntro>
 
       <Container className="py-10">
+        <section className="mb-8">
+          <HeroSlider section="listings" />
+        </section>
+
         <ClassifiedsClientSections listings={listings} />
       </Container>
     </>

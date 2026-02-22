@@ -22,6 +22,11 @@ function withTime(date: Date, hours: number, minutes: number) {
   return next;
 }
 
+function toLocalIsoString(date: Date) {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
+}
+
 function nthWeekdayOfMonth(
   year: number,
   month: number,
@@ -57,7 +62,8 @@ function buildPushWithSpan(spanDays: number, hours: number, minutes: number, buc
     for (let offset = 0; offset < spanDays; offset++) {
       const day = addDays(baseDate, offset);
       const withClock = withTime(day, hours, minutes);
-      bucket.push(withClock.toISOString());
+      // Keep local date/time to avoid weekday shifts caused by UTC conversion.
+      bucket.push(toLocalIsoString(withClock));
     }
   };
 }
@@ -138,7 +144,7 @@ export function normalizeRecurrence(raw: unknown, startAt: string): EventRecurre
             : trimmed;
 
           const parsed = parseSpecificDate(normalized, baseHours, baseMinutes);
-          return parsed ? parsed.toISOString() : null;
+          return parsed ? toLocalIsoString(parsed) : null;
         })
         .filter((v: string | null): v is string => Boolean(v));
 

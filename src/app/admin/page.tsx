@@ -94,6 +94,24 @@ export default function AdminPage() {
         </div>
 
         <div className="mt-10">
+          <AdminBannersPanel
+            token={token}
+            fixedSection="events"
+            title="Banners da Sessao Eventos"
+            description="Banners exibidos apenas dentro da sessao de eventos."
+          />
+        </div>
+
+        <div className="mt-10">
+          <AdminBannersPanel
+            token={token}
+            fixedSection="listings"
+            title="Banners da Sessao Classificados"
+            description="Banners exibidos apenas dentro da sessao de classificados."
+          />
+        </div>
+
+        <div className="mt-10">
           <AdminCommentsPanel token={token} />
         </div>
       </Container>

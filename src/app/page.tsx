@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
@@ -137,7 +137,7 @@ function isFeaturedEventActive(event: Event, now: number) {
 }
 
 export default function HomePage() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
 
   const [config, setConfig] = useState<HomeConfig>({
     heroTitle: "Auto Garage Show",
@@ -151,12 +151,13 @@ export default function HomePage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [listings, setListings] = useState<Listing[]>([]);
   const [news, setNews] = useState<News[]>([]);
-  const [banners, setBanners] = useState<Banner[]>([]);
+  const [pendingListingsCount, setPendingListingsCount] = useState(0);
+  const [pendingCommentsCount, setPendingCommentsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Buscar todas as configurações e dados
+    // Buscar todas as configuraÃ§Ãµes e dados
     const fetchData = async () => {
       try {
         const requests = [
@@ -212,7 +213,7 @@ export default function HomePage() {
         if (settings?.settings?.events?.requireApproval === true) {
           setConfig((current) => ({
             ...current,
-            heroSubtitle: "Portal de carros antigos com aprovação manual"
+            heroSubtitle: "Portal de carros antigos com aprovaÃ§Ã£o manual"
           }));
         }
 
@@ -260,7 +261,6 @@ export default function HomePage() {
         setEvents(eventsData.events || []);
         setListings(listingsData.listings || []);
         setNews(newsData.news || []);
-        setBanners(bannersData.banners || []);
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
         setError(error instanceof Error ? error.message : "Erro ao carregar dados.");
@@ -271,6 +271,40 @@ export default function HomePage() {
     
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (user?.role !== "admin" || !token) {
+      setPendingListingsCount(0);
+      setPendingCommentsCount(0);
+      return;
+    }
+
+    let cancelled = false;
+    const headers: HeadersInit = { Authorization: `Bearer ${token}` };
+
+    Promise.allSettled([
+      fetchJson<{ listings?: Listing[] }>("/api/admin/listings/pending", { headers }),
+      fetchJson<{ comments?: Array<{ id: string }> }>("/api/comments?pending=true", { headers })
+    ]).then(([listingsResult, commentsResult]) => {
+      if (cancelled) return;
+
+      if (listingsResult.status === "fulfilled") {
+        setPendingListingsCount((listingsResult.value.listings || []).length);
+      } else {
+        console.error("Falha ao carregar pendencias de classificados:", listingsResult.reason);
+      }
+
+      if (commentsResult.status === "fulfilled") {
+        setPendingCommentsCount((commentsResult.value.comments || []).length);
+      } else {
+        console.error("Falha ao carregar pendencias de comentarios:", commentsResult.reason);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, user?.role]);
 
   if (loading) {
     return (
@@ -316,15 +350,24 @@ export default function HomePage() {
       if (aFeatured !== bFeatured) return aFeatured ? -1 : 1;
       return new Date(a.nextOccurrence).getTime() - new Date(b.nextOccurrence).getTime();
     })
-    .slice(0, 6);  const liveEvent = upcoming.find(({ event }) => Boolean(event.liveUrl))?.event;
+    .slice(0, 6);
+  const liveEvent = upcoming.find(({ event }) => Boolean(event.liveUrl))?.event;
   const liveEmbedUrl = toYouTubeEmbedUrl(liveEvent?.liveUrl);
 
-  const featured = listings
-    .filter((l) => (l.status === 'active' || l.status === 'approved') && isFeaturedListingActive(l, now))
+  const visibleListings = listings.filter((listing) => listing.status === "active" || listing.status === "approved");
+  const activeListingsCount = visibleListings.length;
+  const publishedNewsCount = news.filter((item) => item.status === "published").length;
+  const totalEventOccurrencesCount = events.reduce((total, event) => {
+    const occurrences = generateEventOccurrences(event.startAt, event.recurrence, event.endAt);
+    return total + occurrences.length;
+  }, 0);
+
+  const featured = visibleListings
+    .filter((listing) => isFeaturedListingActive(listing, now))
     .slice(0, 3);
 
-  const latestListings = listings
-    .filter((l) => l.status === 'active' || l.status === 'approved')
+  const latestListings = visibleListings
+    .slice()
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 6);
 
@@ -365,7 +408,7 @@ export default function HomePage() {
                   href="/classificados/anunciar"
                   className="rounded-md bg-brand-600 px-6 py-3 text-base font-semibold text-white hover:bg-brand-700"
                 >
-                  Anunciar Veículo
+                  Anunciar VeÃ­culo
                 </Link>
                 <Link
                   href="/eventos"
@@ -382,32 +425,40 @@ export default function HomePage() {
       </section>
 
       <Container className="py-10">
-        {/* Resumo Estatístico */}
-        {canViewHomeStats && (
-          <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div className="text-xs font-semibold text-slate-600">Próximos Eventos</div>
-            <div className="mt-2 text-2xl font-bold text-slate-900">{upcoming.length}</div>
+        {/* Resumo EstatÃ­stico */}
+        {canViewHomeStats ? (
+          <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-xs font-semibold text-slate-600">Ocorrencias de eventos</div>
+              <div className="mt-2 text-2xl font-bold text-slate-900">{totalEventOccurrencesCount}</div>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-xs font-semibold text-slate-600">Anuncios ativos</div>
+              <div className="mt-2 text-2xl font-bold text-slate-900">{activeListingsCount}</div>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-xs font-semibold text-slate-600">Noticias</div>
+              <div className="mt-2 text-2xl font-bold text-slate-900">{publishedNewsCount}</div>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-xs font-semibold text-slate-600">Classificados para liberar</div>
+              <div className="mt-2 text-2xl font-bold text-slate-900">{pendingListingsCount}</div>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-xs font-semibold text-slate-600">Comentarios para liberar</div>
+              <div className="mt-2 text-2xl font-bold text-slate-900">{pendingCommentsCount}</div>
+            </div>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div className="text-xs font-semibold text-slate-600">Anúncios Ativos</div>
-            <div className="mt-2 text-2xl font-bold text-slate-900">{latestListings.length}</div>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div className="text-xs font-semibold text-slate-600">Notícias</div>
-            <div className="mt-2 text-2xl font-bold text-slate-900">{latestNews.length}</div>
-          </div>
-          </div>
-        )}
+        ) : null}
 
-        {/* Calendário Interativo */}
+        {/* CalendÃ¡rio Interativo */}
         {liveEvent && liveEmbedUrl ? (
           <section className="mb-12 rounded-2xl border border-red-200 bg-red-50 p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-bold text-slate-900">Evento ao vivo agora</h2>
                 <p className="mt-1 text-sm text-slate-700">
-                  {liveEvent.title} • {liveEvent.city}/{liveEvent.state}
+                  {liveEvent.title} â€¢ {liveEvent.city}/{liveEvent.state}
                 </p>
               </div>
               <Link
@@ -432,16 +483,16 @@ export default function HomePage() {
 
         
         
-        {/* Próximos Eventos */}
+        {/* PrÃ³ximos Eventos */}
         {config.showUpcomingEvents && upcoming.length > 0 && (
           <section className="mb-12">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">Próximos Eventos</h2>
+              <h2 className="text-2xl font-bold text-slate-900">PrÃ³ximos Eventos</h2>
               <Link
                 href="/eventos"
                 className="text-brand-600 hover:text-brand-800 font-semibold"
               >
-                Ver Eventos →
+                Ver Eventos â†’
               </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -452,7 +503,7 @@ export default function HomePage() {
                   className="group block rounded-2xl border border-slate-200 bg-white p-6 hover:border-brand-200 transition-colors"
                 >
                   <div className="text-xs font-semibold text-brand-700">
-                    {formatDateShort(nextOccurrence)} • {event.city}/{event.state}
+                    {formatDateShort(nextOccurrence)} â€¢ {event.city}/{event.state}
                   </div>
                   <h3 className="mt-2 text-lg font-semibold text-slate-900 group-hover:text-brand-800">
                     {event.title}
@@ -482,12 +533,12 @@ export default function HomePage() {
         {config.showFeaturedListings && featured.length > 0 && (
           <section className="mb-12">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">Anúncios em Destaque</h2>
+              <h2 className="text-2xl font-bold text-slate-900">AnÃºncios em Destaque</h2>
               <Link
                 href="/classificados"
                 className="text-brand-600 hover:text-brand-800 font-semibold"
               >
-                Ver Todos →
+                Ver Todos â†’
               </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -513,7 +564,7 @@ export default function HomePage() {
                   </div>
                   <div className="p-4">
                     <div className="text-xs font-semibold text-brand-700">
-                      {listing.make} {listing.model} • {listing.modelYear}
+                      {listing.make} {listing.model} â€¢ {listing.modelYear}
                     </div>
                     <h3 className="mt-1 text-lg font-semibold text-slate-900 group-hover:text-brand-800">
                       {listing.title}
@@ -528,16 +579,16 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* Últimos Classificados */}
+        {/* Ãšltimos Classificados */}
         {config.showLatestListings && latestListings.length > 0 && (
           <section className="mb-12">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">Últimos Anúncios</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Ãšltimos AnÃºncios</h2>
               <Link
                 href="/classificados"
                 className="text-brand-600 hover:text-brand-800 font-semibold"
               >
-                Ver Todos →
+                Ver Todos â†’
               </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -558,7 +609,7 @@ export default function HomePage() {
                   </div>
                   <div className="p-4">
                     <div className="text-xs font-semibold text-slate-700">
-                      {listing.make} {listing.model} • {listing.modelYear}
+                      {listing.make} {listing.model} â€¢ {listing.modelYear}
                     </div>
                     <h3 className="mt-1 text-lg font-semibold text-slate-900 group-hover:text-brand-800">
                       {listing.title}
@@ -573,16 +624,16 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* Últimas Notícias */}
+        {/* Ãšltimas NotÃ­cias */}
         {config.showLatestNews && latestNews.length > 0 && (
           <section className="mb-12">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">Últimas Notícias</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Ãšltimas NotÃ­cias</h2>
               <Link
                 href="/noticias"
                 className="text-brand-600 hover:text-brand-800 font-semibold"
               >
-                Ver Todas →
+                Ver Todas â†’
               </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -610,4 +661,7 @@ export default function HomePage() {
     </>
   );
 }
+
+
+
 

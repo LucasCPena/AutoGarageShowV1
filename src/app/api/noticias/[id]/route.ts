@@ -15,6 +15,12 @@ function slugify(input: string) {
     .replace(/(^-|-$)/g, "");
 }
 
+function toExcerpt(content: string, max = 160) {
+  const normalized = content.replace(/\s+/g, " ").trim();
+  if (normalized.length <= max) return normalized;
+  return `${normalized.slice(0, max - 3)}...`;
+}
+
 async function uniqueNewsSlug(title: string, excludeId?: string) {
   const base = slugify(title) || `noticia-${Date.now()}`;
   let candidate = base;
@@ -64,6 +70,7 @@ export async function PUT(
 
     const body = await request.json();
     const updates: Record<string, unknown> = {};
+    let nextContent = existing.content;
 
     if (typeof body?.title === "string" && body.title.trim()) {
       const title = body.title.trim();
@@ -72,11 +79,8 @@ export async function PUT(
     }
 
     if (typeof body?.content === "string" && body.content.trim()) {
-      updates.content = body.content.trim();
-    }
-
-    if (typeof body?.excerpt === "string" && body.excerpt.trim()) {
-      updates.excerpt = body.excerpt.trim();
+      nextContent = body.content.trim();
+      updates.content = nextContent;
     }
 
     if (typeof body?.category === "string" && VALID_CATEGORIES.has(body.category)) {
@@ -97,6 +101,8 @@ export async function PUT(
     if (body?.status === "draft" || body?.status === "published") {
       updates.status = body.status;
     }
+
+    updates.excerpt = toExcerpt(nextContent);
 
     const news = await db.news.update(params.id, updates);
     if (!news) {

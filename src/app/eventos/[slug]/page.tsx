@@ -75,6 +75,7 @@ export default async function EventDetailPage({ params }: Props) {
   const heroImage =
     normalizeAssetReference(event.coverImage || event.images?.[0]) ||
     "/placeholders/event.svg";
+  const organizerLogo = normalizeAssetReference(event.organizerLogo);
   const liveEmbedUrl = toYouTubeEmbedUrl(event.liveUrl);
 
   return (
@@ -204,6 +205,13 @@ export default async function EventDetailPage({ params }: Props) {
                 <dd className="mt-1 font-semibold text-slate-900">
                   {event.contactName}
                 </dd>
+                {organizerLogo ? (
+                  <img
+                    src={organizerLogo}
+                    alt={eventImageAlt(`logo do organizador ${event.contactName}`)}
+                    className="mt-2 h-14 w-14 rounded-md border border-slate-200 object-contain bg-white p-1"
+                  />
+                ) : null}
               </div>
               {event.contactPhone ? (
                 <div>

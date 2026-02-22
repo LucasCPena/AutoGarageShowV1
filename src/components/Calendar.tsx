@@ -6,7 +6,7 @@ import Link from "next/link";
 
 import Notice from "@/components/Notice";
 import type { Event } from "@/lib/database";
-import { formatDateShort } from "@/lib/date";
+import { toDateKey } from "@/lib/date";
 import { generateEventOccurrences } from "@/lib/eventRecurrence";
 
 type Props = {
@@ -70,7 +70,7 @@ export default function Calendar({ events }: Props) {
     events.forEach((event) => {
       const occurrences = generateEventOccurrences(event.startAt, event.recurrence, event.endAt);
       occurrences.forEach((occ) => {
-        const key = formatDateShort(occ);
+        const key = toDateKey(occ);
         if (!map.has(key)) map.set(key, []);
         map.get(key)!.push(event);
       });
@@ -116,7 +116,7 @@ export default function Calendar({ events }: Props) {
 
       <div className="grid grid-cols-7 gap-1">
         {days.map((day, i) => {
-          const key = formatDateShort(day);
+          const key = toDateKey(day);
           const dayEvents = eventsByDay.get(key) || [];
           const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
           const isCurrentDay = isToday(day);

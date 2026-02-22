@@ -100,10 +100,7 @@ export async function POST(request: NextRequest) {
     }
 
     const status = requestedStatus === "draft" ? "draft" : "published";
-    const excerpt =
-      typeof body?.excerpt === "string" && body.excerpt.trim()
-        ? body.excerpt.trim()
-        : toExcerpt(content);
+    const excerpt = toExcerpt(content);
     const slug = await uniqueNewsSlug(title);
 
     const news = await db.news.create({

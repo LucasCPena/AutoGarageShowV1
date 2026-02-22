@@ -7,7 +7,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = requireAdmin(request);
+    requireAdmin(request);
     const { action } = await request.json(); // 'approve' ou 'reject'
     
     if (!['approve', 'reject'].includes(action)) {

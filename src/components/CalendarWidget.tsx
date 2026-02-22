@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { EventRecurrence } from "@/lib/database";
-import { formatDateShort } from "@/lib/date";
+import { formatDateShort, toDateKey } from "@/lib/date";
 import { generateEventOccurrences } from "@/lib/eventRecurrence";
 
 interface Event {
@@ -44,10 +44,10 @@ export default function CalendarWidget({ events, onEventClick }: CalendarWidgetP
   };
 
   const getEventsForDate = (date: Date) => {
-    const dateStr = formatDateShort(date);
+    const dateStr = toDateKey(date);
     return eventsWithOccurrences.filter((event) => {
       if (event.status !== "approved") return false;
-      return event.occurrences.some((occ) => formatDateShort(occ) === dateStr);
+      return event.occurrences.some((occ) => toDateKey(occ) === dateStr);
     });
   };
 

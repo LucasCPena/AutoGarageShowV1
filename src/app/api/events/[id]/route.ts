@@ -180,6 +180,18 @@ export async function PUT(
         : undefined;
     const nextCoverImage = safeProvidedCoverImage || safeExistingCoverImage || nextImages[0];
 
+    const providedOrganizerLogo = normalizeAssetReference(updateData.organizerLogo);
+    const safeProvidedOrganizerLogo =
+      typeof providedOrganizerLogo === 'string' && !providedOrganizerLogo.startsWith('data:')
+        ? providedOrganizerLogo
+        : undefined;
+    const existingOrganizerLogo = normalizeAssetReference(existing.organizerLogo);
+    const safeExistingOrganizerLogo =
+      typeof existingOrganizerLogo === 'string' && !existingOrganizerLogo.startsWith('data:')
+        ? existingOrganizerLogo
+        : undefined;
+    const nextOrganizerLogo = safeProvidedOrganizerLogo || safeExistingOrganizerLogo;
+
     const nextContactDocument =
       typeof updateData.contactDocument === 'string'
         ? updateData.contactDocument.trim() || 'nao informado'
@@ -295,6 +307,7 @@ export async function PUT(
       liveUrl: nextLiveUrl,
       images: nextImages,
       coverImage: nextCoverImage,
+      organizerLogo: nextOrganizerLogo,
       featured: nextFeatured,
       featuredUntil: nextFeaturedUntil,
       createdBy: existing.createdBy

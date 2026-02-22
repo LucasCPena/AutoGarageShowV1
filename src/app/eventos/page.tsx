@@ -4,6 +4,7 @@ import Link from "next/link";
 import Calendar from "@/components/Calendar";
 import Container from "@/components/Container";
 import EventCrudActions from "@/components/EventCrudActions";
+import HeroSlider from "@/components/HeroSlider";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { formatDateLong, formatTime } from "@/lib/date";
@@ -76,6 +77,10 @@ export default async function EventsPage() {
       </PageIntro>
 
       <Container className="py-10">
+        <section className="mb-8">
+          <HeroSlider section="events" />
+        </section>
+
         <section>
           <Calendar events={approvedEvents} />
         </section>

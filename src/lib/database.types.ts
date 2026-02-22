@@ -43,6 +43,7 @@ export interface Event {
   recurrence: EventRecurrence;
   websiteUrl?: string;
   liveUrl?: string;
+  organizerLogo?: string;
   coverImage?: string;
   images?: string[];
   featured?: boolean;

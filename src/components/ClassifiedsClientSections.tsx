@@ -1,4 +1,6 @@
-"use client";
+﻿"use client";
+
+import { useEffect, useMemo, useState } from "react";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -62,7 +64,7 @@ function formatListingMeta(listing: Listing) {
       : "";
   if (yearLabel) parts.push(yearLabel);
 
-  return parts.join(" • ");
+  return parts.join(" â€¢ ");
 }
 
 function getListingImageSrc(images: string[] | undefined) {
@@ -82,11 +84,13 @@ function getContactInfo(listing: Listing) {
 function ListingCard({
   listing,
   featuredTag,
-  detailHref
+  detailHref,
+  showContact = false
 }: {
   listing: Listing;
   featuredTag?: boolean;
   detailHref?: string;
+  showContact?: boolean;
 }) {
   const contact = getContactInfo(listing);
   const href = detailHref || `/classificados/${listing.slug}`;
@@ -127,7 +131,7 @@ function ListingCard({
           {formatCurrencyBRL(listing.price)}
         </div>
 
-        {(contact.email || contact.phone) ? (
+        {showContact && (contact.email || contact.phone) ? (
           <div className="mt-2 space-y-1 text-xs text-slate-600">
             {contact.email ? <div>Email: {contact.email}</div> : null}
             {contact.phone ? <div>Telefone: {contact.phone}</div> : null}
@@ -152,6 +156,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
   const { settings } = useSiteSettings();
   const { user } = useAuth();
   const { overrides } = useListingOverrides();
+  const [featuredCursor, setFeaturedCursor] = useState(0);
   const now = Date.now();
 
   const effectiveListings = applyListingOverrides(listings, overrides);
@@ -178,6 +183,21 @@ export default function ClassifiedsClientSections({ listings }: Props) {
   const latest = visible
     .filter((listing) => !isFeaturedActive(listing, now))
     .sort(byCreatedAtDesc);
+
+  const featuredRotated = useMemo(() => {
+    if (featuredActive.length <= 1) return featuredActive;
+    const start = Math.floor(Math.random() * featuredActive.length);
+    return [...featuredActive.slice(start), ...featuredActive.slice(0, start)];
+  }, [featuredActive]);
+
+  useEffect(() => {
+    setFeaturedCursor(0);
+  }, [featuredRotated.length]);
+
+  const canSlideFeatured = featuredRotated.length > 3;
+  const visibleFeatured = canSlideFeatured
+    ? Array.from({ length: 3 }, (_, index) => featuredRotated[(featuredCursor + index) % featuredRotated.length])
+    : featuredRotated;
 
   const maxAllowedYear = new Date().getFullYear() - settings.vehicleMinAgeYears;
 
@@ -215,6 +235,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
                 key={listing.id}
                 listing={listing}
                 detailHref={`/classificados/gerenciar/${listing.id}`}
+                showContact={Boolean(user)}
               />
             ))}
           </div>
@@ -222,18 +243,45 @@ export default function ClassifiedsClientSections({ listings }: Props) {
       ) : null}
 
       <section className="mt-10">
-        <div className="flex items-end justify-between gap-4">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-slate-900">Em destaque</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Destaque pago: o anuncio volta ao topo por um periodo configuravel.
+              Destaque pago: o anuncio volta ao topo por 30 dias.
             </p>
           </div>
+
+          {canSlideFeatured ? (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  setFeaturedCursor((current) =>
+                    (current - 1 + featuredRotated.length) % featuredRotated.length
+                  )
+                }
+                className="h-9 w-9 rounded-md border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                aria-label="Ver destaques anteriores"
+              >
+                {"<"}
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setFeaturedCursor((current) => (current + 1) % featuredRotated.length)
+                }
+                className="h-9 w-9 rounded-md border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                aria-label="Ver proximos destaques"
+              >
+                {">"}
+              </button>
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {featuredActive.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} featuredTag />
+          {visibleFeatured.map((listing) => (
+            <ListingCard key={listing.id} listing={listing} featuredTag showContact={Boolean(user)} />
           ))}
 
           {featuredActive.length === 0 ? (
@@ -254,9 +302,9 @@ export default function ClassifiedsClientSections({ listings }: Props) {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {latest.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
+            <ListingCard key={listing.id} listing={listing} showContact={Boolean(user)} />
           ))}
 
           {latest.length === 0 ? (
@@ -269,3 +317,4 @@ export default function ClassifiedsClientSections({ listings }: Props) {
     </>
   );
 }
+

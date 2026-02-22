@@ -152,6 +152,7 @@ function mapEvent(row: Row): Event {
     recurrence: parseJson(row.recurrence, { type: "single" }),
     websiteUrl: row.website_url ?? undefined,
     liveUrl: row.live_url ?? undefined,
+    organizerLogo: toPublicAssetUrl(row.organizer_logo, { uploadType: "event" }) || row.organizer_logo,
     coverImage: toPublicAssetUrl(row.cover_image, { uploadType: "event" }),
     images: toPublicAssetUrls(parseJson(row.images, []), { uploadType: "event" }),
     featured: Boolean(row.featured),
@@ -380,6 +381,7 @@ export const dbMysql = {
         add("recurrence", JSON.stringify(newEvent.recurrence ?? { type: "single" }));
         add("website_url", newEvent.websiteUrl ?? null);
         add("live_url", newEvent.liveUrl ?? null);
+        add("organizer_logo", newEvent.organizerLogo ?? null);
         add("cover_image", newEvent.coverImage ?? null);
         add("images", JSON.stringify(newEvent.images ?? []));
         add("featured", newEvent.featured ? 1 : 0);
@@ -467,6 +469,7 @@ export const dbMysql = {
         set("recurrence", JSON.stringify(next.recurrence ?? { type: "single" }));
         set("website_url", next.websiteUrl ?? null);
         set("live_url", next.liveUrl ?? null);
+        set("organizer_logo", next.organizerLogo ?? null);
         set("cover_image", next.coverImage ?? null);
         set("images", JSON.stringify(next.images ?? []));
         set("featured", next.featured ? 1 : 0);

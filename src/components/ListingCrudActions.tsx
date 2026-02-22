@@ -21,43 +21,11 @@ export default function ListingCrudActions({
 }: Props) {
   const router = useRouter();
   const { user, token, isLoading } = useAuth();
-  const [busyAction, setBusyAction] = useState<"duplicate" | "delete" | null>(null);
+  const [busyAction, setBusyAction] = useState<"delete" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   if (isLoading || user?.role !== "admin") {
     return null;
-  }
-
-  async function handleDuplicate() {
-    if (!token) {
-      setMessage("Token de autenticacao nao encontrado.");
-      return;
-    }
-    setBusyAction("duplicate");
-    setMessage(null);
-    try {
-      const response = await fetch(`/api/listings/${listingId}/duplicate`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Erro ao duplicar classificado.");
-      }
-      if (data.listing?.id) {
-        router.push(`/classificados/gerenciar/${data.listing.id}`);
-        return;
-      }
-      setMessage("Classificado duplicado com sucesso.");
-    } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Erro ao duplicar classificado."
-      );
-    } finally {
-      setBusyAction(null);
-    }
   }
 
   async function handleDelete() {
@@ -105,14 +73,6 @@ export default function ListingCrudActions({
         >
           Editar
         </Link>
-        <button
-          type="button"
-          onClick={handleDuplicate}
-          disabled={busyAction !== null}
-          className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-        >
-          {busyAction === "duplicate" ? "Duplicando..." : "Duplicar"}
-        </button>
         <button
           type="button"
           onClick={handleDelete}

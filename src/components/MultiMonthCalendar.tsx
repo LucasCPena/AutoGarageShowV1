@@ -7,7 +7,7 @@ import Link from "next/link";
 import Notice from "@/components/Notice";
 import { generateEventOccurrences } from "@/lib/eventRecurrence";
 import type { Event } from "@/lib/mockData";
-import { formatDateLong, formatDateShort, formatTime } from "@/lib/date";
+import { formatDateLong, formatDateShort, formatTime, toDateKey } from "@/lib/date";
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 
@@ -73,7 +73,7 @@ export default function MultiMonthCalendar({ events, months = 3 }: Props) {
       const occurrences = generateEventOccurrences(event.startAt, event.recurrence, event.endAt);
       occurrences.forEach((occ) => {
         const occDate = new Date(occ);
-        const key = formatDateShort(occDate);
+        const key = toDateKey(occDate);
         if (!map.has(key)) map.set(key, []);
         map.get(key)!.push(event);
       });
@@ -134,7 +134,7 @@ export default function MultiMonthCalendar({ events, months = 3 }: Props) {
 
               <div className="grid grid-cols-7 gap-1">
                 {days.map((day, i) => {
-                  const key = formatDateShort(day);
+                  const key = toDateKey(day);
                   const dayEvents = eventsByDay.get(key) || [];
                   const isCurrentMonth = day.getMonth() === monthStart.getMonth();
                   const isCurrentDay = isToday(day);

@@ -264,12 +264,15 @@ export default function ListingSubmissionForm() {
       }
 
       setSubmitted(true);
-      setSuccessMessage(
+      const successText =
         data.message ||
           (user?.role === "admin"
             ? "Classificado publicado com sucesso."
-            : "Classificado enviado com sucesso.")
-      );
+            : "Classificado enviado com sucesso.");
+      setSuccessMessage(successText);
+      if (typeof window !== "undefined") {
+        window.alert(successText);
+      }
       setPhotoFiles([]);
       setPhotoCount(0);
     } catch (submitError) {

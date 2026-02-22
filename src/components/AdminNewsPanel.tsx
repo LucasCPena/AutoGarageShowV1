@@ -13,7 +13,6 @@ type Message = { type: "success" | "error"; text: string } | null;
 
 type NewsFormState = {
   title: string;
-  excerpt: string;
   content: string;
   category: "eventos" | "classificados" | "geral" | "dicas";
   coverImage: string;
@@ -23,7 +22,6 @@ type NewsFormState = {
 
 const EMPTY_FORM: NewsFormState = {
   title: "",
-  excerpt: "",
   content: "",
   category: "geral",
   coverImage: "",
@@ -130,7 +128,6 @@ export default function AdminNewsPanel({ token }: Props) {
     try {
       const payload = {
         title: form.title.trim(),
-        excerpt: form.excerpt.trim(),
         content: form.content.trim(),
         category: form.category,
         coverImage: form.coverImage.trim(),
@@ -177,7 +174,6 @@ export default function AdminNewsPanel({ token }: Props) {
     setEditingId(item.id);
     setForm({
       title: item.title,
-      excerpt: item.excerpt,
       content: item.content,
       category: item.category,
       coverImage: item.coverImage,
@@ -314,16 +310,6 @@ export default function AdminNewsPanel({ token }: Props) {
             onChange={(e) => setForm((current) => ({ ...current, coverImage: e.target.value }))}
             placeholder="https://... ou /uploads/..."
             required
-          />
-        </label>
-
-        <label className="grid gap-1 md:col-span-2">
-          <span className="text-sm font-semibold text-slate-900">Resumo</span>
-          <textarea
-            className="min-h-20 rounded-md border border-slate-300 px-3 py-2 text-sm"
-            value={form.excerpt}
-            onChange={(e) => setForm((current) => ({ ...current, excerpt: e.target.value }))}
-            placeholder="Resumo curto da noticia"
           />
         </label>
 

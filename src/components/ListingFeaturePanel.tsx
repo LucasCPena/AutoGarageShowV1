@@ -1,15 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import MockPayment from "@/components/MockPayment";
 import Notice from "@/components/Notice";
 import { applyListingOverride } from "@/lib/listingOverrides";
-import type { Listing } from "@/lib/mockData";
+import type { Listing } from "@/lib/database";
 import { useListingOverrides } from "@/lib/useListingOverrides";
-import { useSiteSettings } from "@/lib/useSiteSettings";
 
 const DAY_MS = 1000 * 60 * 60 * 24;
+const FEATURE_DAYS = 30;
 
 type Props = {
   listing: Listing;
@@ -24,14 +24,7 @@ function isFeaturedActive(listing: Listing, now: number) {
 }
 
 export default function ListingFeaturePanel({ listing, amountLabel }: Props) {
-  const { settings } = useSiteSettings();
   const { overrides, setOverride } = useListingOverrides();
-
-  const durationOptions = settings.listingFeaturedDurationsDays.length
-    ? settings.listingFeaturedDurationsDays
-    : [7, 14, 21, 30];
-
-  const [selectedDays, setSelectedDays] = useState(() => String(durationOptions[0] ?? 7));
 
   const effective = useMemo(
     () => applyListingOverride(listing, overrides[listing.id]),
@@ -40,8 +33,6 @@ export default function ListingFeaturePanel({ listing, amountLabel }: Props) {
 
   const now = Date.now();
   const featuredActive = isFeaturedActive(effective, now);
-
-  const daysNumber = Number(selectedDays) || (durationOptions[0] ?? 7);
 
   function activate(days: number) {
     const until = new Date(Date.now() + days * DAY_MS).toISOString();
@@ -52,33 +43,27 @@ export default function ListingFeaturePanel({ listing, amountLabel }: Props) {
     <div className="grid gap-4">
       {featuredActive ? (
         <Notice title="Ativo" variant="success">
-          Este anúncio está em destaque.
+          Este anuncio esta em destaque.
         </Notice>
       ) : (
         <Notice title="Status" variant="info">
-          Este anúncio não está em destaque.
+          Este anuncio nao esta em destaque.
         </Notice>
       )}
 
       <label className="grid gap-1">
-        <span className="text-xs font-semibold text-slate-600">Duração do destaque</span>
-        <select
-          className="h-10 rounded-md border border-slate-300 px-3 text-sm"
-          value={selectedDays}
-          onChange={(e) => setSelectedDays(e.target.value)}
-        >
-          {durationOptions.map((d) => (
-            <option key={d} value={String(d)}>
-              {d} dias
-            </option>
-          ))}
-        </select>
+        <span className="text-xs font-semibold text-slate-600">Duracao do destaque</span>
+        <input
+          readOnly
+          value={`${FEATURE_DAYS} dias`}
+          className="h-10 rounded-md border border-slate-300 bg-slate-50 px-3 text-sm text-slate-700"
+        />
       </label>
 
       <button
         type="button"
         className="inline-flex h-11 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-        onClick={() => activate(daysNumber)}
+        onClick={() => activate(FEATURE_DAYS)}
       >
         Ativar destaque agora (mock)
       </button>
@@ -87,7 +72,7 @@ export default function ListingFeaturePanel({ listing, amountLabel }: Props) {
         <MockPayment
           amountLabel={amountLabel}
           onPaid={() => {
-            activate(daysNumber);
+            activate(FEATURE_DAYS);
           }}
         />
       ) : null}

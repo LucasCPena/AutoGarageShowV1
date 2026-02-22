@@ -144,6 +144,15 @@ export async function POST(request: NextRequest) {
     }
     const coverImage = normalizedCoverImage || images[0];
 
+    const normalizedOrganizerLogo = normalizeAssetReference(eventData.organizerLogo);
+    if (typeof normalizedOrganizerLogo === 'string' && normalizedOrganizerLogo.startsWith('data:')) {
+      return NextResponse.json(
+        { error: 'Logo do organizador invalido. Envie a imagem via upload para gerar URL publica.' },
+        { status: 400 }
+      );
+    }
+    const organizerLogo = normalizedOrganizerLogo || undefined;
+
     const liveUrlInput = typeof eventData.liveUrl === 'string' ? eventData.liveUrl.trim() : '';
     const liveUrl = liveUrlInput ? normalizeYouTubeUrl(liveUrlInput) : undefined;
     if (liveUrlInput && !liveUrl) {
@@ -181,6 +190,7 @@ export async function POST(request: NextRequest) {
       contactEmail: String(eventData.contactEmail || '').trim() || undefined,
       images,
       coverImage,
+      organizerLogo,
       liveUrl,
       featured,
       featuredUntil: featured

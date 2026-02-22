@@ -7,7 +7,6 @@ import Image from "next/image";
 import Notice from "@/components/Notice";
 import { useAuth } from "@/lib/useAuth";
 import type { Event, EventRecurrence, PastEvent } from "@/lib/database";
-import { formatDateShort } from "@/lib/date";
 import { eventImageAlt } from "@/lib/image-alt";
 
 type RecurrenceType = "single" | "weekly" | "monthly" | "monthly_weekday" | "annual" | "specific";
@@ -58,6 +57,8 @@ export default function EventEditForm({ eventId }: Props) {
   const [isMultiDay, setIsMultiDay] = useState(false);
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [organizerLogoPreview, setOrganizerLogoPreview] = useState<string | null>(null);
+  const [organizerLogoFile, setOrganizerLogoFile] = useState<File | null>(null);
   const [message, setMessage] = useState<MessageState>(null);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -93,6 +94,7 @@ export default function EventEditForm({ eventId }: Props) {
         setRecurrenceType(data.event.recurrence.type as RecurrenceType);
         setIsMultiDay(Boolean(data.event.endAt));
         setCoverImagePreview(toCoverPreview(data.event.coverImage));
+        setOrganizerLogoPreview(toCoverPreview(data.event.organizerLogo));
         const loadedPastEvent: PastEvent | null = data.pastEvent || null;
         setPastImages(loadedPastEvent?.images || data.event.images || []);
         setPastVideosText((loadedPastEvent?.videos || []).join("\n"));
@@ -217,6 +219,9 @@ export default function EventEditForm({ eventId }: Props) {
       const uploadedCoverImage = coverImageFile
         ? await uploadEventImage(coverImageFile)
         : undefined;
+      const uploadedOrganizerLogo = organizerLogoFile
+        ? await uploadEventImage(organizerLogoFile)
+        : undefined;
 
       if (user?.role === "admin" && status === "completed" && pastImages.length === 0 && parsedVideos.length === 0) {
         throw new Error("Para marcar como realizado, adicione pelo menos uma foto ou link de video.");
@@ -236,6 +241,11 @@ export default function EventEditForm({ eventId }: Props) {
         endAt: endAt || null,
         websiteUrl: form.get("websiteUrl")?.toString().trim() || undefined,
         liveUrl: liveUrl || undefined,
+        organizerLogo:
+          uploadedOrganizerLogo ||
+          form.get("organizerLogoUrl")?.toString().trim() ||
+          eventData.organizerLogo ||
+          undefined,
         recurrence,
         coverImage: uploadedCoverImage || undefined,
         status: user?.role === "admin" ? status : undefined,
@@ -281,6 +291,8 @@ export default function EventEditForm({ eventId }: Props) {
       setFeaturedUntil(isoToDateTimeLocal(data.event.featuredUntil));
       setCoverImageFile(null);
       setCoverImagePreview(toCoverPreview(data.event.coverImage));
+      setOrganizerLogoFile(null);
+      setOrganizerLogoPreview(toCoverPreview(data.event.organizerLogo));
       if (data.pastEvent) {
         setPastImages(data.pastEvent.images || []);
         setPastVideosText((data.pastEvent.videos || []).join("\n"));
@@ -311,6 +323,19 @@ export default function EventEditForm({ eventId }: Props) {
     } else {
       setCoverImageFile(null);
       setCoverImagePreview(null);
+    }
+  }
+
+  function onOrganizerLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      setOrganizerLogoFile(file);
+      const reader = new FileReader();
+      reader.onload = () => setOrganizerLogoPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setOrganizerLogoFile(null);
+      setOrganizerLogoPreview(null);
     }
   }
 
@@ -426,6 +451,17 @@ export default function EventEditForm({ eventId }: Props) {
             defaultValue={eventData.contactName}
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="Nome do organizador"
+          />
+        </label>
+
+        <label className="grid gap-1">
+          <span className="text-sm font-semibold text-slate-900">Logo do organizador (URL opcional)</span>
+          <input
+            name="organizerLogoUrl"
+            defaultValue={eventData.organizerLogo || ""}
+            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+            placeholder="https://... ou /uploads/event/..."
+            type="text"
           />
         </label>
 
@@ -696,7 +732,9 @@ export default function EventEditForm({ eventId }: Props) {
               className="min-h-24 rounded-md border border-slate-300 px-3 py-2 text-sm font-mono"
               defaultValue={
                 eventData.recurrence.type === "specific" && eventData.recurrence.dates
-                  ? eventData.recurrence.dates.map((d) => formatDateShort(d)).join("\n")
+                  ? eventData.recurrence.dates
+                      .map((d) => d.replace("T", " ").slice(0, 16))
+                      .join("\n")
                   : ""
               }
               placeholder="2026-03-15 09:00&#10;2026-04-20 10:00&#10;2026-05-10"
@@ -746,6 +784,30 @@ export default function EventEditForm({ eventId }: Props) {
               />
             </div>
           )}
+        </label>
+
+        <label className="grid gap-1 md:col-span-2">
+          <span className="text-sm font-semibold text-slate-900">Logo do organizador (arquivo opcional)</span>
+          <input
+            type="file"
+            accept="image/*"
+            name="organizerLogoFile"
+            onChange={onOrganizerLogoChange}
+            className="h-11 rounded-md border border-slate-300 px-3 text-sm file:mr-4 file:rounded file:border-0 file:bg-slate-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-700 hover:file:bg-slate-100"
+          />
+          <span className="text-xs text-slate-500">Medida recomendada: 400 x 400 px.</span>
+          {organizerLogoPreview ? (
+            <div className="mt-2">
+              <Image
+                src={organizerLogoPreview}
+                alt={eventImageAlt("logo do organizador")}
+                className="h-24 w-24 rounded-lg border border-slate-200 object-cover"
+                width={96}
+                height={96}
+                unoptimized
+              />
+            </div>
+          ) : null}
         </label>
 
         {user?.role === "admin" ? (
