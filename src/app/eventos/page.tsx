@@ -40,7 +40,10 @@ export default async function EventsPage() {
   }
 
   const now = Date.now();
-  const limit = now + 30 * 24 * 60 * 60 * 1000;
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const windowStart = startOfToday.getTime();
+  const limit = windowStart + 30 * 24 * 60 * 60 * 1000;
   const approvedEvents = allEvents.filter((e) => e.status === "approved");
 
   const upcoming = (
@@ -49,7 +52,7 @@ export default async function EventsPage() {
         const occurrences = generateEventOccurrences(event.startAt, event.recurrence, event.endAt);
         const nextOccurrence = occurrences.find((iso) => {
           const time = new Date(iso).getTime();
-          return time >= now && time <= limit;
+          return time >= windowStart && time <= limit;
         });
         if (!nextOccurrence) return null;
         return { event, nextOccurrence };

@@ -66,10 +66,16 @@ export default function Calendar({ events }: Props) {
   }, [calendarStart, calendarEnd]);
 
   const eventsByDay = useMemo(() => {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const minTime = startOfToday.getTime();
+
     const map = new Map<string, Event[]>();
     events.forEach((event) => {
       const occurrences = generateEventOccurrences(event.startAt, event.recurrence, event.endAt);
       occurrences.forEach((occ) => {
+        const occTime = new Date(occ).getTime();
+        if (!Number.isFinite(occTime) || occTime < minTime) return;
         const key = toDateKey(occ);
         if (!map.has(key)) map.set(key, []);
         map.get(key)!.push(event);
@@ -168,7 +174,7 @@ export default function Calendar({ events }: Props) {
 
       <div className="mt-6">
         <Notice title="Dica" variant="info">
-          Clique em qualquer evento para ver detalhes. Apenas eventos aprovados aparecem neste calendário.
+          Clique em qualquer evento para ver detalhes. Apenas eventos aprovados com ocorrencias de hoje em diante aparecem neste calendário.
         </Notice>
       </div>
     </div>

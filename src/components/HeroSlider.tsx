@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import type { EventRecurrence } from "@/lib/database";
+import { generateEventOccurrences } from "@/lib/eventRecurrence";
 import { normalizeAssetReference } from "@/lib/site-url";
 
 type EventItem = {
@@ -9,6 +11,8 @@ type EventItem = {
   slug: string;
   title: string;
   startAt?: string;
+  endAt?: string;
+  recurrence?: EventRecurrence;
   featured?: boolean;
   featuredUntil?: string;
   coverImage?: string;
@@ -63,13 +67,25 @@ function isEventFeaturedActive(event: EventItem, now: number) {
   return Number.isFinite(until) ? until > now : true;
 }
 
+function getNextOccurrenceFromToday(event: EventItem, fromTime: number) {
+  if (!event.startAt) return null;
+  const recurrence = event.recurrence ?? { type: "single" };
+  const occurrences = generateEventOccurrences(event.startAt, recurrence, event.endAt);
+  return (
+    occurrences.find((iso) => {
+      const time = new Date(iso).getTime();
+      return Number.isFinite(time) && time >= fromTime;
+    }) ?? null
+  );
+}
+
 export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs = 5000 }: Props) {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [banners, setBanners] = useState<BannerItem[]>([]);
   const [current, setCurrent] = useState(0);
 
   useEffect(() => {
-    fetch(`/api/banners?section=${encodeURIComponent(section)}`)
+    fetch(`/api/banners?section=${encodeURIComponent(section)}`, { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => setBanners(Array.isArray(data.banners) ? data.banners : []))
       .catch(() => setBanners([]));
@@ -81,7 +97,7 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
       return;
     }
 
-    fetch("/api/events")
+    fetch("/api/events", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => setEvents(data.events || []))
       .catch(() => setEvents([]));
@@ -89,6 +105,9 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
 
   const slides = useMemo(() => {
     const now = Date.now();
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const windowStart = startOfToday.getTime();
 
     const bannerSlides = banners
       .filter((banner) => banner.section === section && isBannerActiveNow(banner, now))
@@ -121,6 +140,9 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
     return events
       .filter((event) => !event.status || event.status === "approved")
       .map((event) => {
+        const nextOccurrence = getNextOccurrenceFromToday(event, windowStart);
+        if (!nextOccurrence) return null;
+
         const image = normalizeAssetReference(event.coverImage || event.images?.[0]);
         if (!image) return null;
         return {
@@ -128,7 +150,7 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
           title: event.title,
           image,
           link: `/eventos/${event.slug}`,
-          startAt: event.startAt,
+          startAt: nextOccurrence,
           featuredRank: isEventFeaturedActive(event, now) ? 1 : 0
         } as Slide;
       })

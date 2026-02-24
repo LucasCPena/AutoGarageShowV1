@@ -413,6 +413,13 @@ export async function DELETE(
     }
 
     await db.events.delete(params.id);
+    const stillExists = await db.events.findById(params.id);
+    if (stillExists) {
+      return NextResponse.json(
+        { error: 'Falha ao excluir evento. Tente novamente.' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(
       { message: 'Evento excluido com sucesso' }

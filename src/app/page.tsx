@@ -160,12 +160,13 @@ export default function HomePage() {
     // Buscar todas as configuracoes e dados
     const fetchData = async () => {
       try {
+        const noStore: RequestInit = { cache: "no-store" };
         const requests = [
-          fetchJson<{ settings?: any }>('/api/settings'),
-          fetchJson<{ events?: Event[] }>('/api/events'),
-          fetchJson<{ listings?: Listing[] }>('/api/listings'),
-          fetchJson<{ news?: News[] }>('/api/noticias'),
-          fetchJson<{ banners?: Banner[] }>('/api/banners')
+          fetchJson<{ settings?: any }>('/api/settings', noStore),
+          fetchJson<{ events?: Event[] }>('/api/events', noStore),
+          fetchJson<{ listings?: Listing[] }>('/api/listings', noStore),
+          fetchJson<{ news?: News[] }>('/api/noticias', noStore),
+          fetchJson<{ banners?: Banner[] }>('/api/banners', noStore)
         ] as const;
 
         const [settingsResult, eventsResult, listingsResult, newsResult, bannersResult] =
@@ -328,11 +329,11 @@ export default function HomePage() {
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
   const windowStart = startOfToday.getTime();
-  const limit = now + 30 * 24 * 60 * 60 * 1000;
+  const limit = windowStart + 30 * 24 * 60 * 60 * 1000;
+  const approvedEvents = events.filter((e) => e.status === "approved");
 
   const upcoming = (
-    events
-      .filter((e) => e.status === 'approved')
+    approvedEvents
       .map((event) => {
         const occurrences = generateEventOccurrences(event.startAt, event.recurrence, event.endAt);
         const nextOccurrence = occurrences.find((iso) => {
@@ -357,9 +358,13 @@ export default function HomePage() {
   const visibleListings = listings.filter((listing) => listing.status === "active" || listing.status === "approved");
   const activeListingsCount = visibleListings.length;
   const publishedNewsCount = news.filter((item) => item.status === "published").length;
-  const totalEventOccurrencesCount = events.reduce((total, event) => {
+  const totalEventOccurrencesCount = approvedEvents.reduce((total, event) => {
     const occurrences = generateEventOccurrences(event.startAt, event.recurrence, event.endAt);
-    return total + occurrences.length;
+    const upcomingOccurrencesCount = occurrences.filter((iso) => {
+      const time = new Date(iso).getTime();
+      return Number.isFinite(time) && time >= windowStart;
+    }).length;
+    return total + upcomingOccurrencesCount;
   }, 0);
 
   const featured = visibleListings
@@ -429,7 +434,7 @@ export default function HomePage() {
         {canViewHomeStats ? (
           <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div className="text-xs font-semibold text-slate-600">Ocorrencias de eventos</div>
+              <div className="text-xs font-semibold text-slate-600">Ocorrencias futuras de eventos</div>
               <div className="mt-2 text-2xl font-bold text-slate-900">{totalEventOccurrencesCount}</div>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">

@@ -6,6 +6,8 @@ import { normalizeRecurrence } from '@/lib/eventRecurrence';
 import { normalizeAssetReference } from '@/lib/site-url';
 import { normalizeYouTubeUrl } from '@/lib/youtube';
 
+export const dynamic = 'force-dynamic';
+
 function slugify(input: string) {
   return input
     .toLowerCase()

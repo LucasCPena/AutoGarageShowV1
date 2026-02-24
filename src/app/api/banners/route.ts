@@ -3,6 +3,8 @@ import { db, isMysqlRequiredError } from '@/lib/database';
 import { requireAdmin } from '@/lib/auth-middleware';
 import { toPublicAssetUrl } from '@/lib/site-url';
 
+export const dynamic = 'force-dynamic';
+
 const DEFAULT_SECTIONS = ['home', 'events', 'listings'];
 
 const SECTION_ALIASES: Record<string, string[]> = {
@@ -46,11 +48,25 @@ export async function GET(request: NextRequest) {
     if (rawSection) {
       const section = normalizeBannerSection(rawSection);
       const banners = await db.banners.findBySection(section || rawSection);
-      return NextResponse.json({ banners });
+      return NextResponse.json(
+        { banners },
+        {
+          headers: {
+            'Cache-Control': 'no-store'
+          }
+        }
+      );
     }
 
     const banners = await db.banners.getAll();
-    return NextResponse.json({ banners });
+    return NextResponse.json(
+      { banners },
+      {
+        headers: {
+          'Cache-Control': 'no-store'
+        }
+      }
+    );
   } catch (error) {
     console.error('Erro ao buscar banners:', error);
     if (isMysqlRequiredError(error)) {
