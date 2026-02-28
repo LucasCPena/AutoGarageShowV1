@@ -151,6 +151,7 @@ export default function HomePage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [listings, setListings] = useState<Listing[]>([]);
   const [news, setNews] = useState<News[]>([]);
+  const [siteSettings, setSiteSettings] = useState<any>({});
   const [pendingListingsCount, setPendingListingsCount] = useState(0);
   const [pendingCommentsCount, setPendingCommentsCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -210,6 +211,7 @@ export default function HomePage() {
           bannersResult.status === "fulfilled" ? bannersResult.value : {};
 
         const settings = settingsData.settings;
+        setSiteSettings(settings || {});
 
         if (settings?.settings?.events?.requireApproval === true) {
           setConfig((current) => ({
@@ -355,8 +357,8 @@ export default function HomePage() {
   const liveEvent = upcoming.find(({ event }) => Boolean(event.liveUrl))?.event;
 
   // Allow admin-configured home YouTube link (branding.youtubeLiveUrl) as fallback
-  const siteYouTube = (typeof (settings as any)?.settings?.branding?.youtubeLiveUrl === 'string')
-    ? (settings as any).settings.branding.youtubeLiveUrl
+  const siteYouTube = typeof siteSettings?.branding?.youtubeLiveUrl === "string"
+    ? siteSettings.branding.youtubeLiveUrl
     : undefined;
 
   const liveEmbedUrl = toYouTubeEmbedUrl(liveEvent?.liveUrl || siteYouTube);
