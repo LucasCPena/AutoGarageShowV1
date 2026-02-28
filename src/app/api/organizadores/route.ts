@@ -4,6 +4,13 @@ import { requireAdmin } from "@/lib/auth-middleware";
 import { db, isMysqlRequiredError } from "@/lib/database";
 import { toPublicAssetUrl } from "@/lib/site-url";
 
+function normalizeOptionalText(value: unknown, max = 180) {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  return trimmed.slice(0, max);
+}
+
 function normalizeOptionalLink(value: unknown) {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
@@ -81,6 +88,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const name = normalizeOptionalText(body?.name, 120);
+    if (!name) {
+      return NextResponse.json({ error: "Informe o nome do organizador." }, { status: 400 });
+    }
+
+    const altText = normalizeOptionalText(body?.altText, 180);
+
+    const bannerTop = toPublicAssetUrl(body?.bannerTop, { uploadType: "banner" });
+    const normalizedBannerTop = bannerTop && !bannerTop.startsWith("data:") ? bannerTop : undefined;
+
     const rawLink = body?.link;
     const link = normalizeOptionalLink(rawLink);
     if (
@@ -95,7 +112,10 @@ export async function POST(request: NextRequest) {
     }
 
     const organizer = await db.organizers.create({
+      name,
       logo,
+      altText,
+      bannerTop: normalizedBannerTop,
       link
     });
 
