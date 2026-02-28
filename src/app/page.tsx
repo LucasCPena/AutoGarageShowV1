@@ -210,10 +210,10 @@ export default function HomePage() {
         const bannersData =
           bannersResult.status === "fulfilled" ? bannersResult.value : {};
 
-        const settings = settingsData.settings;
-        setSiteSettings(settings || {});
+        const fetchedSettings = settingsData.settings;
+        setSiteSettings(fetchedSettings || {});
 
-        if (settings?.settings?.events?.requireApproval === true) {
+        if (fetchedSettings?.events?.requireApproval === true) {
           setConfig((current) => ({
             ...current,
             heroSubtitle: "Portal de carros antigos com aprovacao manual"
