@@ -134,7 +134,10 @@ export interface Banner {
 
 export interface Organizer {
   id: string;
+  name: string;
   logo: string;
+  altText?: string;
+  bannerTop?: string;
   link?: string;
   createdAt: string;
   updatedAt: string;

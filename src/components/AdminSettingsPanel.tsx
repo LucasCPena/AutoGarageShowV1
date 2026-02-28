@@ -26,15 +26,6 @@ function durationsToText(values: number[]) {
   return values.join(", ");
 }
 
-function parseDurations(text: string) {
-  return text
-    .split(/[^0-9]+/)
-    .map((value) => value.trim())
-    .filter(Boolean)
-    .map((value) => Number(value))
-    .filter((value) => Number.isFinite(value) && value > 0)
-    .map((value) => Math.round(value));
-}
 
 function toBrandingDraft(branding: SiteBranding): BrandingDraft {
   return {
@@ -234,7 +225,7 @@ export default function AdminSettingsPanel() {
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    const durations = parseDurations(featuredDurationsText);
+    const durations = [30];
 
     const next = normalizeSiteSettings({
       ...draft,
@@ -382,15 +373,12 @@ export default function AdminSettingsPanel() {
             </span>
             <input
               className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-              placeholder="Ex.: 7, 14, 21, 30"
+              placeholder="30"
               value={featuredDurationsText}
-              onChange={(e) => {
-                setSaved(false);
-                setFeaturedDurationsText(e.target.value);
-              }}
+              readOnly
             />
             <span className="text-xs text-slate-500">
-              Separar por virgula (ex.: 7, 14, 21, 30).
+              A duracao do destaque e fixa em 30 dias.
             </span>
           </label>
 
