@@ -9,6 +9,7 @@ import ListingCrudActions from "@/components/ListingCrudActions";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import ZoomableImage from "@/components/ZoomableImage";
+import ListingGallery from "@/components/ListingGallery";
 import { formatCurrencyBRL } from "@/lib/format";
 import { db } from "@/lib/database";
 import { listingImageAlt } from "@/lib/image-alt";
@@ -201,42 +202,17 @@ export default async function ListingDetailPage({ params }: Props) {
               )}
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              {mediaItems.slice(1).map((item, index) => (
-                <div
-                  key={`${item.type}-${item.src}-${index}`}
-                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
-                >
-                  {item.type === "image" ? (
-                    <ZoomableImage
-                      src={item.src}
-                      alt={item.alt}
-                      width={1200}
-                      height={800}
-                      className="h-48 w-full object-cover"
-                      sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                    />
-                  ) : item.type === "youtube" ? (
-                    <iframe
-                      src={item.src}
-                      title={`Video do anuncio: ${listing.title} (${index + 2})`}
-                      className="h-48 w-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      referrerPolicy="strict-origin-when-cross-origin"
-                      allowFullScreen
-                    />
-                  ) : (
-                    <video
-                      src={item.src}
-                      className="h-48 w-full bg-black object-contain"
-                      controls
-                      preload="metadata"
-                      title={`Video do anuncio: ${listing.title} (${index + 2})`}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
+              <div>
+                {/* Client-side gallery with lightbox and video support */}
+                {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+                <ListingGallery
+                  images={images}
+                  title={listing.title}
+                  mediaVideoUrl={listing.specifications?.mediaVideoUrl ?? null}
+                  mediaVideoType={listing.specifications?.mediaVideoType as any}
+                  mediaVideoPosition={listing.specifications?.mediaVideoPosition}
+                />
+              </div>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-6">
               <div className="flex flex-wrap items-start justify-between gap-3">

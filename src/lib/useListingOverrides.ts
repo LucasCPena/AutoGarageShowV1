@@ -31,8 +31,20 @@ function normalizeOverride(id: string, input: unknown): ListingOverride {
     next.featuredUntil = obj.featuredUntil;
   }
 
+  if (obj.order === null) {
+    next.order = null;
+  } else if (typeof obj.order === "number" && Number.isFinite(obj.order)) {
+    next.order = obj.order as number;
+  } else if (typeof obj.order === "string" && obj.order.trim() !== "") {
+    const parsed = Number(obj.order);
+    if (Number.isFinite(parsed)) next.order = parsed;
+  }
+
   return { ...fallback, ...next };
 }
+
+// exported for unit tests
+export { normalizeOverride };
 
 function normalizeOverrideMap(input: unknown): ListingOverrideMap {
   if (!input || typeof input !== "object") return {};

@@ -177,17 +177,28 @@ export default function ClassifiedsClientSections({ listings }: Props) {
     isExpired(listing, settings.listingAutoExpireDays, now)
   ).length;
 
+  function sortByOrderThen(primary: (a: Listing, b: Listing) => number) {
+    return (a: Listing, b: Listing) => {
+      const ao = overrides[a.id]?.order;
+      const bo = overrides[b.id]?.order;
+      if (typeof ao === "number" && typeof bo === "number") return ao - bo;
+      if (typeof ao === "number") return ao - (bo ?? 1e9);
+      if (typeof bo === "number") return (ao ?? 1e9) - bo;
+      return primary(a, b);
+    };
+  }
+
   const visible = approved
     .filter((listing) => !isExpired(listing, settings.listingAutoExpireDays, now))
-    .sort(byCreatedAtDesc);
+    .sort(sortByOrderThen(byCreatedAtDesc));
 
   const featuredActive = visible
     .filter((listing) => isFeaturedActive(listing, now))
-    .sort(byFeaturedUntilDesc);
+    .sort(sortByOrderThen(byFeaturedUntilDesc));
 
   const latest = visible
     .filter((listing) => !isFeaturedActive(listing, now))
-    .sort(byCreatedAtDesc);
+    .sort(sortByOrderThen(byCreatedAtDesc));
 
   const featuredRotated = useMemo(() => {
     if (featuredActive.length <= 1) return featuredActive;
