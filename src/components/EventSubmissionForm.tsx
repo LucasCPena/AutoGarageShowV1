@@ -9,18 +9,10 @@ import Notice from "@/components/Notice";
 import { eventImageAlt } from "@/lib/image-alt";
 import { useAuth } from "@/lib/useAuth";
 
-type RecurrenceType = "single" | "weekly" | "monthly" | "monthly_weekday" | "annual" | "specific";
-
-const weekDays = ["Domingo", "Segunda", "Terca", "Quarta", "Quinta", "Sexta", "Sabado"];
-const months = ["Janeiro", "Fevereiro", "Marco", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-const nthOptions = [1, 2, 3, 4, 5];
-
 type MessageState = { type: "success" | "error"; text: string } | null;
 
 export default function EventSubmissionForm() {
   const { token, user } = useAuth();
-  const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>("single");
-  const [isMultiDay, setIsMultiDay] = useState(false);
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
   const [organizerLogoPreview, setOrganizerLogoPreview] = useState<string | null>(null);
@@ -32,55 +24,12 @@ export default function EventSubmissionForm() {
 
   const infoMessage = useMemo(
     () =>
-      "Envie seu encontro com horario de inicio e fim, recorrencia e opcao de transmissao ao vivo no YouTube.",
+      "Envie seu encontro com data unica, horario de inicio/fim e opcao de transmissao ao vivo no YouTube.",
     []
   );
 
-  function buildRecurrence(form: FormData) {
-    const toNumber = (value: FormDataEntryValue | null, fallback: number) => {
-      const parsed = Number(value);
-      return Number.isFinite(parsed) ? parsed : fallback;
-    };
-
-    switch (recurrenceType) {
-      case "weekly":
-        return {
-          type: "weekly" as const,
-          dayOfWeek: toNumber(form.get("weeklyDay"), 0),
-          generateWeeks: toNumber(form.get("occurrences"), 12)
-        };
-      case "monthly":
-        return {
-          type: "monthly" as const,
-          dayOfMonth: toNumber(form.get("monthlyDay"), 1),
-          generateMonths: toNumber(form.get("occurrences"), 12)
-        };
-      case "monthly_weekday":
-        return {
-          type: "monthly_weekday" as const,
-          weekday: toNumber(form.get("monthlyWeekdayDay"), 0),
-          nth: toNumber(form.get("monthlyWeekdayNth"), 1),
-          generateMonths: toNumber(form.get("occurrences"), 12)
-        };
-      case "annual":
-        return {
-          type: "annual" as const,
-          month: toNumber(form.get("annualMonth"), 1),
-          day: toNumber(form.get("annualDay"), 1),
-          generateYears: toNumber(form.get("occurrences"), 5)
-        };
-      case "specific":
-        return {
-          type: "specific" as const,
-          dates: (form.get("specificDates")?.toString() || "")
-            .split(/\r?\n/)
-            .map((d) => d.trim())
-            .map((d) => (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}$/.test(d) ? d.replace(/\s+/, "T") : d))
-            .filter(Boolean)
-        };
-      default:
-        return { type: "single" as const };
-    }
+  function buildRecurrence(_form: FormData) {
+    return { type: "single" as const };
   }
 
   async function uploadEventImage(file: File) {
@@ -138,7 +87,7 @@ export default function EventSubmissionForm() {
         throw new Error("Informe o horario de termino.");
       }
 
-      const endDate = isMultiDay ? form.get("endDate")?.toString() : startDate;
+      const endDate = startDate;
       let endAt: string | undefined;
       if (endDate) {
         const end = new Date(`${endDate}T${endTime}`);
@@ -199,8 +148,6 @@ export default function EventSubmissionForm() {
 
       setMessage({ type: "success", text: data.message || "Evento enviado com sucesso." });
       formElement.reset();
-      setRecurrenceType("single");
-      setIsMultiDay(false);
       setFeatured(false);
       setFeaturedUntil("");
       setCoverImagePreview(null);
@@ -398,151 +345,7 @@ export default function EventSubmissionForm() {
           />
         </label>
 
-        <label className="grid gap-1 md:col-span-2">
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="multiDay"
-              checked={isMultiDay}
-              onChange={(e) => setIsMultiDay(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-            />
-            <span className="text-sm font-semibold text-slate-900">Evento com multiplos dias</span>
-          </div>
-        </label>
-
-        {isMultiDay && (
-          <label className="grid gap-1">
-            <span className="text-sm font-semibold text-slate-900">Data de termino</span>
-            <input
-              required
-              name="endDate"
-              className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-              type="date"
-            />
-          </label>
-        )}
-
-        <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Recorrencia</span>
-          <select
-            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-            value={recurrenceType}
-            name="recurrenceType"
-            onChange={(e) => setRecurrenceType(e.target.value as RecurrenceType)}
-          >
-            <option value="single">Evento unico</option>
-            <option value="weekly">Semanal</option>
-            <option value="monthly">Mensal</option>
-            <option value="monthly_weekday">Mensal (ex.: 3o domingo)</option>
-            <option value="annual">Anual</option>
-            <option value="specific">Datas especificas</option>
-          </select>
-        </label>
-
-        {recurrenceType === "weekly" && (
-          <label className="grid gap-1">
-            <span className="text-sm font-semibold text-slate-900">Dia da semana</span>
-            <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="weeklyDay">
-              {weekDays.map((day, i) => (
-                <option key={day} value={i}>
-                  {day}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-
-        {recurrenceType === "monthly" && (
-          <label className="grid gap-1">
-            <span className="text-sm font-semibold text-slate-900">Dia do mes</span>
-            <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="monthlyDay">
-              {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                <option key={day} value={day}>
-                  Dia {day}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-
-        {recurrenceType === "monthly_weekday" && (
-          <>
-            <label className="grid gap-1">
-              <span className="text-sm font-semibold text-slate-900">Semana do mes</span>
-              <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="monthlyWeekdayNth">
-                {nthOptions.map((nth) => (
-                  <option key={nth} value={nth}>
-                    {nth}o encontro do mes
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="grid gap-1">
-              <span className="text-sm font-semibold text-slate-900">Dia da semana</span>
-              <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="monthlyWeekdayDay">
-                {weekDays.map((day, i) => (
-                  <option key={day} value={i}>
-                    {day}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </>
-        )}
-
-        {recurrenceType === "annual" && (
-          <>
-            <label className="grid gap-1">
-              <span className="text-sm font-semibold text-slate-900">Mes</span>
-              <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="annualMonth">
-                {months.map((month, i) => (
-                  <option key={month} value={i + 1}>
-                    {month}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="grid gap-1">
-              <span className="text-sm font-semibold text-slate-900">Dia</span>
-              <select className="h-11 rounded-md border border-slate-300 px-3 text-sm" required name="annualDay">
-                {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                  <option key={day} value={day}>
-                    {day}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </>
-        )}
-
-        {recurrenceType === "specific" && (
-          <label className="grid gap-1 md:col-span-2">
-            <span className="text-sm font-semibold text-slate-900">Datas especificas (uma por linha, AAAA-MM-DD ou AAAA-MM-DD HH:MM)</span>
-            <textarea
-              required
-              name="specificDates"
-              className="min-h-24 rounded-md border border-slate-300 px-3 py-2 text-sm font-mono"
-              placeholder="2026-03-15 09:00&#10;2026-04-20 10:00&#10;2026-05-10"
-            />
-          </label>
-        )}
-
-        {recurrenceType !== "single" && recurrenceType !== "specific" && (
-          <label className="grid gap-1">
-            <span className="text-sm font-semibold text-slate-900">Quantas ocorrencias gerar?</span>
-            <input
-              required
-              name="occurrences"
-              type="number"
-              min="1"
-              max="52"
-              defaultValue="12"
-              className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-            />
-          </label>
-        )}
+        <input type="hidden" name="recurrenceType" value="single" />
 
         {user?.role === "admin" ? (
           <>

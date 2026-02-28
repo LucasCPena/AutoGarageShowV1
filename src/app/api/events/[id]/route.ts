@@ -2,7 +2,6 @@
 
 import { getUserFromToken, requireAuth } from '@/lib/auth-middleware';
 import { db } from '@/lib/database';
-import { normalizeRecurrence } from '@/lib/eventRecurrence';
 import { normalizeAssetReference } from '@/lib/site-url';
 import { normalizeYouTubeUrl } from '@/lib/youtube';
 
@@ -158,10 +157,7 @@ export async function PUT(
       );
     }
 
-    const recurrence = normalizeRecurrence(
-      updateData.recurrence ?? existing.recurrence,
-      baseStart.toISOString()
-    );
+    const recurrence = { type: "single" as const };
 
     const nextImages =
       updateData.images !== undefined

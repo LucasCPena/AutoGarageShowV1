@@ -108,12 +108,27 @@ async function ensureOrganizersTable() {
   await query(
     `CREATE TABLE IF NOT EXISTS organizers (
       id VARCHAR(36) PRIMARY KEY,
+      name VARCHAR(120) NOT NULL,
       logo VARCHAR(255) NOT NULL,
+      alt_text VARCHAR(180),
+      banner_top VARCHAR(255),
       link VARCHAR(255),
       created_at VARCHAR(32) NOT NULL,
       updated_at VARCHAR(32) NOT NULL
     )`
   );
+
+  const columns = await getTableColumns("organizers");
+  if (columns && !columns.has("name")) {
+    await query("ALTER TABLE organizers ADD COLUMN name VARCHAR(120) NOT NULL DEFAULT 'Organizador'");
+  }
+  if (columns && !columns.has("alt_text")) {
+    await query("ALTER TABLE organizers ADD COLUMN alt_text VARCHAR(180) NULL");
+  }
+  if (columns && !columns.has("banner_top")) {
+    await query("ALTER TABLE organizers ADD COLUMN banner_top VARCHAR(255) NULL");
+  }
+
   organizersTableEnsured = true;
 }
 
@@ -265,7 +280,10 @@ function mapBanner(row: Row): Banner {
 function mapOrganizer(row: Row): Organizer {
   return {
     id: row.id,
+    name: row.name || "Organizador",
     logo: toPublicAssetUrl(row.logo, { uploadType: "event" }) || row.logo,
+    altText: row.alt_text ?? undefined,
+    bannerTop: toPublicAssetUrl(row.banner_top, { uploadType: "banner" }) || (row.banner_top ?? undefined),
     link: row.link ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at
@@ -917,11 +935,14 @@ export const dbMysql = {
         updatedAt: now
       };
       await query(
-        `INSERT INTO organizers (id, logo, link, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?)`,
+        `INSERT INTO organizers (id, name, logo, alt_text, banner_top, link, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           newOrganizer.id,
+          newOrganizer.name,
           newOrganizer.logo,
+          newOrganizer.altText ?? null,
+          newOrganizer.bannerTop ?? null,
           newOrganizer.link ?? null,
           newOrganizer.createdAt,
           newOrganizer.updatedAt
@@ -939,9 +960,12 @@ export const dbMysql = {
         updatedAt: nowIso()
       };
       await query(
-        `UPDATE organizers SET logo=?, link=?, updated_at=? WHERE id=?`,
+        `UPDATE organizers SET name=?, logo=?, alt_text=?, banner_top=?, link=?, updated_at=? WHERE id=?`,
         [
+          next.name,
           next.logo,
+          next.altText ?? null,
+          next.bannerTop ?? null,
           next.link ?? null,
           next.updatedAt,
           id

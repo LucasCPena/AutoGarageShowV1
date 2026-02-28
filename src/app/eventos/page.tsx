@@ -3,7 +3,6 @@ import Link from "next/link";
 
 import Calendar from "@/components/Calendar";
 import Container from "@/components/Container";
-import EventCrudActions from "@/components/EventCrudActions";
 import HeroSlider from "@/components/HeroSlider";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
@@ -140,11 +139,6 @@ export default async function EventsPage() {
                 </div>
               ) : null}
 
-              <EventCrudActions
-                eventId={event.id}
-                editHref={`/eventos/gerenciar/${event.id}`}
-                compact
-              />
             </article>
           ))}
 

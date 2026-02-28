@@ -4,7 +4,6 @@ import Container from "@/components/Container";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { db } from "@/lib/database";
-import { eventImageAlt } from "@/lib/image-alt";
 import { normalizeAssetReference } from "@/lib/site-url";
 
 export const metadata: Metadata = {
@@ -16,7 +15,10 @@ export const dynamic = "force-dynamic";
 
 type Organizer = {
   id: string;
+  name: string;
   logo: string;
+  altText?: string;
+  bannerTop?: string;
   link?: string;
   createdAt: string;
   updatedAt: string;
@@ -54,6 +56,15 @@ export default async function OrganizersPage() {
       />
 
       <Container className="py-10">
+        {organizers[0]?.bannerTop ? (
+          <section className="mb-8 overflow-hidden rounded-2xl border border-slate-200">
+            <img
+              src={normalizeAssetReference(organizers[0].bannerTop) || ""}
+              alt="Banner dos organizadores"
+              className="h-44 w-full object-cover sm:h-56"
+            />
+          </section>
+        ) : null}
         {loadError ? (
           <Notice title="Erro" variant="warning">
             Nao foi possivel carregar os organizadores agora.
@@ -75,7 +86,7 @@ export default async function OrganizersPage() {
                 <div className="flex h-44 items-center justify-center rounded-2xl border border-slate-200 bg-white p-6">
                   <img
                     src={logo}
-                    alt={eventImageAlt("logo do organizador", index + 1)}
+                    alt={organizer.altText?.trim() || organizer.name?.trim() || `Organizador ${index + 1}`}
                     className="h-full w-full object-contain"
                   />
                 </div>

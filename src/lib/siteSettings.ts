@@ -17,7 +17,7 @@ export const defaultSiteSettings: SiteSettings = {
     cpf: 4,
     cnpj: 20
   },
-  listingFeaturedDurationsDays: [7, 14, 21, 30],
+  listingFeaturedDurationsDays: [30],
   listingAutoExpireDays: 120,
   listingExpireNoticeDays: 7
 };
@@ -75,12 +75,7 @@ export function normalizeSiteSettings(input: unknown): SiteSettings {
     }
   }
 
-  const durations = normalizeNumberArray(obj.listingFeaturedDurationsDays);
-  if (durations) {
-    normalized.listingFeaturedDurationsDays = durations.length
-      ? durations
-      : [...defaultSiteSettings.listingFeaturedDurationsDays];
-  }
+  normalized.listingFeaturedDurationsDays = [30];
 
   if (typeof obj.listingAutoExpireDays === "number") {
     normalized.listingAutoExpireDays = clampInt(obj.listingAutoExpireDays, 0, 3650);
