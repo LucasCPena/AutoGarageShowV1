@@ -4,6 +4,13 @@ import { requireAdmin } from "@/lib/auth-middleware";
 import { db, isMysqlRequiredError } from "@/lib/database";
 import { toPublicAssetUrl } from "@/lib/site-url";
 
+function normalizeOptionalText(value: unknown, max = 180) {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  return trimmed.slice(0, max);
+}
+
 function normalizeOptionalLink(value: unknown) {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
@@ -89,7 +96,15 @@ export async function PUT(
       parsedBody && typeof parsedBody === "object"
         ? (parsedBody as Record<string, unknown>)
         : {};
-    const updates: { logo?: string; link?: string | undefined } = {};
+    const updates: { name?: string; logo?: string; altText?: string | undefined; bannerTop?: string | undefined; link?: string | undefined } = {};
+
+    if (Object.prototype.hasOwnProperty.call(body, "name")) {
+      const name = normalizeOptionalText(body?.name, 120);
+      if (!name) {
+        return NextResponse.json({ error: "Informe o nome do organizador." }, { status: 400 });
+      }
+      updates.name = name;
+    }
 
     if (Object.prototype.hasOwnProperty.call(body, "logo")) {
       const logo = toPublicAssetUrl(body?.logo, { uploadType: "event" });
@@ -100,6 +115,15 @@ export async function PUT(
         );
       }
       updates.logo = logo;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(body, "altText")) {
+      updates.altText = normalizeOptionalText(body?.altText, 180);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(body, "bannerTop")) {
+      const bannerTop = toPublicAssetUrl(body?.bannerTop, { uploadType: "banner" });
+      updates.bannerTop = bannerTop && !bannerTop.startsWith("data:") ? bannerTop : undefined;
     }
 
     if (Object.prototype.hasOwnProperty.call(body, "link")) {

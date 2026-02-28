@@ -29,6 +29,11 @@ const nextConfig = {
     parallelServerBuildTraces: false
   },
   swcMinify: false,
+  eslint: {
+    // Avoid deploy interruption when CI/build environment runs lint on stale cache.
+    // Lint should run in dedicated step (npm run lint).
+    ignoreDuringBuilds: true
+  },
   images: {
     unoptimized: true,
     formats: ["image/avif", "image/webp"],
