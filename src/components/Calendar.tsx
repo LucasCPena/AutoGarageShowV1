@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 
 import Link from "next/link";
 
-import Notice from "@/components/Notice";
 import type { Event } from "@/lib/database";
 import { toDateKey } from "@/lib/date";
 import { generateEventOccurrences } from "@/lib/eventRecurrence";
@@ -170,12 +169,6 @@ export default function Calendar({ events }: Props) {
             </div>
           );
         })}
-      </div>
-
-      <div className="mt-6">
-        <Notice title="Dica" variant="info">
-          Clique em qualquer evento para ver detalhes. Apenas eventos aprovados com ocorrencias de hoje em diante aparecem neste calendário.
-        </Notice>
       </div>
     </div>
   );
