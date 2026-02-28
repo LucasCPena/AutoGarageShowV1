@@ -239,10 +239,6 @@ export default function ClassifiedsClientSections({ listings }: Props) {
 
   return (
     <>
-      <Notice title="Regras e seguranca (planejado)" variant="info">
-        Anuncios dependem de aprovacao. Limites por documento: CPF ate {settings.listingLimits.cpf} anuncios ativos e CNPJ ate {settings.listingLimits.cnpj}. Apenas veiculos com {settings.vehicleMinAgeYears}+ anos (ano maximo: {maxAllowedYear}). {noticeText}
-      </Notice>
-
       {expiredCount > 0 ? (
         <Notice title="Automacao" variant="warning" className="mt-4">
           {expiredCount} anuncio(s) foram ocultados por expiracao automatica.

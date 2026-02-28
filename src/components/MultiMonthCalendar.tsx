@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 
 import Link from "next/link";
 
-import Notice from "@/components/Notice";
 import { generateEventOccurrences } from "@/lib/eventRecurrence";
 import type { Event } from "@/lib/mockData";
 import { formatDateLong, formatDateShort, formatTime, toDateKey } from "@/lib/date";

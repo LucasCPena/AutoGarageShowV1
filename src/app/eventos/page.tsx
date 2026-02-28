@@ -144,22 +144,6 @@ export default async function EventsPage() {
           ) : null}
         </div>
 
-        <div className="mt-10 rounded-2xl border border-slate-200 bg-slate-50 p-6">
-          <div className="text-sm font-semibold text-slate-900">
-            Quer divulgar um encontro?
-          </div>
-          <p className="mt-1 text-sm text-slate-600">
-            Envie seu evento para revisao. No sistema final havera validacao de e-mail, captcha e controle anti-spam.
-          </p>
-          <div className="mt-4">
-            <Link
-              href="/eventos/cadastrar"
-              className="inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700"
-            >
-              Enviar evento
-            </Link>
-          </div>
-        </div>
       </Container>
     </>
   );
