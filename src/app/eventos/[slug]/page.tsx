@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import Container from "@/components/Container";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
+import ZoomableImage from "@/components/ZoomableImage";
 import { formatDateLong, formatTime } from "@/lib/date";
 import { db } from "@/lib/database";
 import { formatRecurrence, generateEventOccurrences, getSpanDays } from "@/lib/eventRecurrence";
@@ -113,10 +114,12 @@ export default async function EventDetailPage({ params }: Props) {
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
           <div className="grid gap-6 lg:col-span-2">
             <section className="rounded-2xl border border-slate-200 bg-white p-6">
-              <img
+              <ZoomableImage
                 src={heroImage}
                 alt={eventImageAlt(event.title)}
-                className="mb-4 h-52 w-full rounded-xl object-cover border border-slate-200"
+                width={1200}
+                height={800}
+                className="mb-4 h-52 w-full rounded-xl border border-slate-200 object-cover"
               />
               <h2 className="text-lg font-semibold text-slate-900">Sobre o evento</h2>
               <p className="mt-3 text-sm leading-relaxed text-slate-700">
