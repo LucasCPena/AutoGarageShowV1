@@ -357,7 +357,7 @@ export default function AdminOrganizersPanel({ token }: Props) {
             <div className="text-xs font-semibold text-slate-600">Pre-visualizacao do logo</div>
             <img
               src={logoPreview}
-              alt={item.altText || item.name || eventImageAlt("logo do organizador")}
+              alt={form.altText.trim() || form.name.trim() || eventImageAlt("logo do organizador")}
               className="mt-2 h-20 w-20 rounded-lg border border-slate-200 bg-white object-contain p-2"
             />
           </div>
@@ -411,7 +411,7 @@ export default function AdminOrganizersPanel({ token }: Props) {
                     {logo ? (
                       <img
                         src={logo}
-                        alt={item.altText || item.name || eventImageAlt("logo do organizador")}
+                        alt={form.altText.trim() || form.name.trim() || eventImageAlt("logo do organizador")}
                         className="h-full w-full object-contain"
                       />
                     ) : (

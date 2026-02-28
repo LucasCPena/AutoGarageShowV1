@@ -118,7 +118,7 @@ async function ensureOrganizersTable() {
     )`
   );
 
-  const columns = await getTableColumns("organizers");
+  const columns = await getTableColumnsSafe("organizers");
   if (columns && !columns.has("name")) {
     await query("ALTER TABLE organizers ADD COLUMN name VARCHAR(120) NOT NULL DEFAULT 'Organizador'");
   }
