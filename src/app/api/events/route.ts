@@ -2,7 +2,6 @@
 
 import { getUserFromToken } from '@/lib/auth-middleware';
 import { db, isMysqlRequiredError } from '@/lib/database';
-import { normalizeRecurrence } from '@/lib/eventRecurrence';
 import { normalizeAssetReference } from '@/lib/site-url';
 import { normalizeYouTubeUrl } from '@/lib/youtube';
 
@@ -118,7 +117,7 @@ export async function POST(request: NextRequest) {
       endAtIso = endDate.toISOString();
     }
 
-    const recurrence = normalizeRecurrence(eventData.recurrence, startDate.toISOString());
+    const recurrence = { type: "single" as const };
 
     let slug = slugify(eventData.title);
     const existingEvent = await db.events.findBySlug(slug);
