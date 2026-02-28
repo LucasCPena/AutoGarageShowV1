@@ -106,7 +106,7 @@ function ListingCard({
           alt={listingImageAlt(listing.title)}
           width={1200}
           height={800}
-          className="h-64 w-full object-cover"
+          className="h-56 w-full object-cover"
           loading="lazy"
         />
       </Link>
@@ -208,6 +208,10 @@ export default function ClassifiedsClientSections({ listings }: Props) {
     ? Array.from({ length: 3 }, (_, index) => featuredRotated[(featuredCursor + index) % featuredRotated.length])
     : featuredRotated;
 
+  const maxAllowedYear = new Date().getFullYear() - settings.vehicleMinAgeYears;
+
+
+
   const allMakes = Array.from(new Set(latest.map((l) => l.make).filter(Boolean))).sort();
   const allStates = Array.from(new Set(latest.map((l) => l.state).filter(Boolean))).sort();
   const allYears = Array.from(new Set(latest.map((l) => String(l.modelYear || l.year)).filter(Boolean))).sort((a,b)=>Number(b)-Number(a));
@@ -227,6 +231,11 @@ export default function ClassifiedsClientSections({ listings }: Props) {
   const totalPages = Math.max(1, Math.ceil(filteredLatest.length / pageSize));
   const safePage = Math.min(page, totalPages);
   const paginatedLatest = filteredLatest.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+  const noticeText =
+    settings.listingAutoExpireDays > 0
+      ? `Anuncios sao inativados automaticamente apos ${settings.listingAutoExpireDays} dias.`
+      : "Inativacao automatica desativada.";
 
   return (
     <>
