@@ -72,7 +72,7 @@ export default function ClassifiedsPage() {
     <>
       <PageIntro
         title="Classificados"
-        subtitle="Ordenação tipo OLX, destaque pago e expiração automática (configuráveis no admin)."
+        subtitle="Encontre anuncios de veiculos antigos aprovados pela plataforma."
       >
         <Link
           href="/classificados/anunciar"

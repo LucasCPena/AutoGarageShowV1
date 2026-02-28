@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 
 import Link from "next/link";
 
-import Notice from "@/components/Notice";
 import { generateEventOccurrences } from "@/lib/eventRecurrence";
 import type { Event } from "@/lib/mockData";
 import { formatDateLong, formatDateShort, formatTime, toDateKey } from "@/lib/date";
@@ -193,10 +192,8 @@ export default function MultiMonthCalendar({ events, months = 3 }: Props) {
         })}
       </div>
 
-      <div className="mt-8">
-        <Notice title="Dica" variant="info">
-          Clique em qualquer evento para ver detalhes. Apenas eventos aprovados aparecem neste calendário.
-        </Notice>
+      <div className="mt-8 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        Selecione um evento no calendario para abrir os detalhes.
       </div>
     </div>
   );

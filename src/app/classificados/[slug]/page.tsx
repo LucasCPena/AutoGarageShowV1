@@ -1,5 +1,4 @@
 ﻿import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -9,6 +8,7 @@ import ListingDetailSidebar from "@/components/ListingDetailSidebar";
 import ListingCrudActions from "@/components/ListingCrudActions";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
+import ZoomableImage from "@/components/ZoomableImage";
 import { formatCurrencyBRL } from "@/lib/format";
 import { db } from "@/lib/database";
 import { listingImageAlt } from "@/lib/image-alt";
@@ -125,11 +125,6 @@ export default async function ListingDetailPage({ params }: Props) {
           }}
         />
 
-        <Notice title="Controle anti-fraude (planejado)" variant="info">
-          Para publicar, o usuário precisa validar e-mail. Haverá limites por CPF/CNPJ
-          e aprovação manual antes de gerar URL pública.
-        </Notice>
-
         <ListingCrudActions
           listingId={listing.id}
           editHref={`/classificados/gerenciar/${listing.id}`}
@@ -138,7 +133,7 @@ export default async function ListingDetailPage({ params }: Props) {
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
           <div className="grid gap-6 lg:col-span-2">
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-              <Image
+              <ZoomableImage
                 src={images[0]}
                 alt={listingImageAlt(listing.title)}
                 width={1200}
@@ -154,13 +149,12 @@ export default async function ListingDetailPage({ params }: Props) {
                   key={`${src}-${index}`}
                   className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
                 >
-                  <Image
+                  <ZoomableImage
                     src={src}
                     alt={listingImageAlt(listing.title, index + 2)}
                     width={1200}
                     height={800}
                     className="h-48 w-full object-cover"
-                    loading="lazy"
                     sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                   />
                 </div>
@@ -213,9 +207,6 @@ export default async function ListingDetailPage({ params }: Props) {
                 </div>
               </dl>
 
-              <div className="mt-6 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
-                No sistema final: imagens em WEBP com versões 480/960/1600 e zoom.
-              </div>
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-6">
