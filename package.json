@@ -6,9 +6,6 @@
     "dev": "next dev",
     "build": "next build",
     "start": "node scripts/start-hostinger.js",
-    "test": "vitest",
-    "test:watch": "vitest --watch",
-    "test:coverage": "vitest --coverage",
     "lint": "next lint",
     "db:seed": "node scripts/seed-mysql.js",
     "db:check": "node scripts/check-mysql.js"
@@ -30,13 +27,6 @@
     "eslint-config-next": "14.2.35",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.4",
-    "typescript": "^5.4.5",
-    "vitest": "^0.34.0",
-    "@testing-library/react": "^14.0.0",
-    "@testing-library/jest-dom": "^6.0.0",
-    "jsdom": "^21.1.0"
-  },
-  "engines": {
-    "node": ">=18"
+    "typescript": "^5.4.5"
   }
 }
