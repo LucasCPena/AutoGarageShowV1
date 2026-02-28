@@ -15,7 +15,6 @@ import { db } from "@/lib/database";
 import { listingImageAlt } from "@/lib/image-alt";
 import { listingJsonLd } from "@/lib/schema";
 import { normalizeAssetReference } from "@/lib/site-url";
-import { toYouTubeEmbedUrl } from "@/lib/youtube";
 
 type Props = {
   params: {
@@ -98,32 +97,6 @@ export default async function ListingDetailPage({ params }: Props) {
     alt: listingImageAlt(listing.title, index + 1)
   }));
 
-  const videoUrl = listing.specifications?.mediaVideoUrl?.trim();
-  const videoType = listing.specifications?.mediaVideoType;
-  const videoPosition = Math.max(
-    0,
-    Math.min(
-      typeof listing.specifications?.mediaVideoPosition === "number"
-        ? Math.floor(listing.specifications.mediaVideoPosition)
-        : mediaItems.length,
-      mediaItems.length
-    )
-  );
-
-  if (videoUrl) {
-    if (videoType === "youtube") {
-      const embed = toYouTubeEmbedUrl(videoUrl);
-      if (embed) {
-        mediaItems.splice(videoPosition, 0, { type: "youtube", src: embed });
-      }
-    } else if (videoType === "upload") {
-      const normalized = normalizeAssetReference(videoUrl);
-      if (normalized) {
-        mediaItems.splice(videoPosition, 0, { type: "upload", src: normalized });
-      }
-    }
-  }
-
   const locationLabel = formatLocation(listing.city, listing.state);
   const subtitleParts = [
     locationLabel,
@@ -142,12 +115,6 @@ export default async function ListingDetailPage({ params }: Props) {
           className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
         >
           Voltar
-        </Link>
-        <Link
-          href="/classificados/anunciar"
-          className="rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
-        >
-          Anunciar
         </Link>
       </PageIntro>
 
@@ -173,33 +140,14 @@ export default async function ListingDetailPage({ params }: Props) {
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
           <div className="grid gap-6 lg:col-span-2">
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-              {mediaItems[0]?.type === "image" ? (
-                <ZoomableImage
-                  src={mediaItems[0].src}
-                  alt={mediaItems[0].alt}
-                  width={1200}
-                  height={800}
-                  className="h-80 w-full object-cover"
-                  priority
-                />
-              ) : mediaItems[0]?.type === "youtube" ? (
-                <iframe
-                  src={mediaItems[0].src}
-                  title={`Video do anuncio: ${listing.title}`}
-                  className="h-80 w-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                  allowFullScreen
-                />
-              ) : (
-                <video
-                  src={mediaItems[0]?.src}
-                  className="h-80 w-full bg-black object-contain"
-                  controls
-                  preload="metadata"
-                  title={`Video do anuncio: ${listing.title}`}
-                />
-              )}
+              <ZoomableImage
+                src={mediaItems[0].src}
+                alt={mediaItems[0].alt}
+                width={1200}
+                height={800}
+                className="h-80 w-full object-cover"
+                priority
+              />
             </div>
 
               <div>
@@ -208,9 +156,6 @@ export default async function ListingDetailPage({ params }: Props) {
                 <ListingGallery
                   images={images}
                   title={listing.title}
-                  mediaVideoUrl={listing.specifications?.mediaVideoUrl ?? null}
-                  mediaVideoType={listing.specifications?.mediaVideoType as any}
-                  mediaVideoPosition={listing.specifications?.mediaVideoPosition}
                 />
               </div>
 
@@ -223,11 +168,7 @@ export default async function ListingDetailPage({ params }: Props) {
                   </p>
                 </div>
 
-                {listing.featured ? (
-                  <span className="rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-800">
-                    Em destaque
-                  </span>
-                ) : null}
+                {null}
               </div>
             </section>
           </div>

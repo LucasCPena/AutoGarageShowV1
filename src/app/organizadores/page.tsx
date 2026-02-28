@@ -87,7 +87,7 @@ export default async function OrganizersPage() {
                   <img
                     src={logo}
                     alt={organizer.altText?.trim() || organizer.name?.trim() || `Organizador ${index + 1}`}
-                    className="h-full w-full object-contain"
+                    className="max-w-[50%] h-auto object-contain"
                   />
                 </div>
               );

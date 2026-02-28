@@ -103,8 +103,7 @@ export default function SiteHeader() {
       { href: "/eventos", label: "Eventos" },
       { href: "/organizadores", label: "Organizadores" },
       { href: "/classificados", label: "Classificados" },
-      { href: "/noticias", label: "Noticias" },
-      { href: "/classificados/anunciar", label: "Anuncie aqui" }
+      { href: "/noticias", label: "Noticias" }
     ];
     if (mounted && user?.role === "admin") {
       items.push({ href: "/admin", label: "Admin" });

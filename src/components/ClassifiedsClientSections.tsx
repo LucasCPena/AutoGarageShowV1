@@ -119,11 +119,7 @@ function ListingCard({
           >
             {listing.title}
           </Link>
-          {featuredTag ? (
-            <span className="rounded-full bg-brand-100 px-2.5 py-1 text-xs font-semibold text-brand-800">
-              Destaque
-            </span>
-          ) : null}
+          {null}
         </div>
 
         <div className="mt-1 text-sm text-slate-600">{formatListingMeta(listing)}</div>

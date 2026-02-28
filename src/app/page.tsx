@@ -397,11 +397,7 @@ export default function HomePage() {
         <Container className="py-16 md:py-20">
           <div className="grid gap-10 md:grid-cols-2 md:items-center">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white">
-                Sistema Completo
-                <span className="h-1 w-1 rounded-full bg-brand-300" />
-                Backend + Frontend
-              </div>
+              
 
               <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
                 {config.heroTitle}
@@ -409,12 +405,7 @@ export default function HomePage() {
               <p className="mt-4 text-lg text-slate-100">{config.heroSubtitle}</p>
               
               <div className="mt-6 flex flex-wrap gap-4">
-                <Link
-                  href="/classificados/anunciar"
-                  className="rounded-md bg-brand-600 px-6 py-3 text-base font-semibold text-white hover:bg-brand-700"
-                >
-                  Anunciar Veiculo
-                </Link>
+                
                 <Link
                   href="/eventos"
                   className="rounded-md border border-white/40 px-6 py-3 text-base font-semibold text-white hover:bg-white/10"
@@ -561,11 +552,7 @@ export default function HomePage() {
                       className="object-cover"
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 1200px"
                     />
-                    <div className="absolute top-2 right-2">
-                      <span className="rounded-full bg-brand-600 px-2 py-1 text-xs font-semibold text-white">
-                        Destaque
-                      </span>
-                    </div>
+                    
                   </div>
                   <div className="p-4">
                     <div className="text-xs font-semibold text-brand-700">
@@ -628,6 +615,24 @@ export default function HomePage() {
             </div>
           </section>
         )}
+
+        {liveEmbedUrl ? (
+          <section className="mb-12">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-slate-900">Transmissão ao vivo</h2>
+            </div>
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <iframe
+                className="aspect-video w-full"
+                src={liveEmbedUrl}
+                title={`Transmissao ao vivo: ${liveEvent?.title ?? "Transmissao"}`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+              />
+            </div>
+          </section>
+        ) : null}
 
         {/* Ultimas Noticias */}
         {config.showLatestNews && latestNews.length > 0 && (

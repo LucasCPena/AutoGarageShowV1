@@ -32,7 +32,7 @@ export default function ListingDetailSidebar({ listing }: Props) {
   if (!user) {
     return (
       <Notice title="Area para usuarios logados" variant="info">
-        Faca login para ver contato completo e opcao de destaque.
+        Faca login para ver contato completo.
       </Notice>
     );
   }
@@ -42,52 +42,39 @@ export default function ListingDetailSidebar({ listing }: Props) {
   const email = listing.contact?.email?.trim();
 
   return (
-    <>
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
-        <div className="text-sm font-semibold text-slate-900">Destaque</div>
-        <p className="mt-2 text-sm text-slate-600">
-          Aumente a visibilidade do anuncio.
-        </p>
-
-        <div className="mt-4">
-          <ListingFeaturePanel listing={listing} amountLabel="R$ 15,00" />
+    <div className="rounded-2xl border border-slate-200 bg-white p-6">
+      <div className="text-sm font-semibold text-slate-900">Contato</div>
+      <div className="mt-3 grid gap-2 text-sm text-slate-700">
+        <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+          Responsavel: {ownerName}
         </div>
-      </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
-        <div className="text-sm font-semibold text-slate-900">Contato</div>
-        <div className="mt-3 grid gap-2 text-sm text-slate-700">
-          <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-            Responsavel: {ownerName}
+        {phone ? (
+          <a
+            href={`tel:${phone}`}
+            className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            Telefone: {phone}
+          </a>
+        ) : (
+          <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-slate-500">
+            Telefone nao informado.
           </div>
+        )}
 
-          {phone ? (
-            <a
-              href={`tel:${phone}`}
-              className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              Telefone: {phone}
-            </a>
-          ) : (
-            <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-slate-500">
-              Telefone nao informado.
-            </div>
-          )}
-
-          {email ? (
-            <a
-              href={`mailto:${email}`}
-              className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              E-mail: {email}
-            </a>
-          ) : (
-            <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-slate-500">
-              E-mail nao informado.
-            </div>
-          )}
-        </div>
+        {email ? (
+          <a
+            href={`mailto:${email}`}
+            className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            E-mail: {email}
+          </a>
+        ) : (
+          <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-slate-500">
+            E-mail nao informado.
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 }
