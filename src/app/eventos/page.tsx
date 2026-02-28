@@ -6,6 +6,7 @@ import Container from "@/components/Container";
 import HeroSlider from "@/components/HeroSlider";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
+import EventCrudActions from "@/components/EventCrudActions";
 import { formatDateLong, formatTime } from "@/lib/date";
 import { db, Event } from "@/lib/database";
 import { formatRecurrence, generateEventOccurrences, getSpanDays } from "@/lib/eventRecurrence";
@@ -133,6 +134,12 @@ export default async function EventsPage() {
                   Evento em destaque
                 </div>
               ) : null}
+
+              <EventCrudActions
+                eventId={event.id}
+                editHref={`/eventos/gerenciar/${event.id}`}
+                compact
+              />
 
             </article>
           ))}
