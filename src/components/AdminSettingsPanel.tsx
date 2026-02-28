@@ -227,7 +227,7 @@ export default function AdminSettingsPanel() {
     }
   }
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     const durations = [30];
@@ -241,6 +241,12 @@ export default function AdminSettingsPanel() {
     setDraft(next);
     setFeaturedDurationsText(durationsToText(next.listingFeaturedDurationsDays));
     setSaved(true);
+    // Also persist branding (youtube live link) when saving the main settings
+    try {
+      await saveBranding();
+    } catch {
+      // saveBranding handles its own errors; ignore here
+    }
   }
 
   return (
@@ -433,6 +439,23 @@ export default function AdminSettingsPanel() {
             <span className="text-xs text-slate-500">
               Prototipo: sem envio de e-mail.
             </span>
+          </label>
+
+          <label className="grid gap-1 md:col-span-2">
+            <span className="text-sm font-semibold text-slate-900">YouTube ao vivo (home)</span>
+            <input
+              className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+              placeholder="https://www.youtube.com/watch?v=..."
+              value={brandingDraft.youtubeLiveUrl}
+              onChange={(e) => {
+                setBrandingSaved(false);
+                setBrandingDraft((current) => ({
+                  ...current,
+                  youtubeLiveUrl: e.target.value
+                }));
+              }}
+            />
+            <span className="text-xs text-slate-500">Opcional: link para transmissao ao vivo exibida na Home.</span>
           </label>
         </div>
 
