@@ -3,7 +3,6 @@ import Link from "next/link";
 
 import Calendar from "@/components/Calendar";
 import Container from "@/components/Container";
-import EventCrudActions from "@/components/EventCrudActions";
 import HeroSlider from "@/components/HeroSlider";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
@@ -94,11 +93,6 @@ export default async function EventsPage() {
           </Notice>
         ) : null}
 
-        <Notice title="Como funciona" variant="info" className="mt-6">
-          Eventos enviados passam por aprovacao manual. Apenas eventos aprovados geram URL publica amigavel. Eventos
-          recorrentes podem gerar datas automaticamente por ate 12 meses.
-        </Notice>
-
         <div className="mt-8 grid gap-3">
           {upcoming.map(({ event, nextOccurrence }) => (
             <article
@@ -140,11 +134,6 @@ export default async function EventsPage() {
                 </div>
               ) : null}
 
-              <EventCrudActions
-                eventId={event.id}
-                editHref={`/eventos/gerenciar/${event.id}`}
-                compact
-              />
             </article>
           ))}
 
@@ -155,22 +144,6 @@ export default async function EventsPage() {
           ) : null}
         </div>
 
-        <div className="mt-10 rounded-2xl border border-slate-200 bg-slate-50 p-6">
-          <div className="text-sm font-semibold text-slate-900">
-            Quer divulgar um encontro?
-          </div>
-          <p className="mt-1 text-sm text-slate-600">
-            Envie seu evento para revisao. No sistema final havera validacao de e-mail, captcha e controle anti-spam.
-          </p>
-          <div className="mt-4">
-            <Link
-              href="/eventos/cadastrar"
-              className="inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700"
-            >
-              Enviar evento
-            </Link>
-          </div>
-        </div>
       </Container>
     </>
   );

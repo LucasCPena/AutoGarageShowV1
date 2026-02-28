@@ -278,7 +278,7 @@ export const listings: Listing[] = [
     state: "SP",
     price: 42000,
     description:
-      "Exemplo de anúncio aprovado. No sistema final haverá validação automática (10+ anos), limites por CPF/CNPJ e aprovação manual.",
+      "Anúncio aprovado com informações completas do veículo.",
     status: "approved",
     createdAt: isoDaysAgo(3, 11),
     featured: false,
@@ -299,7 +299,7 @@ export const listings: Listing[] = [
     state: "PR",
     price: 125000,
     description:
-      "Exemplo de anúncio com destaque pago (Mercado Pago no sistema final).",
+      "Anúncio com destaque ativo na vitrine de classificados.",
     status: "approved",
     createdAt: isoDaysAgo(40, 10),
     featured: true,
@@ -339,7 +339,7 @@ export const news: NewsArticle[] = [
     excerpt:
       "Checklist prático para evitar surpresas: documentação, histórico, funilaria, mecânica e originalidade.",
     content:
-      "Avaliar um carro antigo vai muito além da aparência. Comece pela documentação e histórico, verifique sinais de funilaria e corrosão, e faça uma inspeção mecânica completa. Também é importante considerar a disponibilidade de peças e a originalidade do conjunto.\n\nNo Auto Garage Show, anúncios passam por aprovação manual e no sistema final haverá controles contra fraude e validação de e-mail.",
+      "Avaliar um carro antigo vai muito além da aparência. Comece pela documentação e histórico, verifique sinais de funilaria e corrosão, e faça uma inspeção mecânica completa. Também é importante considerar a disponibilidade de peças e a originalidade do conjunto.",
     category: "Guia",
     coverImage: "/placeholders/news.svg",
     publishedAt: isoDaysAgo(3, 9)
@@ -359,11 +359,11 @@ export const news: NewsArticle[] = [
   {
     id: "n3",
     slug: "como-funciona-o-destaque-de-anuncios",
-    title: "Como funciona o destaque de anúncios",
+    title: "Destaque de anúncios",
     excerpt:
-      "Entenda o destaque pago, expiração automática e como isso ajuda a manter o portal sustentável.",
+      "Saiba como destacar seu anúncio para ganhar mais visibilidade no portal.",
     content:
-      "O destaque é uma forma de dar mais visibilidade ao seu anúncio. No sistema final, a ativação será automática após pagamento via Mercado Pago e terá expiração automática.\n\nEste protótipo mostra apenas a experiência visual.",
+      "O destaque é uma forma de dar mais visibilidade ao seu anúncio dentro dos classificados.",
     category: "Classificados",
     coverImage: "/placeholders/news.svg",
     publishedAt: isoDaysAgo(15, 9)

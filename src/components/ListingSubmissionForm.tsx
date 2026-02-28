@@ -1,6 +1,6 @@
 "use client";
 
-import type { FormEvent } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 import Notice from "@/components/Notice";
@@ -10,6 +10,13 @@ import { useAuth } from "@/lib/useAuth";
 import { useSiteSettings } from "@/lib/useSiteSettings";
 import { getModelsForMake, vehicleMakes } from "@/lib/vehicleCatalog";
 import type { VehicleBrand } from "@/lib/database";
+
+
+type ListingPhotoItem = {
+  id: string;
+  file: File;
+  previewUrl: string;
+};
 
 export default function ListingSubmissionForm() {
   const { settings, isReady } = useSiteSettings();
@@ -43,13 +50,66 @@ export default function ListingSubmissionForm() {
   const [contactEmail, setContactEmail] = useState("");
   const [description, setDescription] = useState("");
 
-  const [photoCount, setPhotoCount] = useState(0);
-  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [photos, setPhotos] = useState<ListingPhotoItem[]>([]);
+  const [coverPhotoId, setCoverPhotoId] = useState<string | null>(null);
 
   const maxAllowedYear = useMemo(
     () => getVehicleMaxAllowedYear(settings),
     [settings]
   );
+
+
+  useEffect(() => {
+    return () => {
+      photos.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+    };
+  }, [photos]);
+
+  function onPhotoFilesChange(event: ChangeEvent<HTMLInputElement>) {
+    const files = event.target.files ? Array.from(event.target.files) : [];
+    setError(null);
+
+    setPhotos((current) => {
+      current.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+
+      const next = files.slice(0, 10).map((file, index) => ({
+        id: `${Date.now()}-${index}-${file.name}`,
+        file,
+        previewUrl: URL.createObjectURL(file)
+      }));
+
+      setCoverPhotoId(next[0]?.id ?? null);
+      return next;
+    });
+  }
+
+  function movePhoto(photoId: string, direction: -1 | 1) {
+    setPhotos((current) => {
+      const index = current.findIndex((item) => item.id === photoId);
+      if (index < 0) return current;
+      const target = index + direction;
+      if (target < 0 || target >= current.length) return current;
+
+      const next = [...current];
+      const [moved] = next.splice(index, 1);
+      next.splice(target, 0, moved);
+      return next;
+    });
+  }
+
+  function removePhoto(photoId: string) {
+    setPhotos((current) => {
+      const item = current.find((entry) => entry.id === photoId);
+      if (item) URL.revokeObjectURL(item.previewUrl);
+
+      const next = current.filter((entry) => entry.id !== photoId);
+      setCoverPhotoId((selected) => {
+        if (selected && next.some((entry) => entry.id === selected)) return selected;
+        return next[0]?.id ?? null;
+      });
+      return next;
+    });
+  }
 
   useEffect(() => {
     const loadBrands = async () => {
@@ -202,7 +262,7 @@ export default function ListingSubmissionForm() {
       return;
     }
 
-    if (photoCount > 10) {
+    if (photos.length > 10) {
       setError("Voce pode enviar no maximo 10 fotos por anuncio.");
       setSubmitted(false);
       return;
@@ -225,8 +285,24 @@ export default function ListingSubmissionForm() {
     setError(null);
 
     try {
-      const uploadedImages =
-        photoFiles.length > 0 ? await uploadListingImages(photoFiles) : [];
+      const orderedFiles = photos.map((item) => item.file);
+      const uploadedImages = orderedFiles.length > 0 ? await uploadListingImages(orderedFiles) : [];
+
+      const selectedCoverIndex = coverPhotoId
+        ? photos.findIndex((item) => item.id === coverPhotoId)
+        : 0;
+
+      const normalizedCoverIndex =
+        selectedCoverIndex >= 0 && selectedCoverIndex < uploadedImages.length
+          ? selectedCoverIndex
+          : 0;
+
+      const orderedImages = uploadedImages.length
+        ? [
+            uploadedImages[normalizedCoverIndex],
+            ...uploadedImages.filter((_, index) => index !== normalizedCoverIndex)
+          ]
+        : [];
 
       const payload = {
         make: normalizedMake,
@@ -245,7 +321,7 @@ export default function ListingSubmissionForm() {
           email: contactEmail.trim(),
           phone: contactPhone.trim()
         },
-        images: uploadedImages,
+        images: orderedImages,
         status: user?.role === "admin" ? "active" : undefined
       };
 
@@ -273,8 +349,9 @@ export default function ListingSubmissionForm() {
       if (typeof window !== "undefined") {
         window.alert(successText);
       }
-      setPhotoFiles([]);
-      setPhotoCount(0);
+      photos.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+      setPhotos([]);
+      setCoverPhotoId(null);
     } catch (submitError) {
       setError(
         submitError instanceof Error
@@ -601,16 +678,59 @@ export default function ListingSubmissionForm() {
             type="file"
             multiple
             accept="image/*"
-            onChange={(event) => {
-              const files = event.target.files ? Array.from(event.target.files) : [];
-              setPhotoFiles(files);
-              setPhotoCount(files.length);
-              setError(null);
-            }}
+            onChange={onPhotoFilesChange}
           />
-          <span className="text-xs text-slate-500">As fotos serao enviadas no cadastro do anuncio.</span>
-          {photoCount > 0 ? (
-            <span className="text-xs text-slate-500">{photoCount} imagem(ns) selecionada(s).</span>
+          <span className="text-xs text-slate-500">Selecione ate 10 imagens. A foto marcada como destaque vira a capa do anuncio.</span>
+
+          {photos.length > 0 ? (
+            <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {photos.map((item, index) => {
+                const isCover = item.id === coverPhotoId;
+                return (
+                  <div key={item.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                    <img
+                      src={item.previewUrl}
+                      alt={`Preview da foto ${index + 1}`}
+                      className="h-48 w-full object-cover"
+                    />
+                    <div className="grid gap-2 p-2">
+                      <button
+                        type="button"
+                        onClick={() => setCoverPhotoId(item.id)}
+                        className={`rounded-md px-2 py-1 text-xs font-semibold ${isCover ? "bg-brand-600 text-white" : "border border-slate-300 text-slate-700 hover:bg-slate-50"}`}
+                      >
+                        {isCover ? "Imagem de destaque" : "Definir como destaque"}
+                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => movePhoto(item.id, -1)}
+                          disabled={index === 0}
+                          className="flex-1 rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700 disabled:opacity-40"
+                        >
+                          Subir
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => movePhoto(item.id, 1)}
+                          disabled={index === photos.length - 1}
+                          className="flex-1 rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700 disabled:opacity-40"
+                        >
+                          Descer
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(item.id)}
+                        className="rounded-md border border-red-200 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           ) : null}
         </label>
       </div>
