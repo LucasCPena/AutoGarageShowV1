@@ -353,7 +353,13 @@ export default function HomePage() {
     })
     .slice(0, 6);
   const liveEvent = upcoming.find(({ event }) => Boolean(event.liveUrl))?.event;
-  const liveEmbedUrl = toYouTubeEmbedUrl(liveEvent?.liveUrl);
+
+  // Allow admin-configured home YouTube link (branding.youtubeLiveUrl) as fallback
+  const siteYouTube = (typeof (settings as any)?.settings?.branding?.youtubeLiveUrl === 'string')
+    ? (settings as any).settings.branding.youtubeLiveUrl
+    : undefined;
+
+  const liveEmbedUrl = toYouTubeEmbedUrl(liveEvent?.liveUrl || siteYouTube);
 
   const visibleListings = listings.filter((listing) => listing.status === "active" || listing.status === "approved");
   const activeListingsCount = visibleListings.length;

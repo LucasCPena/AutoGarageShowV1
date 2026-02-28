@@ -168,6 +168,12 @@ export default function SiteHeader() {
             </>
           ) : (
             <>
+              <Link
+                href="/classificados/anunciar"
+                className="rounded-md border border-white/20 px-3 py-2 text-sm font-semibold text-white hover:bg-white/10"
+              >
+                Anunciar
+              </Link>
               <button
                 onClick={() => setAuthModalOpen(true)}
                 className="rounded-md border border-white bg-white px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-200"

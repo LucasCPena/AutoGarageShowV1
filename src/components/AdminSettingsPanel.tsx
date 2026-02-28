@@ -20,6 +20,7 @@ import { useSiteSettings } from "@/lib/useSiteSettings";
 type BrandingDraft = {
   logoUrl: string;
   faviconUrl: string;
+  youtubeLiveUrl?: string;
 };
 
 function durationsToText(values: number[]) {
@@ -31,6 +32,8 @@ function toBrandingDraft(branding: SiteBranding): BrandingDraft {
   return {
     logoUrl: branding.logoUrl ?? "",
     faviconUrl: branding.faviconUrl ?? ""
+    ,
+    youtubeLiveUrl: branding.youtubeLiveUrl ?? ""
   };
 }
 
@@ -49,6 +52,8 @@ export default function AdminSettingsPanel() {
   const [brandingDraft, setBrandingDraft] = useState<BrandingDraft>({
     logoUrl: "",
     faviconUrl: ""
+    ,
+    youtubeLiveUrl: ""
   });
   const [brandingLoading, setBrandingLoading] = useState(true);
   const [brandingSaving, setBrandingSaving] = useState(false);
@@ -541,6 +546,23 @@ export default function AdminSettingsPanel() {
                 }));
               }}
             />
+          </label>
+
+          <label className="grid gap-1 md:col-span-2">
+            <span className="text-sm font-semibold text-slate-900">YouTube ao vivo (URL da home)</span>
+            <input
+              className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+              placeholder="https://www.youtube.com/watch?v=..."
+              value={brandingDraft.youtubeLiveUrl}
+              onChange={(e) => {
+                setBrandingSaved(false);
+                setBrandingDraft((current) => ({
+                  ...current,
+                  youtubeLiveUrl: e.target.value
+                }));
+              }}
+            />
+            <span className="text-xs text-slate-500">Opcional: se preenchido, o video sera exibido na home quando nao houver evento ao vivo.</span>
           </label>
 
           {brandingDraft.faviconUrl ? (
