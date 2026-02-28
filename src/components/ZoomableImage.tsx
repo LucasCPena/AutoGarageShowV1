@@ -31,6 +31,7 @@ export default function ZoomableImage({
         onClick={() => setOpen(true)}
         className="block w-full overflow-hidden"
         aria-label={`Ampliar imagem: ${alt}`}
+        title={alt}
       >
         <Image
           src={src}

@@ -39,8 +39,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const allowedTypes =
-      type === "site"
+    const isListingVideoUpload = type === "listing-video";
+    const allowedTypes = isListingVideoUpload
+      ? ["mp4", "webm", "mov"]
+      : type === "site"
         ? Array.from(new Set([...baseAllowedTypes, "ico"]))
         : baseAllowedTypes;
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
@@ -52,11 +54,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validar tamanho (máximo 5MB por padrão)
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    // Validar tamanho
+    const maxSize = isListingVideoUpload ? 100 * 1024 * 1024 : 5 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
-        { error: 'Arquivo muito grande. Tamanho máximo: 5MB' },
+        { error: `Arquivo muito grande. Tamanho maximo: ${isListingVideoUpload ? '100MB' : '5MB'}` },
         { status: 400 }
       );
     }

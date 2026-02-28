@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import Notice from "@/components/Notice";
 import { validateCNPJ, validateCPF } from "@/lib/document";
+import { normalizeYouTubeUrl } from "@/lib/youtube";
 import { getVehicleMaxAllowedYear } from "@/lib/siteSettings";
 import { useAuth } from "@/lib/useAuth";
 import { useSiteSettings } from "@/lib/useSiteSettings";
@@ -52,6 +53,11 @@ export default function ListingSubmissionForm() {
 
   const [photos, setPhotos] = useState<ListingPhotoItem[]>([]);
   const [coverPhotoId, setCoverPhotoId] = useState<string | null>(null);
+  const [videoMode, setVideoMode] = useState<"none" | "youtube" | "upload">("none");
+  const [youtubeVideoUrl, setYoutubeVideoUrl] = useState("");
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
+  const [videoPosition, setVideoPosition] = useState(0);
 
   const maxAllowedYear = useMemo(
     () => getVehicleMaxAllowedYear(settings),
@@ -62,8 +68,9 @@ export default function ListingSubmissionForm() {
   useEffect(() => {
     return () => {
       photos.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+      if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
     };
-  }, [photos]);
+  }, [photos, videoPreviewUrl]);
 
   function onPhotoFilesChange(event: ChangeEvent<HTMLInputElement>) {
     const files = event.target.files ? Array.from(event.target.files) : [];
@@ -110,6 +117,35 @@ export default function ListingSubmissionForm() {
       return next;
     });
   }
+
+  function onVideoFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null;
+    if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
+
+    if (!file) {
+      setVideoFile(null);
+      setVideoPreviewUrl(null);
+      return;
+    }
+
+    setVideoMode("upload");
+    setYoutubeVideoUrl("");
+    setVideoFile(file);
+    setVideoPreviewUrl(URL.createObjectURL(file));
+    setError(null);
+  }
+
+  function moveVideoPosition(direction: -1 | 1) {
+    setVideoPosition((current) => {
+      const maxPosition = photos.length;
+      const next = current + direction;
+      if (next < 0) return 0;
+      if (next > maxPosition) return maxPosition;
+      return next;
+    });
+  }
+
+  const canUseVideo = videoMode !== "none" && (Boolean(videoFile) || Boolean(youtubeVideoUrl.trim()));
 
   useEffect(() => {
     const loadBrands = async () => {
@@ -192,6 +228,25 @@ export default function ListingSubmissionForm() {
     );
 
     return uploadedUrls;
+  }
+
+  async function uploadListingVideo(file: File) {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("type", "listing-video");
+
+    const response = await fetch("/api/upload", {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: formData
+    });
+
+    const data = await response.json();
+    if (!response.ok || typeof data.url !== "string" || !data.url.trim()) {
+      throw new Error(data?.error || `Erro ao enviar video (${file.name}).`);
+    }
+
+    return data.url.trim();
   }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -288,6 +343,23 @@ export default function ListingSubmissionForm() {
       const orderedFiles = photos.map((item) => item.file);
       const uploadedImages = orderedFiles.length > 0 ? await uploadListingImages(orderedFiles) : [];
 
+      let listingVideoUrl = "";
+      let listingVideoType: "youtube" | "upload" | undefined;
+
+      if (videoMode === "youtube" && youtubeVideoUrl.trim()) {
+        const normalized = normalizeYouTubeUrl(youtubeVideoUrl.trim());
+        if (!normalized) {
+          throw new Error("Informe um link valido do YouTube para o video.");
+        }
+        listingVideoUrl = normalized;
+        listingVideoType = "youtube";
+      }
+
+      if (videoMode === "upload" && videoFile) {
+        listingVideoUrl = await uploadListingVideo(videoFile);
+        listingVideoType = "upload";
+      }
+
       const selectedCoverIndex = coverPhotoId
         ? photos.findIndex((item) => item.id === coverPhotoId)
         : 0;
@@ -322,6 +394,17 @@ export default function ListingSubmissionForm() {
           phone: contactPhone.trim()
         },
         images: orderedImages,
+        specifications: {
+          singleOwner: false,
+          blackPlate: false,
+          showPlate: true,
+          auctionVehicle: false,
+          ipvaPaid: false,
+          vehicleStatus: "paid",
+          mediaVideoUrl: listingVideoUrl || undefined,
+          mediaVideoType: listingVideoType,
+          mediaVideoPosition: listingVideoUrl ? Math.min(Math.max(videoPosition, 0), orderedImages.length) : undefined
+        },
         status: user?.role === "admin" ? "active" : undefined
       };
 
@@ -352,6 +435,12 @@ export default function ListingSubmissionForm() {
       photos.forEach((item) => URL.revokeObjectURL(item.previewUrl));
       setPhotos([]);
       setCoverPhotoId(null);
+      setVideoMode("none");
+      setYoutubeVideoUrl("");
+      setVideoFile(null);
+      if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
+      setVideoPreviewUrl(null);
+      setVideoPosition(0);
     } catch (submitError) {
       setError(
         submitError instanceof Error
@@ -671,6 +760,48 @@ export default function ListingSubmissionForm() {
           />
         </label>
 
+
+        <div className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 md:col-span-2">
+          <span className="text-sm font-semibold text-slate-900">Video do anuncio (opcional)</span>
+
+          <div className="grid gap-2 sm:grid-cols-3">
+            <button type="button" onClick={() => { setVideoMode("none"); setYoutubeVideoUrl(""); setVideoFile(null); if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl); setVideoPreviewUrl(null); }} className={`rounded-md border px-3 py-2 text-xs font-semibold ${videoMode === "none" ? "border-brand-600 bg-brand-50 text-brand-700" : "border-slate-300 text-slate-700"}`}>Sem video</button>
+            <button type="button" onClick={() => { setVideoMode("youtube"); setVideoFile(null); if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl); setVideoPreviewUrl(null); }} className={`rounded-md border px-3 py-2 text-xs font-semibold ${videoMode === "youtube" ? "border-brand-600 bg-brand-50 text-brand-700" : "border-slate-300 text-slate-700"}`}>Link do YouTube</button>
+            <button type="button" onClick={() => { setVideoMode("upload"); setYoutubeVideoUrl(""); }} className={`rounded-md border px-3 py-2 text-xs font-semibold ${videoMode === "upload" ? "border-brand-600 bg-brand-50 text-brand-700" : "border-slate-300 text-slate-700"}`}>Enviar video</button>
+          </div>
+
+          {videoMode === "youtube" ? (
+            <input
+              className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+              placeholder="https://www.youtube.com/watch?v=..."
+              value={youtubeVideoUrl}
+              onChange={(event) => {
+                setYoutubeVideoUrl(event.target.value);
+                setError(null);
+              }}
+            />
+          ) : null}
+
+          {videoMode === "upload" ? (
+            <input
+              className="h-11 rounded-md border border-slate-300 px-3 py-2 text-sm"
+              type="file"
+              accept="video/mp4,video/webm,video/quicktime"
+              onChange={onVideoFileChange}
+            />
+          ) : null}
+
+          {canUseVideo ? (
+            <div className="grid gap-2 rounded-md border border-slate-200 bg-white p-2">
+              <div className="text-xs font-semibold text-slate-700">Posicao do video na ordem da galeria</div>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => moveVideoPosition(-1)} className="rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700">Subir</button>
+                <button type="button" onClick={() => moveVideoPosition(1)} className="rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700">Descer</button>
+                <span className="text-xs text-slate-600 self-center">Posicao atual: {videoPosition + 1}</span>
+              </div>
+            </div>
+          ) : null}
+        </div>
         <label className="grid gap-1 md:col-span-2">
           <span className="text-sm font-semibold text-slate-900">Fotos</span>
           <input

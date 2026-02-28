@@ -14,12 +14,18 @@ import { db } from "@/lib/database";
 import { listingImageAlt } from "@/lib/image-alt";
 import { listingJsonLd } from "@/lib/schema";
 import { normalizeAssetReference } from "@/lib/site-url";
+import { toYouTubeEmbedUrl } from "@/lib/youtube";
 
 type Props = {
   params: {
     slug: string;
   };
 };
+
+type ListingMediaItem =
+  | { type: "image"; src: string; alt: string }
+  | { type: "youtube"; src: string }
+  | { type: "upload"; src: string };
 
 function toMetaDescription(text: string) {
   const clean = text.replace(/\s+/g, " ").trim();
@@ -84,6 +90,39 @@ export default async function ListingDetailPage({ params }: Props) {
   const listingYearLabel = listingYear ? String(listingYear) : "Ano não informado";
   const images = (listing.images?.length ? listing.images : ["/placeholders/car.svg"])
     .map((image) => normalizeAssetReference(image) || "/placeholders/car.svg");
+
+  const mediaItems: ListingMediaItem[] = images.map((src, index) => ({
+    type: "image",
+    src,
+    alt: listingImageAlt(listing.title, index + 1)
+  }));
+
+  const videoUrl = listing.specifications?.mediaVideoUrl?.trim();
+  const videoType = listing.specifications?.mediaVideoType;
+  const videoPosition = Math.max(
+    0,
+    Math.min(
+      typeof listing.specifications?.mediaVideoPosition === "number"
+        ? Math.floor(listing.specifications.mediaVideoPosition)
+        : mediaItems.length,
+      mediaItems.length
+    )
+  );
+
+  if (videoUrl) {
+    if (videoType === "youtube") {
+      const embed = toYouTubeEmbedUrl(videoUrl);
+      if (embed) {
+        mediaItems.splice(videoPosition, 0, { type: "youtube", src: embed });
+      }
+    } else if (videoType === "upload") {
+      const normalized = normalizeAssetReference(videoUrl);
+      if (normalized) {
+        mediaItems.splice(videoPosition, 0, { type: "upload", src: normalized });
+      }
+    }
+  }
+
   const locationLabel = formatLocation(listing.city, listing.state);
   const subtitleParts = [
     locationLabel,
@@ -133,30 +172,68 @@ export default async function ListingDetailPage({ params }: Props) {
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
           <div className="grid gap-6 lg:col-span-2">
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-              <ZoomableImage
-                src={images[0]}
-                alt={listingImageAlt(listing.title)}
-                width={1200}
-                height={800}
-                className="h-80 w-full object-cover"
-                priority
-              />
+              {mediaItems[0]?.type === "image" ? (
+                <ZoomableImage
+                  src={mediaItems[0].src}
+                  alt={mediaItems[0].alt}
+                  width={1200}
+                  height={800}
+                  className="h-80 w-full object-cover"
+                  priority
+                />
+              ) : mediaItems[0]?.type === "youtube" ? (
+                <iframe
+                  src={mediaItems[0].src}
+                  title={`Video do anuncio: ${listing.title}`}
+                  className="h-80 w-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                />
+              ) : (
+                <video
+                  src={mediaItems[0]?.src}
+                  className="h-80 w-full bg-black object-contain"
+                  controls
+                  preload="metadata"
+                  title={`Video do anuncio: ${listing.title}`}
+                />
+              )}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              {images.slice(1).map((src, index) => (
+              {mediaItems.slice(1).map((item, index) => (
                 <div
-                  key={`${src}-${index}`}
+                  key={`${item.type}-${item.src}-${index}`}
                   className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
                 >
-                  <ZoomableImage
-                    src={src}
-                    alt={listingImageAlt(listing.title, index + 2)}
-                    width={1200}
-                    height={800}
-                    className="h-48 w-full object-cover"
-                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                  />
+                  {item.type === "image" ? (
+                    <ZoomableImage
+                      src={item.src}
+                      alt={item.alt}
+                      width={1200}
+                      height={800}
+                      className="h-48 w-full object-cover"
+                      sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                    />
+                  ) : item.type === "youtube" ? (
+                    <iframe
+                      src={item.src}
+                      title={`Video do anuncio: ${listing.title} (${index + 2})`}
+                      className="h-48 w-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <video
+                      src={item.src}
+                      className="h-48 w-full bg-black object-contain"
+                      controls
+                      preload="metadata"
+                      title={`Video do anuncio: ${listing.title} (${index + 2})`}
+                    />
+                  )}
                 </div>
               ))}
             </div>
