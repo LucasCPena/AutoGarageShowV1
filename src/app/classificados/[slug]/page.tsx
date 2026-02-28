@@ -139,10 +139,10 @@ export default async function ListingDetailPage({ params }: Props) {
 
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
           <div className="grid gap-6 lg:col-span-2">
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
               <ZoomableImage
-                src={mediaItems[0].src}
-                alt={mediaItems[0].alt}
+                src={images[0]}
+                alt={listingImageAlt(listing.title, 1)}
                 width={1200}
                 height={800}
                 className="h-80 w-full object-cover"
