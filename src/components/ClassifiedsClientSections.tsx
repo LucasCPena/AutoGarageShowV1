@@ -106,7 +106,7 @@ function ListingCard({
           alt={listingImageAlt(listing.title)}
           width={1200}
           height={800}
-          className="h-44 w-full object-cover"
+          className="h-64 w-full object-cover"
           loading="lazy"
         />
       </Link>
@@ -157,6 +157,11 @@ export default function ClassifiedsClientSections({ listings }: Props) {
   const { user } = useAuth();
   const { overrides } = useListingOverrides();
   const [featuredCursor, setFeaturedCursor] = useState(0);
+  const [makeFilter, setMakeFilter] = useState("all");
+  const [modelFilter, setModelFilter] = useState("all");
+  const [stateFilter, setStateFilter] = useState("all");
+  const [yearFilter, setYearFilter] = useState("all");
+  const [page, setPage] = useState(1);
   const now = Date.now();
 
   const effectiveListings = applyListingOverrides(listings, overrides);
@@ -194,24 +199,37 @@ export default function ClassifiedsClientSections({ listings }: Props) {
     setFeaturedCursor(0);
   }, [featuredRotated.length]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [makeFilter, modelFilter, stateFilter, yearFilter]);
+
   const canSlideFeatured = featuredRotated.length > 3;
   const visibleFeatured = canSlideFeatured
     ? Array.from({ length: 3 }, (_, index) => featuredRotated[(featuredCursor + index) % featuredRotated.length])
     : featuredRotated;
 
-  const maxAllowedYear = new Date().getFullYear() - settings.vehicleMinAgeYears;
+  const allMakes = Array.from(new Set(latest.map((l) => l.make).filter(Boolean))).sort();
+  const allStates = Array.from(new Set(latest.map((l) => l.state).filter(Boolean))).sort();
+  const allYears = Array.from(new Set(latest.map((l) => String(l.modelYear || l.year)).filter(Boolean))).sort((a,b)=>Number(b)-Number(a));
+  const modelOptions = Array.from(
+    new Set(latest.filter((l) => makeFilter === "all" || l.make === makeFilter).map((l) => l.model).filter(Boolean))
+  ).sort();
 
-  const noticeText =
-    settings.listingAutoExpireDays > 0
-      ? `Anuncios sao inativados automaticamente apos ${settings.listingAutoExpireDays} dias.`
-      : "Inativacao automatica desativada.";
+  const filteredLatest = latest.filter((listing) => {
+    if (makeFilter !== "all" && listing.make !== makeFilter) return false;
+    if (modelFilter !== "all" && listing.model !== modelFilter) return false;
+    if (stateFilter !== "all" && listing.state !== stateFilter) return false;
+    if (yearFilter !== "all" && String(listing.modelYear || listing.year) !== yearFilter) return false;
+    return true;
+  });
+
+  const pageSize = 24;
+  const totalPages = Math.max(1, Math.ceil(filteredLatest.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const paginatedLatest = filteredLatest.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   return (
     <>
-      <Notice title="Regras e seguranca (planejado)" variant="info">
-        Anuncios dependem de aprovacao. Limites por documento: CPF ate {settings.listingLimits.cpf} anuncios ativos e CNPJ ate {settings.listingLimits.cnpj}. Apenas veiculos com {settings.vehicleMinAgeYears}+ anos (ano maximo: {maxAllowedYear}). {noticeText}
-      </Notice>
-
       {expiredCount > 0 ? (
         <Notice title="Automacao" variant="warning" className="mt-4">
           {expiredCount} anuncio(s) foram ocultados por expiracao automatica.
@@ -247,7 +265,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
           <div>
             <h2 className="text-xl font-bold text-slate-900">Em destaque</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Destaque pago: o anuncio volta ao topo por 30 dias.
+              Anuncios destacados aparecem nesta vitrine.
             </p>
           </div>
 
@@ -290,6 +308,16 @@ export default function ClassifiedsClientSections({ listings }: Props) {
             </div>
           ) : null}
         </div>
+
+        {filteredLatest.length > pageSize ? (
+          <div className="mt-5 flex items-center justify-between gap-3 text-sm">
+            <span className="text-slate-600">Pagina {safePage} de {totalPages} ({filteredLatest.length} anuncios)</span>
+            <div className="flex gap-2">
+              <button type="button" className="rounded-md border border-slate-300 px-3 py-1.5 disabled:opacity-50" disabled={safePage <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>Anterior</button>
+              <button type="button" className="rounded-md border border-slate-300 px-3 py-1.5 disabled:opacity-50" disabled={safePage >= totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))}>Proxima</button>
+            </div>
+          </div>
+        ) : null}
       </section>
 
       <section className="mt-14">
@@ -297,22 +325,51 @@ export default function ClassifiedsClientSections({ listings }: Props) {
           <div>
             <h2 className="text-xl font-bold text-slate-900">Ultimos anuncios</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Ordenacao tipo OLX: os anuncios mais recentes aparecem primeiro.
+              Lista dos anuncios mais recentes.
             </p>
           </div>
         </div>
 
+        <div className="mt-4 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2 lg:grid-cols-4">
+          <select className="h-10 rounded-md border border-slate-300 px-2 text-sm" value={makeFilter} onChange={(e)=>{ setMakeFilter(e.target.value); setModelFilter("all"); }}>
+            <option value="all">Todas as marcas</option>
+            {allMakes.map((make)=><option key={make} value={make}>{make}</option>)}
+          </select>
+          <select className="h-10 rounded-md border border-slate-300 px-2 text-sm" value={modelFilter} onChange={(e)=>setModelFilter(e.target.value)}>
+            <option value="all">Todos os modelos</option>
+            {modelOptions.map((model)=><option key={model} value={model}>{model}</option>)}
+          </select>
+          <select className="h-10 rounded-md border border-slate-300 px-2 text-sm" value={stateFilter} onChange={(e)=>setStateFilter(e.target.value)}>
+            <option value="all">Todos os estados</option>
+            {allStates.map((uf)=><option key={uf} value={uf}>{uf}</option>)}
+          </select>
+          <select className="h-10 rounded-md border border-slate-300 px-2 text-sm" value={yearFilter} onChange={(e)=>setYearFilter(e.target.value)}>
+            <option value="all">Todos os anos</option>
+            {allYears.map((year)=><option key={year} value={year}>{year}</option>)}
+          </select>
+        </div>
+
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {latest.map((listing) => (
+          {paginatedLatest.map((listing) => (
             <ListingCard key={listing.id} listing={listing} showContact={Boolean(user)} />
           ))}
 
-          {latest.length === 0 ? (
+          {paginatedLatest.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-600">
               Nenhum anuncio disponivel no momento.
             </div>
           ) : null}
         </div>
+
+        {filteredLatest.length > pageSize ? (
+          <div className="mt-5 flex items-center justify-between gap-3 text-sm">
+            <span className="text-slate-600">Pagina {safePage} de {totalPages} ({filteredLatest.length} anuncios)</span>
+            <div className="flex gap-2">
+              <button type="button" className="rounded-md border border-slate-300 px-3 py-1.5 disabled:opacity-50" disabled={safePage <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>Anterior</button>
+              <button type="button" className="rounded-md border border-slate-300 px-3 py-1.5 disabled:opacity-50" disabled={safePage >= totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))}>Proxima</button>
+            </div>
+          </div>
+        ) : null}
       </section>
     </>
   );

@@ -94,6 +94,9 @@ export interface Listing {
     auctionVehicle: boolean;
     ipvaPaid: boolean;
     vehicleStatus: "paid" | "alienated";
+    mediaVideoUrl?: string;
+    mediaVideoType?: "youtube" | "upload";
+    mediaVideoPosition?: number;
   };
   status: "pending" | "approved" | "active" | "inactive" | "sold" | "rejected";
   featured: boolean;
@@ -134,7 +137,10 @@ export interface Banner {
 
 export interface Organizer {
   id: string;
+  name: string;
   logo: string;
+  altText?: string;
+  bannerTop?: string;
   link?: string;
   createdAt: string;
   updatedAt: string;

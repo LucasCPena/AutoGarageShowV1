@@ -1,15 +1,23 @@
 "use client";
 
-import type { FormEvent } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 import Notice from "@/components/Notice";
 import { validateCNPJ, validateCPF } from "@/lib/document";
+import { normalizeYouTubeUrl } from "@/lib/youtube";
 import { getVehicleMaxAllowedYear } from "@/lib/siteSettings";
 import { useAuth } from "@/lib/useAuth";
 import { useSiteSettings } from "@/lib/useSiteSettings";
 import { getModelsForMake, vehicleMakes } from "@/lib/vehicleCatalog";
 import type { VehicleBrand } from "@/lib/database";
+
+
+type ListingPhotoItem = {
+  id: string;
+  file: File;
+  previewUrl: string;
+};
 
 export default function ListingSubmissionForm() {
   const { settings, isReady } = useSiteSettings();
@@ -43,13 +51,101 @@ export default function ListingSubmissionForm() {
   const [contactEmail, setContactEmail] = useState("");
   const [description, setDescription] = useState("");
 
-  const [photoCount, setPhotoCount] = useState(0);
-  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [photos, setPhotos] = useState<ListingPhotoItem[]>([]);
+  const [coverPhotoId, setCoverPhotoId] = useState<string | null>(null);
+  const [videoMode, setVideoMode] = useState<"none" | "youtube" | "upload">("none");
+  const [youtubeVideoUrl, setYoutubeVideoUrl] = useState("");
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
+  const [videoPosition, setVideoPosition] = useState(0);
 
   const maxAllowedYear = useMemo(
     () => getVehicleMaxAllowedYear(settings),
     [settings]
   );
+
+
+  useEffect(() => {
+    return () => {
+      photos.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+      if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
+    };
+  }, [photos, videoPreviewUrl]);
+
+  function onPhotoFilesChange(event: ChangeEvent<HTMLInputElement>) {
+    const files = event.target.files ? Array.from(event.target.files) : [];
+    setError(null);
+
+    setPhotos((current) => {
+      current.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+
+      const next = files.slice(0, 10).map((file, index) => ({
+        id: `${Date.now()}-${index}-${file.name}`,
+        file,
+        previewUrl: URL.createObjectURL(file)
+      }));
+
+      setCoverPhotoId(next[0]?.id ?? null);
+      return next;
+    });
+  }
+
+  function movePhoto(photoId: string, direction: -1 | 1) {
+    setPhotos((current) => {
+      const index = current.findIndex((item) => item.id === photoId);
+      if (index < 0) return current;
+      const target = index + direction;
+      if (target < 0 || target >= current.length) return current;
+
+      const next = [...current];
+      const [moved] = next.splice(index, 1);
+      next.splice(target, 0, moved);
+      return next;
+    });
+  }
+
+  function removePhoto(photoId: string) {
+    setPhotos((current) => {
+      const item = current.find((entry) => entry.id === photoId);
+      if (item) URL.revokeObjectURL(item.previewUrl);
+
+      const next = current.filter((entry) => entry.id !== photoId);
+      setCoverPhotoId((selected) => {
+        if (selected && next.some((entry) => entry.id === selected)) return selected;
+        return next[0]?.id ?? null;
+      });
+      return next;
+    });
+  }
+
+  function onVideoFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null;
+    if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
+
+    if (!file) {
+      setVideoFile(null);
+      setVideoPreviewUrl(null);
+      return;
+    }
+
+    setVideoMode("upload");
+    setYoutubeVideoUrl("");
+    setVideoFile(file);
+    setVideoPreviewUrl(URL.createObjectURL(file));
+    setError(null);
+  }
+
+  function moveVideoPosition(direction: -1 | 1) {
+    setVideoPosition((current) => {
+      const maxPosition = photos.length;
+      const next = current + direction;
+      if (next < 0) return 0;
+      if (next > maxPosition) return maxPosition;
+      return next;
+    });
+  }
+
+  const canUseVideo = videoMode !== "none" && (Boolean(videoFile) || Boolean(youtubeVideoUrl.trim()));
 
   useEffect(() => {
     const loadBrands = async () => {
@@ -134,6 +230,25 @@ export default function ListingSubmissionForm() {
     return uploadedUrls;
   }
 
+  async function uploadListingVideo(file: File) {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("type", "listing-video");
+
+    const response = await fetch("/api/upload", {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: formData
+    });
+
+    const data = await response.json();
+    if (!response.ok || typeof data.url !== "string" || !data.url.trim()) {
+      throw new Error(data?.error || `Erro ao enviar video (${file.name}).`);
+    }
+
+    return data.url.trim();
+  }
+
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -202,7 +317,7 @@ export default function ListingSubmissionForm() {
       return;
     }
 
-    if (photoCount > 10) {
+    if (photos.length > 10) {
       setError("Voce pode enviar no maximo 10 fotos por anuncio.");
       setSubmitted(false);
       return;
@@ -225,8 +340,41 @@ export default function ListingSubmissionForm() {
     setError(null);
 
     try {
-      const uploadedImages =
-        photoFiles.length > 0 ? await uploadListingImages(photoFiles) : [];
+      const orderedFiles = photos.map((item) => item.file);
+      const uploadedImages = orderedFiles.length > 0 ? await uploadListingImages(orderedFiles) : [];
+
+      let listingVideoUrl = "";
+      let listingVideoType: "youtube" | "upload" | undefined;
+
+      if (videoMode === "youtube" && youtubeVideoUrl.trim()) {
+        const normalized = normalizeYouTubeUrl(youtubeVideoUrl.trim());
+        if (!normalized) {
+          throw new Error("Informe um link valido do YouTube para o video.");
+        }
+        listingVideoUrl = normalized;
+        listingVideoType = "youtube";
+      }
+
+      if (videoMode === "upload" && videoFile) {
+        listingVideoUrl = await uploadListingVideo(videoFile);
+        listingVideoType = "upload";
+      }
+
+      const selectedCoverIndex = coverPhotoId
+        ? photos.findIndex((item) => item.id === coverPhotoId)
+        : 0;
+
+      const normalizedCoverIndex =
+        selectedCoverIndex >= 0 && selectedCoverIndex < uploadedImages.length
+          ? selectedCoverIndex
+          : 0;
+
+      const orderedImages = uploadedImages.length
+        ? [
+            uploadedImages[normalizedCoverIndex],
+            ...uploadedImages.filter((_, index) => index !== normalizedCoverIndex)
+          ]
+        : [];
 
       const payload = {
         make: normalizedMake,
@@ -245,7 +393,18 @@ export default function ListingSubmissionForm() {
           email: contactEmail.trim(),
           phone: contactPhone.trim()
         },
-        images: uploadedImages,
+        images: orderedImages,
+        specifications: {
+          singleOwner: false,
+          blackPlate: false,
+          showPlate: true,
+          auctionVehicle: false,
+          ipvaPaid: false,
+          vehicleStatus: "paid",
+          mediaVideoUrl: listingVideoUrl || undefined,
+          mediaVideoType: listingVideoType,
+          mediaVideoPosition: listingVideoUrl ? Math.min(Math.max(videoPosition, 0), orderedImages.length) : undefined
+        },
         status: user?.role === "admin" ? "active" : undefined
       };
 
@@ -273,8 +432,15 @@ export default function ListingSubmissionForm() {
       if (typeof window !== "undefined") {
         window.alert(successText);
       }
-      setPhotoFiles([]);
-      setPhotoCount(0);
+      photos.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+      setPhotos([]);
+      setCoverPhotoId(null);
+      setVideoMode("none");
+      setYoutubeVideoUrl("");
+      setVideoFile(null);
+      if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
+      setVideoPreviewUrl(null);
+      setVideoPosition(0);
     } catch (submitError) {
       setError(
         submitError instanceof Error
@@ -594,6 +760,48 @@ export default function ListingSubmissionForm() {
           />
         </label>
 
+
+        <div className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 md:col-span-2">
+          <span className="text-sm font-semibold text-slate-900">Video do anuncio (opcional)</span>
+
+          <div className="grid gap-2 sm:grid-cols-3">
+            <button type="button" onClick={() => { setVideoMode("none"); setYoutubeVideoUrl(""); setVideoFile(null); if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl); setVideoPreviewUrl(null); }} className={`rounded-md border px-3 py-2 text-xs font-semibold ${videoMode === "none" ? "border-brand-600 bg-brand-50 text-brand-700" : "border-slate-300 text-slate-700"}`}>Sem video</button>
+            <button type="button" onClick={() => { setVideoMode("youtube"); setVideoFile(null); if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl); setVideoPreviewUrl(null); }} className={`rounded-md border px-3 py-2 text-xs font-semibold ${videoMode === "youtube" ? "border-brand-600 bg-brand-50 text-brand-700" : "border-slate-300 text-slate-700"}`}>Link do YouTube</button>
+            <button type="button" onClick={() => { setVideoMode("upload"); setYoutubeVideoUrl(""); }} className={`rounded-md border px-3 py-2 text-xs font-semibold ${videoMode === "upload" ? "border-brand-600 bg-brand-50 text-brand-700" : "border-slate-300 text-slate-700"}`}>Enviar video</button>
+          </div>
+
+          {videoMode === "youtube" ? (
+            <input
+              className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+              placeholder="https://www.youtube.com/watch?v=..."
+              value={youtubeVideoUrl}
+              onChange={(event) => {
+                setYoutubeVideoUrl(event.target.value);
+                setError(null);
+              }}
+            />
+          ) : null}
+
+          {videoMode === "upload" ? (
+            <input
+              className="h-11 rounded-md border border-slate-300 px-3 py-2 text-sm"
+              type="file"
+              accept="video/mp4,video/webm,video/quicktime"
+              onChange={onVideoFileChange}
+            />
+          ) : null}
+
+          {canUseVideo ? (
+            <div className="grid gap-2 rounded-md border border-slate-200 bg-white p-2">
+              <div className="text-xs font-semibold text-slate-700">Posicao do video na ordem da galeria</div>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => moveVideoPosition(-1)} className="rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700">Subir</button>
+                <button type="button" onClick={() => moveVideoPosition(1)} className="rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700">Descer</button>
+                <span className="text-xs text-slate-600 self-center">Posicao atual: {videoPosition + 1}</span>
+              </div>
+            </div>
+          ) : null}
+        </div>
         <label className="grid gap-1 md:col-span-2">
           <span className="text-sm font-semibold text-slate-900">Fotos</span>
           <input
@@ -601,16 +809,59 @@ export default function ListingSubmissionForm() {
             type="file"
             multiple
             accept="image/*"
-            onChange={(event) => {
-              const files = event.target.files ? Array.from(event.target.files) : [];
-              setPhotoFiles(files);
-              setPhotoCount(files.length);
-              setError(null);
-            }}
+            onChange={onPhotoFilesChange}
           />
-          <span className="text-xs text-slate-500">As fotos serao enviadas no cadastro do anuncio.</span>
-          {photoCount > 0 ? (
-            <span className="text-xs text-slate-500">{photoCount} imagem(ns) selecionada(s).</span>
+          <span className="text-xs text-slate-500">Selecione ate 10 imagens. A foto marcada como destaque vira a capa do anuncio.</span>
+
+          {photos.length > 0 ? (
+            <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {photos.map((item, index) => {
+                const isCover = item.id === coverPhotoId;
+                return (
+                  <div key={item.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                    <img
+                      src={item.previewUrl}
+                      alt={`Preview da foto ${index + 1}`}
+                      className="h-48 w-full object-cover"
+                    />
+                    <div className="grid gap-2 p-2">
+                      <button
+                        type="button"
+                        onClick={() => setCoverPhotoId(item.id)}
+                        className={`rounded-md px-2 py-1 text-xs font-semibold ${isCover ? "bg-brand-600 text-white" : "border border-slate-300 text-slate-700 hover:bg-slate-50"}`}
+                      >
+                        {isCover ? "Imagem de destaque" : "Definir como destaque"}
+                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => movePhoto(item.id, -1)}
+                          disabled={index === 0}
+                          className="flex-1 rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700 disabled:opacity-40"
+                        >
+                          Subir
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => movePhoto(item.id, 1)}
+                          disabled={index === photos.length - 1}
+                          className="flex-1 rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700 disabled:opacity-40"
+                        >
+                          Descer
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(item.id)}
+                        className="rounded-md border border-red-200 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           ) : null}
         </label>
       </div>
