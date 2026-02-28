@@ -106,7 +106,7 @@ function ListingCard({
           alt={listingImageAlt(listing.title)}
           width={1200}
           height={800}
-          className="h-44 w-full object-cover"
+          className="h-56 w-full object-cover"
           loading="lazy"
         />
       </Link>
@@ -278,7 +278,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
           <div>
             <h2 className="text-xl font-bold text-slate-900">Em destaque</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Destaque pago: o anuncio volta ao topo por 30 dias.
+              Anuncios destacados aparecem nesta vitrine.
             </p>
           </div>
 
@@ -338,7 +338,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
           <div>
             <h2 className="text-xl font-bold text-slate-900">Ultimos anuncios</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Ordenacao tipo OLX: os anuncios mais recentes aparecem primeiro.
+              Lista dos anuncios mais recentes.
             </p>
           </div>
         </div>

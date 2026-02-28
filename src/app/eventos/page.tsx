@@ -93,11 +93,6 @@ export default async function EventsPage() {
           </Notice>
         ) : null}
 
-        <Notice title="Como funciona" variant="info" className="mt-6">
-          Eventos enviados passam por aprovacao manual. Apenas eventos aprovados geram URL publica amigavel. Eventos
-          recorrentes podem gerar datas automaticamente por ate 12 meses.
-        </Notice>
-
         <div className="mt-8 grid gap-3">
           {upcoming.map(({ event, nextOccurrence }) => (
             <article
