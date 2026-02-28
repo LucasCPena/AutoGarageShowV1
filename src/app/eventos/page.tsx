@@ -3,7 +3,6 @@ import Link from "next/link";
 
 import Calendar from "@/components/Calendar";
 import Container from "@/components/Container";
-import EventCrudActions from "@/components/EventCrudActions";
 import HeroSlider from "@/components/HeroSlider";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
@@ -94,11 +93,6 @@ export default async function EventsPage() {
           </Notice>
         ) : null}
 
-        <Notice title="Como funciona" variant="info" className="mt-6">
-          Eventos enviados passam por aprovacao manual. Apenas eventos aprovados geram URL publica amigavel. Eventos
-          recorrentes podem gerar datas automaticamente por ate 12 meses.
-        </Notice>
-
         <div className="mt-8 grid gap-3">
           {upcoming.map(({ event, nextOccurrence }) => (
             <article
@@ -140,11 +134,6 @@ export default async function EventsPage() {
                 </div>
               ) : null}
 
-              <EventCrudActions
-                eventId={event.id}
-                editHref={`/eventos/gerenciar/${event.id}`}
-                compact
-              />
             </article>
           ))}
 
