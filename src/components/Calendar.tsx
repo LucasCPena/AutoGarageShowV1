@@ -170,6 +170,12 @@ export default function Calendar({ events }: Props) {
           );
         })}
       </div>
+
+      <div className="mt-6">
+        <Notice title="Dica" variant="info">
+          Clique em qualquer evento para ver detalhes.
+        </Notice>
+      </div>
     </div>
   );
 }
