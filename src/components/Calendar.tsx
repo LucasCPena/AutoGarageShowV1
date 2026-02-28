@@ -174,7 +174,7 @@ export default function Calendar({ events }: Props) {
 
       <div className="mt-6">
         <Notice title="Dica" variant="info">
-          Clique em qualquer evento para ver detalhes. Apenas eventos aprovados com ocorrencias de hoje em diante aparecem neste calendário.
+          Clique em qualquer evento para ver detalhes.
         </Notice>
       </div>
     </div>

@@ -195,7 +195,7 @@ export default function MultiMonthCalendar({ events, months = 3 }: Props) {
 
       <div className="mt-8">
         <Notice title="Dica" variant="info">
-          Clique em qualquer evento para ver detalhes. Apenas eventos aprovados aparecem neste calendário.
+          Clique em qualquer evento para ver detalhes.
         </Notice>
       </div>
     </div>

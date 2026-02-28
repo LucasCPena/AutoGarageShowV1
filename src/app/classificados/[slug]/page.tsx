@@ -125,11 +125,6 @@ export default async function ListingDetailPage({ params }: Props) {
           }}
         />
 
-        <Notice title="Controle anti-fraude (planejado)" variant="info">
-          Para publicar, o usuário precisa validar e-mail. Haverá limites por CPF/CNPJ
-          e aprovação manual antes de gerar URL pública.
-        </Notice>
-
         <ListingCrudActions
           listingId={listing.id}
           editHref={`/classificados/gerenciar/${listing.id}`}
@@ -213,9 +208,6 @@ export default async function ListingDetailPage({ params }: Props) {
                 </div>
               </dl>
 
-              <div className="mt-6 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
-                No sistema final: imagens em WEBP com versões 480/960/1600 e zoom.
-              </div>
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-6">

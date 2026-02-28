@@ -104,7 +104,7 @@ export default function SiteHeader() {
       { href: "/organizadores", label: "Organizadores" },
       { href: "/classificados", label: "Classificados" },
       { href: "/noticias", label: "Noticias" },
-      { href: "/classificados/anunciar", label: "Anuncie seu veiculo" }
+      { href: "/classificados/anunciar", label: "Anuncie aqui" }
     ];
     if (mounted && user?.role === "admin") {
       items.push({ href: "/admin", label: "Admin" });

@@ -12,7 +12,10 @@ type Props = {
 
 type Organizer = {
   id: string;
+  name: string;
   logo: string;
+  altText?: string;
+  bannerTop?: string;
   link?: string;
   createdAt: string;
   updatedAt: string;
@@ -21,11 +24,17 @@ type Organizer = {
 type Message = { type: "success" | "error"; text: string } | null;
 
 type OrganizerFormState = {
+  name: string;
+  altText: string;
+  bannerTop: string;
   logo: string;
   link: string;
 };
 
 const EMPTY_FORM: OrganizerFormState = {
+  name: "",
+  altText: "",
+  bannerTop: "",
   logo: "",
   link: ""
 };
@@ -140,9 +149,16 @@ export default function AdminOrganizersPanel({ token }: Props) {
 
     try {
       const payload = {
+        name: form.name.trim(),
+        altText: form.altText.trim(),
+        bannerTop: form.bannerTop.trim(),
         logo: form.logo.trim(),
         link: form.link.trim()
       };
+
+      if (!payload.name) {
+        throw new Error("Informe o nome do organizador.");
+      }
 
       if (!payload.logo) {
         throw new Error("Envie o logo do organizador.");
@@ -186,6 +202,9 @@ export default function AdminOrganizersPanel({ token }: Props) {
   function handleEdit(item: Organizer) {
     setEditingId(item.id);
     setForm({
+      name: item.name || "",
+      altText: item.altText || "",
+      bannerTop: item.bannerTop || "",
       logo: item.logo || "",
       link: item.link || ""
     });
@@ -256,6 +275,44 @@ export default function AdminOrganizersPanel({ token }: Props) {
       ) : null}
 
       <form onSubmit={handleSubmit} className="mt-6 grid gap-4 md:grid-cols-2">
+        
+        <label className="grid gap-1 md:col-span-2">
+          <span className="text-sm font-semibold text-slate-900">Nome do organizador</span>
+          <input
+            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+            value={form.name}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, name: event.target.value }))
+            }
+            placeholder="Ex.: Clube do Fusca"
+            required
+          />
+        </label>
+
+        <label className="grid gap-1 md:col-span-2">
+          <span className="text-sm font-semibold text-slate-900">Texto para ALT (opcional)</span>
+          <input
+            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+            value={form.altText}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, altText: event.target.value }))
+            }
+            placeholder="Se vazio, usa o nome do organizador"
+          />
+        </label>
+
+        <label className="grid gap-1 md:col-span-2">
+          <span className="text-sm font-semibold text-slate-900">Banner no topo (URL opcional)</span>
+          <input
+            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+            value={form.bannerTop}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, bannerTop: event.target.value }))
+            }
+            placeholder="https://... ou /uploads/banner/topo.webp"
+          />
+        </label>
+
         <label className="grid gap-1">
           <span className="text-sm font-semibold text-slate-900">Logo (arquivo)</span>
           <input
@@ -300,7 +357,7 @@ export default function AdminOrganizersPanel({ token }: Props) {
             <div className="text-xs font-semibold text-slate-600">Pre-visualizacao do logo</div>
             <img
               src={logoPreview}
-              alt={eventImageAlt("logo do organizador")}
+              alt={form.altText.trim() || form.name.trim() || eventImageAlt("logo do organizador")}
               className="mt-2 h-20 w-20 rounded-lg border border-slate-200 bg-white object-contain p-2"
             />
           </div>
@@ -354,7 +411,7 @@ export default function AdminOrganizersPanel({ token }: Props) {
                     {logo ? (
                       <img
                         src={logo}
-                        alt={eventImageAlt("logo do organizador")}
+                        alt={form.altText.trim() || form.name.trim() || eventImageAlt("logo do organizador")}
                         className="h-full w-full object-contain"
                       />
                     ) : (
@@ -362,12 +419,11 @@ export default function AdminOrganizersPanel({ token }: Props) {
                     )}
                   </div>
                   <div className="text-xs text-slate-600">
-                    <div>
-                      Atualizado em: {new Date(item.updatedAt).toLocaleString("pt-BR")}
-                    </div>
-                    <div className="mt-1 break-all">
-                      Link: {item.link ? item.link : "Sem link"}
-                    </div>
+                    <div className="font-semibold text-slate-900">{item.name || "Organizador"}</div>
+                    <div>Atualizado em: {new Date(item.updatedAt).toLocaleString("pt-BR")}</div>
+                    <div className="mt-1 break-all">ALT: {item.altText ? item.altText : "(usa nome)"}</div>
+                    <div className="mt-1 break-all">Banner topo: {item.bannerTop ? item.bannerTop : "Sem banner"}</div>
+                    <div className="mt-1 break-all">Link: {item.link ? item.link : "Sem link"}</div>
                   </div>
                 </div>
 
