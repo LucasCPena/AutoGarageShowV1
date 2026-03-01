@@ -43,7 +43,6 @@ export default async function EventsPage() {
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
   const windowStart = startOfToday.getTime();
-  const limit = windowStart + 30 * 24 * 60 * 60 * 1000;
   const approvedEvents = allEvents.filter((e) => e.status === "approved");
 
   const upcoming = (
@@ -52,7 +51,7 @@ export default async function EventsPage() {
         const occurrences = generateEventOccurrences(event.startAt, event.recurrence, event.endAt);
         const nextOccurrence = occurrences.find((iso) => {
           const time = new Date(iso).getTime();
-          return time >= windowStart && time <= limit;
+          return time >= windowStart;
         });
         if (!nextOccurrence) return null;
         return { event, nextOccurrence };
@@ -111,7 +110,9 @@ export default async function EventsPage() {
                     className="mb-3 h-28 w-full max-w-xs rounded-lg border border-slate-200 object-cover"
                   />
                   <div className="text-sm text-slate-500">
-                    {formatDateLong(nextOccurrence)} • {formatTime(nextOccurrence)}
+                    {formatDateLong(nextOccurrence)} • {event.endAt
+                      ? `${formatTime(event.startAt)} às ${formatTime(event.endAt)}`
+                      : formatTime(nextOccurrence)}
                   </div>
                   <Link
                     href={`/eventos/${event.slug}`}
@@ -146,7 +147,7 @@ export default async function EventsPage() {
 
           {upcoming.length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-600">
-              Nenhum evento aprovado nos proximos 30 dias.
+              Nenhum evento aprovado a partir de hoje.
             </div>
           ) : null}
         </div>

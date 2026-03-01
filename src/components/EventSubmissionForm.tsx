@@ -28,10 +28,6 @@ export default function EventSubmissionForm() {
     []
   );
 
-  function buildRecurrence(_form: FormData) {
-    return { type: "single" as const };
-  }
-
   async function uploadEventImage(file: File) {
     const uploadForm = new FormData();
     uploadForm.append("file", file);
@@ -74,7 +70,7 @@ export default function EventSubmissionForm() {
       const endTime = form.get("endTime")?.toString() || "";
       const liveUrl = form.get("liveUrl")?.toString().trim();
 
-      if (!title || !description || !city || !state || !location || !startDate || !contactName || !contactPhone) {
+      if (!title || !description || !city || !state || !location || !startDate || !contactName) {
         throw new Error("Preencha todos os campos obrigatorios.");
       }
 
@@ -100,7 +96,6 @@ export default function EventSubmissionForm() {
         endAt = end.toISOString();
       }
 
-      const recurrence = buildRecurrence(form);
       const uploadedCoverImage = coverImageFile
         ? await uploadEventImage(coverImageFile)
         : undefined;
@@ -114,7 +109,7 @@ export default function EventSubmissionForm() {
         state,
         location,
         contactName,
-        contactPhone,
+        contactPhone: contactPhone || undefined,
         contactPhoneSecondary: contactPhoneSecondary || undefined,
         contactEmail: contactEmail || undefined,
         startAt: startAt.toISOString(),
@@ -125,7 +120,6 @@ export default function EventSubmissionForm() {
           uploadedOrganizerLogo ||
           form.get("organizerLogoUrl")?.toString().trim() ||
           undefined,
-        recurrence,
         coverImage: uploadedCoverImage || undefined,
         featured: user?.role === "admin" ? featured : false,
         featuredUntil: user?.role === "admin" && featured ? featuredUntil || undefined : undefined
@@ -275,9 +269,8 @@ export default function EventSubmissionForm() {
         </label>
 
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Telefone principal (obrigatorio)</span>
+          <span className="text-sm font-semibold text-slate-900">Telefone principal (opcional)</span>
           <input
-            required
             name="contactPhone"
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="(11) 99999-9999"
@@ -344,9 +337,6 @@ export default function EventSubmissionForm() {
             type="time"
           />
         </label>
-
-        <input type="hidden" name="recurrenceType" value="single" />
-
         {user?.role === "admin" ? (
           <>
             <label className="flex items-center gap-2 text-sm text-slate-700">

@@ -1,14 +1,12 @@
-ï»¿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import Container from "@/components/Container";
-import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import ZoomableImage from "@/components/ZoomableImage";
 import { formatDateLong, formatTime } from "@/lib/date";
 import { db } from "@/lib/database";
-import { formatRecurrence, generateEventOccurrences, getSpanDays } from "@/lib/eventRecurrence";
 import { eventImageAlt } from "@/lib/image-alt";
 import { eventJsonLd } from "@/lib/schema";
 import { normalizeAssetReference } from "@/lib/site-url";
@@ -68,10 +66,9 @@ export default async function EventDetailPage({ params }: Props) {
     return notFound();
   }
 
-  const occurrences = generateEventOccurrences(event.startAt, event.recurrence, event.endAt);
-  const futureOccurrences = occurrences.filter((iso) => new Date(iso).getTime() >= Date.now());
-  const spanDays = getSpanDays(event.startAt, event.endAt);
-  const recurrenceLabel = formatRecurrence(event.recurrence, spanDays);
+  const eventTimeLabel = event.endAt
+    ? `${formatTime(event.startAt)} as ${formatTime(event.endAt)}`
+    : formatTime(event.startAt);
   const heroImage =
     normalizeAssetReference(event.coverImage || event.images?.[0]) ||
     "/placeholders/event.svg";
@@ -82,7 +79,7 @@ export default async function EventDetailPage({ params }: Props) {
     <>
       <PageIntro
         title={event.title}
-        subtitle={`${formatDateLong(event.startAt)} â€¢ ${formatTime(event.startAt)} â€¢ ${event.city}/${event.state}`}
+        subtitle={`${formatDateLong(event.startAt)} • ${eventTimeLabel} • ${event.city}/${event.state}`}
       >
         <Link
           href="/eventos"
@@ -105,11 +102,6 @@ export default async function EventDetailPage({ params }: Props) {
             __html: JSON.stringify(eventJsonLd(event))
           }}
         />
-
-        <Notice title="Regra de exibicao (publico)" variant="info">
-          No calendario publico aparecem apenas eventos aprovados dos proximos 30 dias. No admin, e possivel visualizar todos os cadastros.
-        </Notice>
-
 
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
           <div className="grid gap-6 lg:col-span-2">
@@ -145,29 +137,6 @@ export default async function EventDetailPage({ params }: Props) {
                 </div>
               </section>
             ) : null}
-
-            <section className="rounded-2xl border border-slate-200 bg-white p-6">
-              <h2 className="text-lg font-semibold text-slate-900">Recorrencia</h2>
-              <p className="mt-2 text-sm text-slate-600">
-                {recurrenceLabel}
-              </p>
-
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {futureOccurrences.slice(0, 8).map((iso) => (
-                  <div
-                    key={iso}
-                    className="rounded-xl border border-slate-200 bg-slate-50 p-4"
-                  >
-                    <div className="text-sm font-semibold text-slate-900">
-                      {formatDateLong(iso)}
-                    </div>
-                    <div className="mt-1 text-sm text-slate-600">
-                      {formatTime(iso)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
           </div>
 
           <aside className="rounded-2xl border border-slate-200 bg-white p-6">
@@ -183,7 +152,7 @@ export default async function EventDetailPage({ params }: Props) {
               <div>
                 <dt className="text-slate-500">Horario</dt>
                 <dd className="mt-1 font-semibold text-slate-900">
-                  {formatTime(event.startAt)}
+                  {eventTimeLabel}
                 </dd>
               </div>
               <div>
@@ -247,10 +216,6 @@ export default async function EventDetailPage({ params }: Props) {
                 Site do organizador
               </a>
             ) : null}
-
-            <div className="mt-6 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
-              Apos a data, o evento pode virar Evento realizado com galeria de fotos.
-            </div>
           </aside>
         </div>
       </Container>

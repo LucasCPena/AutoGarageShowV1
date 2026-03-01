@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       console.error('Falha ao carregar configuracoes para evento:', settingsError);
     }
 
-    const requiredFields = ['title', 'description', 'city', 'state', 'location', 'startAt', 'contactName', 'contactPhone'];
+    const requiredFields = ['title', 'description', 'city', 'state', 'location', 'startAt', 'contactName'];
     for (const field of requiredFields) {
       if (!eventData[field]) {
         return NextResponse.json(
@@ -186,7 +186,7 @@ export async function POST(request: NextRequest) {
       createdBy: user?.id || 'anonymous',
       contactName: String(eventData.contactName || '').trim(),
       contactDocument: String(eventData.contactDocument || '').trim() || 'nao informado',
-      contactPhone: String(eventData.contactPhone || '').trim(),
+      contactPhone: String(eventData.contactPhone || '').trim() || undefined,
       contactPhoneSecondary: String(eventData.contactPhoneSecondary || '').trim() || undefined,
       contactEmail: String(eventData.contactEmail || '').trim() || undefined,
       images,
