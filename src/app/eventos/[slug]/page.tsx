@@ -79,7 +79,7 @@ export default async function EventDetailPage({ params }: Props) {
     <>
       <PageIntro
         title={event.title}
-        subtitle={`${formatDateLong(event.startAt)} • ${eventTimeLabel} • ${event.city}/${event.state}`}
+        subtitle={`${formatDateLong(event.startAt)} â€¢ ${eventTimeLabel} â€¢ ${event.city}/${event.state}`}
       >
         <Link
           href="/eventos"
