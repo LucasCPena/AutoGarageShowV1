@@ -389,6 +389,7 @@ export default function HomePage() {
     config.bannerImage,
     "/placeholders/hero-top-custom.svg"
   );
+  const showHomeSlider = !config.bannerImage;
   const canViewHomeStats = user?.role === "admin";
 
   return (
@@ -403,7 +404,9 @@ export default function HomePage() {
         }}
       >
         <Container className="py-16 md:py-20">
-          <div className="grid gap-10 md:grid-cols-2 md:items-center">
+          <div
+            className={`grid gap-10 ${showHomeSlider ? "md:grid-cols-2 md:items-center" : ""}`}
+          >
             <div>
               
 
@@ -422,8 +425,8 @@ export default function HomePage() {
                 </Link>
               </div>
             </div>
-            
-            <HeroSlider section="home" />
+
+            {showHomeSlider ? <HeroSlider section="home" /> : null}
           </div>
         </Container>
       </section>
