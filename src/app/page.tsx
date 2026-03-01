@@ -13,7 +13,6 @@ import { listingImageAlt } from "@/lib/image-alt";
 import { normalizeAssetReference } from "@/lib/site-url";
 import { useAuth } from "@/lib/useAuth";
 import { generateEventOccurrences } from "@/lib/eventRecurrence";
-import HeroSlider from "@/components/HeroSlider";
 import { toYouTubeEmbedUrl } from "@/lib/youtube";
 
 interface HomeConfig {
@@ -389,7 +388,6 @@ export default function HomePage() {
     config.bannerImage,
     "/placeholders/hero-top-custom.svg"
   );
-  const showHomeSlider = !config.bannerImage;
   const canViewHomeStats = user?.role === "admin";
 
   return (
@@ -404,9 +402,7 @@ export default function HomePage() {
         }}
       >
         <Container className="py-16 md:py-20">
-          <div
-            className={`grid gap-10 ${showHomeSlider ? "md:grid-cols-2 md:items-center" : ""}`}
-          >
+          <div className="grid gap-10">
             <div>
               
 
@@ -425,8 +421,6 @@ export default function HomePage() {
                 </Link>
               </div>
             </div>
-
-            {showHomeSlider ? <HeroSlider section="home" /> : null}
           </div>
         </Container>
       </section>
