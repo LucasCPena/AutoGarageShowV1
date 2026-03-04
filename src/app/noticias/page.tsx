@@ -6,6 +6,7 @@ import Link from "next/link";
 
 import AdminNewsPanel from "@/components/AdminNewsPanel";
 import Container from "@/components/Container";
+import HeroSlider from "@/components/HeroSlider";
 import NewsCrudActions from "@/components/NewsCrudActions";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
@@ -102,6 +103,10 @@ export default function NewsPage() {
       />
 
       <Container className="py-10">
+        <section className="mb-8">
+          <HeroSlider section="news" />
+        </section>
+
         {authLoading ? null : user?.role === "admin" ? (
           <div className="mb-6 flex justify-end">
             <button

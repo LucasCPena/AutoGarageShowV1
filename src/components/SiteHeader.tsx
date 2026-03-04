@@ -107,6 +107,7 @@ export default function SiteHeader() {
       { href: "/noticias", label: "Noticias" }
     ];
     if (mounted && user?.role === "admin") {
+      items.push({ href: "/admin/banners", label: "Banners" });
       items.push({ href: "/admin", label: "Admin" });
     }
     return items;

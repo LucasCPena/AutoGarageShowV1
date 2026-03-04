@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import Notice from "@/components/Notice";
 
-type BannerSection = "home" | "events" | "listings";
+type BannerSection = "home" | "events" | "listings" | "news";
 
 type Banner = {
   id: string;
@@ -20,7 +20,7 @@ type Banner = {
 
 type Props = {
   token: string | null;
-  fixedSection?: BannerSection;
+  fixedSection?: string;
   title?: string;
   description?: string;
 };
@@ -34,10 +34,17 @@ function isActiveNow(banner: Banner) {
   return banner.status === "active" && now >= start && now <= end;
 }
 
-function sectionLabel(section: BannerSection) {
-  if (section === "home") return "Home";
-  if (section === "events") return "Eventos";
-  return "Classificados";
+function sectionLabel(section: string) {
+  const normalized = section.trim().toLowerCase();
+  if (normalized === "home") return "Home";
+  if (normalized === "events") return "Eventos";
+  if (normalized === "listings") return "Classificados";
+  if (normalized === "news") return "Noticias";
+  return normalized
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
+    .join(" ");
 }
 
 export default function AdminBannersPanel({
@@ -56,7 +63,7 @@ export default function AdminBannersPanel({
     title: "",
     image: "",
     link: "",
-    section: fixedSection ?? ("home" as BannerSection),
+    section: fixedSection ?? ("events" as BannerSection),
     position: 1,
     startDate: "",
     endDate: "",
@@ -84,7 +91,7 @@ export default function AdminBannersPanel({
     description ??
     (backgroundMode
       ? "Use esta area para trocar somente o banner de fundo do topo da home."
-      : "Ate 3 imagens em destaque, com data de exposicao (start/end) e rotacao automatica no site.");
+      : "Cadastre banners e escolha em qual secao/pagina eles devem aparecer.");
 
   function authHeaders(): Record<string, string> {
     return token ? { Authorization: `Bearer ${token}` } : {};
@@ -198,7 +205,7 @@ export default function AdminBannersPanel({
         title: "",
         image: "",
         link: "",
-        section: fixedSection ?? ("home" as BannerSection),
+        section: fixedSection ?? ("events" as BannerSection),
         position: 1,
         startDate: "",
         endDate: "",
@@ -357,18 +364,16 @@ export default function AdminBannersPanel({
               </label>
             ) : (
               <label className="grid gap-1">
-                <span className="text-sm font-semibold text-slate-900">Secao</span>
-                <select
+                <span className="text-sm font-semibold text-slate-900">Secao / aba da pagina</span>
+                <input
                   className="h-11 rounded-md border border-slate-300 px-3 text-sm"
                   value={form.section}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, section: e.target.value as BannerSection }))
-                  }
-                >
-                  <option value="home">Home</option>
-                  <option value="events">Eventos</option>
-                  <option value="listings">Classificados</option>
-                </select>
+                  onChange={(e) => setForm((f) => ({ ...f, section: e.target.value }))}
+                  placeholder="events, listings, news, home..."
+                />
+                <span className="text-xs text-slate-500">
+                  Ex.: events, listings, news, organizadores.
+                </span>
               </label>
             )}
 

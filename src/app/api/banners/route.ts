@@ -5,12 +5,11 @@ import { toPublicAssetUrl } from '@/lib/site-url';
 
 export const dynamic = 'force-dynamic';
 
-const DEFAULT_SECTIONS = ['home', 'events', 'listings'];
-
 const SECTION_ALIASES: Record<string, string[]> = {
   home: ['home', 'topo', 'top', 'inicio', 'inicial'],
   events: ['events', 'event', 'evento', 'eventos', 'o evento'],
-  listings: ['listings', 'listing', 'classificado', 'classificados', 'anuncio', 'anuncios']
+  listings: ['listings', 'listing', 'classificado', 'classificados', 'anuncio', 'anuncios'],
+  news: ['news', 'new', 'noticia', 'noticias']
 };
 
 function normalizeBannerSection(input: unknown) {
@@ -27,17 +26,9 @@ function normalizeBannerSection(input: unknown) {
     if (aliases.includes(raw)) return section;
   }
 
-  return raw;
-}
-
-function collectValidSections(settingsSections: unknown) {
-  const fromSettings = Array.isArray(settingsSections)
-    ? settingsSections
-        .map((section) => normalizeBannerSection(section))
-        .filter(Boolean)
-    : [];
-
-  return Array.from(new Set([...DEFAULT_SECTIONS, ...fromSettings]));
+  return raw
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
 }
 
 export async function GET(request: NextRequest) {
@@ -97,14 +88,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const settings = await db.settings.get();
-    const validSections = collectValidSections(settings?.banners?.sections);
     const normalizedSection = normalizeBannerSection(bannerData.section);
     const normalizedImage = toPublicAssetUrl(bannerData.image, { uploadType: 'banner' });
 
-    if (!validSections.includes(normalizedSection)) {
+    if (!normalizedSection) {
       return NextResponse.json(
-        { error: `Secao invalida. Secoes permitidas: ${validSections.join(', ')}` },
+        { error: 'Secao invalida. Informe uma secao como home, events, listings, news etc.' },
         { status: 400 }
       );
     }
