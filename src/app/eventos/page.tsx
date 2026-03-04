@@ -6,9 +6,10 @@ import Container from "@/components/Container";
 import HeroSlider from "@/components/HeroSlider";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
+import EventCrudActions from "@/components/EventCrudActions";
 import { formatDateLong, formatTime } from "@/lib/date";
 import { db, Event } from "@/lib/database";
-import { formatRecurrence, generateEventOccurrences, getSpanDays } from "@/lib/eventRecurrence";
+import { findNextOccurrenceInWindow, formatRecurrence, getSpanDays } from "@/lib/eventRecurrence";
 import { eventImageAlt } from "@/lib/image-alt";
 import { normalizeAssetReference } from "@/lib/site-url";
 
@@ -19,6 +20,24 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = "force-dynamic";
+const EVENTS_PER_PAGE = 3;
+
+type EventsPageProps = {
+  searchParams?: {
+    page?: string;
+  };
+};
+
+function parsePage(value: string | undefined) {
+  if (!value) return 1;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+}
+
+function pageHref(page: number) {
+  if (page <= 1) return "/eventos";
+  return `/eventos?page=${page}`;
+}
 
 function isFeaturedActive(event: Event, now: number) {
   if (!event.featured) return false;
@@ -27,7 +46,7 @@ function isFeaturedActive(event: Event, now: number) {
   return Number.isFinite(until) ? until > now : true;
 }
 
-export default async function EventsPage() {
+export default async function EventsPage({ searchParams }: EventsPageProps) {
   let allEvents: Event[] = [];
   let dbError = false;
 
@@ -39,20 +58,20 @@ export default async function EventsPage() {
   }
 
   const now = Date.now();
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
-  const windowStart = startOfToday.getTime();
+  const windowStart = now;
   const limit = windowStart + 30 * 24 * 60 * 60 * 1000;
   const approvedEvents = allEvents.filter((e) => e.status === "approved");
 
   const upcoming = (
     approvedEvents
       .map((event) => {
-        const occurrences = generateEventOccurrences(event.startAt, event.recurrence, event.endAt);
-        const nextOccurrence = occurrences.find((iso) => {
-          const time = new Date(iso).getTime();
-          return time >= windowStart && time <= limit;
-        });
+        const nextOccurrence = findNextOccurrenceInWindow(
+          event.startAt,
+          event.recurrence,
+          event.endAt,
+          windowStart,
+          limit
+        );
         if (!nextOccurrence) return null;
         return { event, nextOccurrence };
       })
@@ -63,6 +82,13 @@ export default async function EventsPage() {
     if (aFeatured !== bFeatured) return aFeatured ? -1 : 1;
     return new Date(a.nextOccurrence).getTime() - new Date(b.nextOccurrence).getTime();
   });
+
+  const totalPages = Math.max(1, Math.ceil(upcoming.length / EVENTS_PER_PAGE));
+  const currentPage = Math.min(parsePage(searchParams?.page), totalPages);
+  const paginatedUpcoming = upcoming.slice(
+    (currentPage - 1) * EVENTS_PER_PAGE,
+    currentPage * EVENTS_PER_PAGE
+  );
 
   return (
     <>
@@ -93,49 +119,62 @@ export default async function EventsPage() {
           </Notice>
         ) : null}
 
-        <div className="mt-8 grid gap-3">
-          {upcoming.map(({ event, nextOccurrence }) => (
-            <article
-              key={event.id}
-              className="rounded-xl border border-slate-200 bg-white p-5"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <img
-                    src={
-                      normalizeAssetReference(event.coverImage || event.images?.[0]) ||
-                      "/placeholders/event.svg"
-                    }
-                    alt={eventImageAlt(event.title)}
-                    className="mb-3 h-28 w-full max-w-xs rounded-lg border border-slate-200 object-cover"
-                  />
-                  <div className="text-sm text-slate-500">
-                    {formatDateLong(nextOccurrence)} • {formatTime(nextOccurrence)}
+        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {paginatedUpcoming.map(({ event, nextOccurrence }) => {
+            const spanDays = getSpanDays(event.startAt, event.endAt);
+            const recurrenceLabel = formatRecurrence(event.recurrence, spanDays);
+            const showRecurrenceBadge = event.recurrence.type !== "single" || spanDays > 1;
+
+            return (
+              <article
+                key={event.id}
+                className="rounded-xl border border-slate-200 bg-white p-5"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <img
+                      src={
+                        normalizeAssetReference(event.coverImage || event.images?.[0]) ||
+                        "/placeholders/event.svg"
+                      }
+                      alt={eventImageAlt(event.title)}
+                      className="mb-3 h-28 w-full max-w-xs rounded-lg border border-slate-200 object-cover"
+                    />
+                    <div className="text-sm text-slate-500">
+                      {formatDateLong(nextOccurrence)} • {formatTime(nextOccurrence)}
+                    </div>
+                    <Link
+                      href={`/eventos/${event.slug}`}
+                      className="mt-1 inline-block text-lg font-semibold text-slate-900 hover:text-brand-800"
+                    >
+                      {event.title}
+                    </Link>
+                    <div className="mt-1 text-sm text-slate-600">
+                      {event.city}/{event.state} • {event.location}
+                    </div>
                   </div>
-                  <Link
-                    href={`/eventos/${event.slug}`}
-                    className="mt-1 inline-block text-lg font-semibold text-slate-900 hover:text-brand-800"
-                  >
-                    {event.title}
-                  </Link>
-                  <div className="mt-1 text-sm text-slate-600">
-                    {event.city}/{event.state} • {event.location}
-                  </div>
+
+                  {showRecurrenceBadge ? (
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                      {recurrenceLabel}
+                    </span>
+                  ) : null}
                 </div>
 
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                  {formatRecurrence(event.recurrence, getSpanDays(event.startAt, event.endAt))}
-                </span>
-              </div>
+                {isFeaturedActive(event, now) ? (
+                  <div className="mt-3 inline-flex rounded-full bg-brand-100 px-2.5 py-1 text-xs font-semibold text-brand-800">
+                    Evento em destaque
+                  </div>
+                ) : null}
 
-              {isFeaturedActive(event, now) ? (
-                <div className="mt-3 inline-flex rounded-full bg-brand-100 px-2.5 py-1 text-xs font-semibold text-brand-800">
-                  Evento em destaque
-                </div>
-              ) : null}
-
-            </article>
-          ))}
+                <EventCrudActions
+                  eventId={event.id}
+                  editHref={`/eventos/gerenciar/${event.id}`}
+                  compact
+                />
+              </article>
+            );
+          })}
 
           {upcoming.length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-600">
@@ -143,6 +182,43 @@ export default async function EventsPage() {
             </div>
           ) : null}
         </div>
+
+        {upcoming.length > 0 ? (
+          <nav
+            className="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm"
+            aria-label="Paginacao de eventos"
+          >
+            <span className="text-slate-600">
+              Pagina {currentPage} de {totalPages} ({upcoming.length} eventos)
+            </span>
+            <div className="flex items-center gap-2">
+              {currentPage > 1 ? (
+                <Link
+                  href={pageHref(currentPage - 1)}
+                  className="rounded-md border border-slate-300 px-3 py-1.5 hover:bg-slate-50"
+                >
+                  Anterior
+                </Link>
+              ) : (
+                <span className="rounded-md border border-slate-200 px-3 py-1.5 text-slate-400">
+                  Anterior
+                </span>
+              )}
+              {currentPage < totalPages ? (
+                <Link
+                  href={pageHref(currentPage + 1)}
+                  className="rounded-md border border-slate-300 px-3 py-1.5 hover:bg-slate-50"
+                >
+                  Proxima
+                </Link>
+              ) : (
+                <span className="rounded-md border border-slate-200 px-3 py-1.5 text-slate-400">
+                  Proxima
+                </span>
+              )}
+            </div>
+          </nav>
+        ) : null}
 
       </Container>
     </>

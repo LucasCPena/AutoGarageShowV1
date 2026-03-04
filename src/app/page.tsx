@@ -12,9 +12,8 @@ import { fetchJson } from "@/lib/fetch-json";
 import { listingImageAlt } from "@/lib/image-alt";
 import { normalizeAssetReference } from "@/lib/site-url";
 import { useAuth } from "@/lib/useAuth";
-import { generateEventOccurrences } from "@/lib/eventRecurrence";
+import { findNextOccurrenceInWindow, generateEventOccurrences } from "@/lib/eventRecurrence";
 import HeroSlider from "@/components/HeroSlider";
-import { toYouTubeEmbedUrl } from "@/lib/youtube";
 
 interface HomeConfig {
   heroTitle: string;
@@ -326,20 +325,20 @@ export default function HomePage() {
   }
 
   const now = Date.now();
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
-  const windowStart = startOfToday.getTime();
+  const windowStart = now;
   const limit = windowStart + 30 * 24 * 60 * 60 * 1000;
   const approvedEvents = events.filter((e) => e.status === "approved");
 
   const upcoming = (
     approvedEvents
       .map((event) => {
-        const occurrences = generateEventOccurrences(event.startAt, event.recurrence, event.endAt);
-        const nextOccurrence = occurrences.find((iso) => {
-          const time = new Date(iso).getTime();
-          return time >= windowStart && time <= limit;
-        });
+        const nextOccurrence = findNextOccurrenceInWindow(
+          event.startAt,
+          event.recurrence,
+          event.endAt,
+          windowStart,
+          limit
+        );
         if (!nextOccurrence) return null;
         return { event, nextOccurrence };
       })
@@ -351,9 +350,7 @@ export default function HomePage() {
       if (aFeatured !== bFeatured) return aFeatured ? -1 : 1;
       return new Date(a.nextOccurrence).getTime() - new Date(b.nextOccurrence).getTime();
     })
-    .slice(0, 6);
-  const liveEvent = upcoming.find(({ event }) => Boolean(event.liveUrl))?.event;
-  const liveEmbedUrl = toYouTubeEmbedUrl(liveEvent?.liveUrl);
+    .slice(0, 3);
 
   const visibleListings = listings.filter((listing) => listing.status === "active" || listing.status === "approved");
   const activeListingsCount = visibleListings.length;
@@ -456,38 +453,6 @@ export default function HomePage() {
           </div>
         ) : null}
 
-        {/* Calendario Interativo */}
-        {liveEvent && liveEmbedUrl ? (
-          <section className="mb-12 rounded-2xl border border-red-200 bg-red-50 p-6">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900">Evento ao vivo agora</h2>
-                <p className="mt-1 text-sm text-slate-700">
-                  {liveEvent.title} | {liveEvent.city}/{liveEvent.state}
-                </p>
-              </div>
-              <Link
-                href={`/eventos/${liveEvent.slug}`}
-                className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
-              >
-                Ver detalhes
-              </Link>
-            </div>
-            <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-black">
-              <iframe
-                className="aspect-video w-full"
-                src={liveEmbedUrl}
-                title={`Transmissao ao vivo: ${liveEvent.title}`}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                referrerPolicy="strict-origin-when-cross-origin"
-                allowFullScreen
-              />
-            </div>
-          </section>
-        ) : null}
-
-        
-        
         {/* Proximos Eventos */}
         {config.showUpcomingEvents && upcoming.length > 0 && (
           <section className="mb-12">

@@ -257,6 +257,51 @@ export function generateEventOccurrences(
   return occurrences.sort();
 }
 
+function getDurationMs(startAt: string, endAt?: string) {
+  if (!endAt) return 0;
+  const start = new Date(startAt).getTime();
+  const end = new Date(endAt).getTime();
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return 0;
+  return Math.max(0, end - start);
+}
+
+/**
+ * Finds the next occurrence that is still valid at `fromTime`.
+ * For multi-day single events, it respects the real `endAt` boundary.
+ */
+export function findNextOccurrenceInWindow(
+  startAt: string,
+  recurrence: EventRecurrence,
+  endAt: string | undefined,
+  fromTime: number,
+  untilTime: number
+) {
+  const occurrences = generateEventOccurrences(startAt, recurrence, endAt);
+  const durationMs = getDurationMs(startAt, endAt);
+  const fixedEnd = endAt ? new Date(endAt).getTime() : Number.NaN;
+  const hasFixedEnd = Number.isFinite(fixedEnd);
+
+  for (const occurrence of occurrences) {
+    const start = new Date(occurrence).getTime();
+    if (!Number.isFinite(start)) continue;
+    if (start > untilTime) continue;
+
+    let end = start + durationMs;
+    if (hasFixedEnd && recurrence.type === "single") {
+      end = Math.min(end, fixedEnd);
+    }
+    if (durationMs <= 0) {
+      end = start;
+    }
+
+    if (end >= fromTime) {
+      return occurrence;
+    }
+  }
+
+  return null;
+}
+
 /**
  * Helper to format a recurrence pattern for display.
  */

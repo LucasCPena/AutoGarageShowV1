@@ -96,7 +96,6 @@ export default function PastEventsPage() {
                   </div>
                   <div className="mt-2 text-sm text-slate-600">
                     {event.images.length} foto{event.images.length !== 1 ? 's' : ''}
-                    {event.attendance && ` • ${event.attendance} participantes`}
                   </div>
                 </div>
               </Link>

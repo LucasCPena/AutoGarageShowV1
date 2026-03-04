@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 
-import AdminBannersPanel from "@/components/AdminBannersPanel";
 import AdminCatalogPanel from "@/components/AdminCatalogPanel";
 import AdminCommentsPanel from "@/components/AdminCommentsPanel";
 import AdminOrganizersPanel from "@/components/AdminOrganizersPanel";
@@ -56,7 +55,7 @@ export default function AdminPage() {
           /eventos, /classificados e /noticias.
         </Notice>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        <div className="mt-6 grid gap-3 sm:grid-cols-4">
           <Link
             href="/eventos"
             className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 hover:border-brand-300 hover:text-brand-700"
@@ -75,6 +74,12 @@ export default function AdminPage() {
           >
             Gerenciar noticias
           </Link>
+          <Link
+            href="/admin/banners"
+            className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 hover:border-brand-300 hover:text-brand-700"
+          >
+            Gerenciar banners
+          </Link>
         </div>
 
         <div className="mt-10">
@@ -83,33 +88,6 @@ export default function AdminPage() {
 
         <div className="mt-10">
           <AdminCatalogPanel token={token} />
-        </div>
-
-        <div className="mt-10">
-          <AdminBannersPanel
-            token={token}
-            fixedSection="home"
-            title="Banner de Fundo da Home"
-            description="Use apenas para trocar a imagem de fundo do topo da Home."
-          />
-        </div>
-
-        <div className="mt-10">
-          <AdminBannersPanel
-            token={token}
-            fixedSection="events"
-            title="Banners da Sessao Eventos"
-            description="Banners exibidos apenas dentro da sessao de eventos."
-          />
-        </div>
-
-        <div className="mt-10">
-          <AdminBannersPanel
-            token={token}
-            fixedSection="listings"
-            title="Banners da Sessao Classificados"
-            description="Banners exibidos apenas dentro da sessao de classificados."
-          />
         </div>
 
         <div className="mt-10">

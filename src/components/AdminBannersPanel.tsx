@@ -334,7 +334,7 @@ export default function AdminBannersPanel({
             <div className="text-xs font-semibold text-slate-600">Pre-visualizacao</div>
             <img
               src={form.image}
-              alt="Previa do banner"
+              alt={form.title.trim() ? `Previa do banner: ${form.title.trim()}` : "Previa do banner"}
               className="mt-2 h-28 w-full rounded-md object-cover md:h-36"
             />
           </div>

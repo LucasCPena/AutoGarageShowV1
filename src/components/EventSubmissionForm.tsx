@@ -11,6 +11,47 @@ import { useAuth } from "@/lib/useAuth";
 
 type MessageState = { type: "success" | "error"; text: string } | null;
 
+const MONTH_LABELS = [
+  "Janeiro",
+  "Fevereiro",
+  "Marco",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro"
+];
+
+const WEEK_LABELS = ["D", "S", "T", "Q", "Q", "S", "S"];
+
+function pad2(value: number) {
+  return String(value).padStart(2, "0");
+}
+
+function toDateKey(year: number, month: number, day: number) {
+  return `${year}-${pad2(month + 1)}-${pad2(day)}`;
+}
+
+function buildMonthCells(year: number, month: number) {
+  const firstWeekday = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: Array<number | null> = Array.from({ length: firstWeekday }, () => null);
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    cells.push(day);
+  }
+
+  while (cells.length % 7 !== 0) {
+    cells.push(null);
+  }
+
+  return cells;
+}
+
 export default function EventSubmissionForm() {
   const { token, user } = useAuth();
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
@@ -21,15 +62,46 @@ export default function EventSubmissionForm() {
   const [submitting, setSubmitting] = useState(false);
   const [featured, setFeatured] = useState(false);
   const [featuredUntil, setFeaturedUntil] = useState("");
+  const [useAnnualCalendar, setUseAnnualCalendar] = useState(false);
+  const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
+  const [selectedDateKeys, setSelectedDateKeys] = useState<string[]>([]);
+
+  const selectedDatesSorted = useMemo(
+    () => [...selectedDateKeys].sort((a, b) => a.localeCompare(b)),
+    [selectedDateKeys]
+  );
 
   const infoMessage = useMemo(
     () =>
-      "Envie seu encontro com data unica, horario de inicio/fim e opcao de transmissao ao vivo no YouTube.",
+      "Envie seu encontro com data unica ou selecione varias datas no calendario anual.",
     []
   );
 
   function buildRecurrence(_form: FormData) {
     return { type: "single" as const };
+  }
+
+  function toggleCalendarDate(dateKey: string) {
+    setSelectedDateKeys((current) =>
+      current.includes(dateKey)
+        ? current.filter((item) => item !== dateKey)
+        : [...current, dateKey]
+    );
+  }
+
+  function addWeekdayDates(weekday: number) {
+    const allDates: string[] = [];
+
+    for (let month = 0; month < 12; month += 1) {
+      const totalDays = new Date(calendarYear, month + 1, 0).getDate();
+      for (let day = 1; day <= totalDays; day += 1) {
+        if (new Date(calendarYear, month, day).getDay() === weekday) {
+          allDates.push(toDateKey(calendarYear, month, day));
+        }
+      }
+    }
+
+    setSelectedDateKeys((current) => Array.from(new Set([...current, ...allDates])));
   }
 
   async function uploadEventImage(file: File) {
@@ -74,11 +146,25 @@ export default function EventSubmissionForm() {
       const endTime = form.get("endTime")?.toString() || "";
       const liveUrl = form.get("liveUrl")?.toString().trim();
 
-      if (!title || !description || !city || !state || !location || !startDate || !contactName || !contactPhone) {
+      if (!title || !description || !city || !state || !location || !contactName || !contactPhone) {
         throw new Error("Preencha todos os campos obrigatorios.");
       }
 
-      const startAt = new Date(`${startDate}T${startTime}`);
+      if (useAnnualCalendar && selectedDatesSorted.length === 0) {
+        throw new Error("Selecione pelo menos uma data no calendario anual.");
+      }
+
+      if (!useAnnualCalendar && !startDate) {
+        throw new Error("Informe a data de inicio.");
+      }
+
+      const effectiveStartDate = useAnnualCalendar ? selectedDatesSorted[0] : startDate;
+
+      if (!effectiveStartDate) {
+        throw new Error("Data de inicio invalida.");
+      }
+
+      const startAt = new Date(`${effectiveStartDate}T${startTime}`);
       if (Number.isNaN(startAt.getTime())) {
         throw new Error("Data ou horario de inicio invalidos.");
       }
@@ -87,7 +173,7 @@ export default function EventSubmissionForm() {
         throw new Error("Informe o horario de termino.");
       }
 
-      const endDate = startDate;
+      const endDate = effectiveStartDate;
       let endAt: string | undefined;
       if (endDate) {
         const end = new Date(`${endDate}T${endTime}`);
@@ -100,7 +186,12 @@ export default function EventSubmissionForm() {
         endAt = end.toISOString();
       }
 
-      const recurrence = buildRecurrence(form);
+      const recurrence = useAnnualCalendar
+        ? {
+            type: "specific" as const,
+            dates: selectedDatesSorted.map((date) => `${date}T${startTime}`)
+          }
+        : buildRecurrence(form);
       const uploadedCoverImage = coverImageFile
         ? await uploadEventImage(coverImageFile)
         : undefined;
@@ -150,6 +241,9 @@ export default function EventSubmissionForm() {
       formElement.reset();
       setFeatured(false);
       setFeaturedUntil("");
+      setUseAnnualCalendar(false);
+      setCalendarYear(new Date().getFullYear());
+      setSelectedDateKeys([]);
       setCoverImagePreview(null);
       setCoverImageFile(null);
       setOrganizerLogoPreview(null);
@@ -318,10 +412,11 @@ export default function EventSubmissionForm() {
         <label className="grid gap-1">
           <span className="text-sm font-semibold text-slate-900">Data de inicio</span>
           <input
-            required
+            required={!useAnnualCalendar}
             name="startDate"
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             type="date"
+            disabled={useAnnualCalendar}
           />
         </label>
 
@@ -345,7 +440,125 @@ export default function EventSubmissionForm() {
           />
         </label>
 
-        <input type="hidden" name="recurrenceType" value="single" />
+        <label className="md:col-span-2 flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            checked={useAnnualCalendar}
+            onChange={(event) => setUseAnnualCalendar(event.target.checked)}
+            className="h-4 w-4 rounded border-slate-300"
+          />
+          Selecionar varias datas no calendario anual (sem duplicar cadastro).
+        </label>
+
+        {useAnnualCalendar ? (
+          <div className="md:col-span-2 rounded-xl border border-slate-200 bg-white p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-slate-900">
+                Calendario anual {calendarYear} - selecione as datas desejadas
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCalendarYear((current) => current - 1)}
+                  className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Ano anterior
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCalendarYear((current) => current + 1)}
+                  className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Proximo ano
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedDateKeys([])}
+                  className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Limpar
+                </button>
+              </div>
+            </div>
+
+            <p className="mt-2 text-xs text-slate-600">
+              {selectedDatesSorted.length} data(s) selecionada(s).
+            </p>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <div className="md:col-span-2 xl:col-span-3 rounded-lg border border-slate-200 bg-slate-50 p-2">
+                <p className="mb-2 text-xs font-semibold text-slate-700">
+                  Atalho rapido por dia da semana (ano inteiro)
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"].map((label, index) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => addWeekdayDates(index)}
+                      className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                    >
+                      + {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {MONTH_LABELS.map((monthLabel, monthIndex) => {
+                const cells = buildMonthCells(calendarYear, monthIndex);
+                return (
+                  <div key={monthLabel} className="rounded-lg border border-slate-200 bg-slate-50 p-2">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-700">
+                      {monthLabel}
+                    </p>
+                    <div className="mb-1 grid grid-cols-7 gap-1">
+                      {WEEK_LABELS.map((weekday) => (
+                        <span key={`${monthLabel}-${weekday}`} className="text-center text-[10px] font-semibold text-slate-500">
+                          {weekday}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-7 gap-1">
+                      {cells.map((day, index) => {
+                        if (!day) {
+                          return <span key={`${monthLabel}-empty-${index}`} className="h-7" />;
+                        }
+
+                        const dateKey = toDateKey(calendarYear, monthIndex, day);
+                        const selected = selectedDateKeys.includes(dateKey);
+
+                        return (
+                          <button
+                            key={dateKey}
+                            type="button"
+                            onClick={() => toggleCalendarDate(dateKey)}
+                            className={
+                              selected
+                                ? "h-7 rounded-md border border-brand-500 bg-brand-100 text-xs font-semibold text-brand-800"
+                                : "h-7 rounded-md border border-slate-300 bg-white text-xs text-slate-700 hover:bg-slate-100"
+                            }
+                            aria-pressed={selected}
+                          >
+                            {day}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <textarea
+              readOnly
+              value={selectedDatesSorted.join("\n")}
+              className="mt-4 min-h-20 w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-mono text-slate-700"
+              aria-label="Datas selecionadas"
+            />
+          </div>
+        ) : null}
+
+        <input type="hidden" name="recurrenceType" value={useAnnualCalendar ? "specific" : "single"} />
 
         {user?.role === "admin" ? (
           <>

@@ -69,7 +69,6 @@ export default function EventEditForm({ eventId }: Props) {
   const [pastImages, setPastImages] = useState<string[]>([]);
   const [pastVideosText, setPastVideosText] = useState("");
   const [pastDescription, setPastDescription] = useState("");
-  const [pastAttendance, setPastAttendance] = useState("");
   const [newImageUrl, setNewImageUrl] = useState("");
   const [uploadingMedia, setUploadingMedia] = useState(false);
 
@@ -99,11 +98,6 @@ export default function EventEditForm({ eventId }: Props) {
         setPastImages(loadedPastEvent?.images || data.event.images || []);
         setPastVideosText((loadedPastEvent?.videos || []).join("\n"));
         setPastDescription(loadedPastEvent?.description || data.event.description || "");
-        setPastAttendance(
-          loadedPastEvent?.attendance !== undefined && loadedPastEvent?.attendance !== null
-            ? String(loadedPastEvent.attendance)
-            : ""
-        );
       } catch (error) {
         setMessage({
           type: "error",
@@ -215,7 +209,6 @@ export default function EventEditForm({ eventId }: Props) {
 
       const recurrence = buildRecurrence(form);
       const parsedVideos = sanitizeLinesToList(pastVideosText);
-      const parsedAttendance = Number(pastAttendance);
       const uploadedCoverImage = coverImageFile
         ? await uploadEventImage(coverImageFile)
         : undefined;
@@ -260,11 +253,7 @@ export default function EventEditForm({ eventId }: Props) {
               pastEvent: {
                 images: pastImages,
                 videos: parsedVideos,
-                description: pastDescription.trim() || description,
-                attendance:
-                  Number.isFinite(parsedAttendance) && parsedAttendance >= 0
-                    ? Math.round(parsedAttendance)
-                    : undefined
+                description: pastDescription.trim() || description
               }
             }
           : {})
@@ -297,11 +286,6 @@ export default function EventEditForm({ eventId }: Props) {
         setPastImages(data.pastEvent.images || []);
         setPastVideosText((data.pastEvent.videos || []).join("\n"));
         setPastDescription(data.pastEvent.description || data.event.description || "");
-        setPastAttendance(
-          data.pastEvent.attendance !== undefined && data.pastEvent.attendance !== null
-            ? String(data.pastEvent.attendance)
-            : ""
-        );
       }
     } catch (error) {
       setMessage({
@@ -883,7 +867,7 @@ export default function EventEditForm({ eventId }: Props) {
               />
             </label>
 
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <div className="mt-4 grid gap-3">
               <label className="grid gap-1">
                 <span className="text-sm font-semibold text-slate-900">Descrição da galeria (opcional)</span>
                 <textarea
@@ -891,18 +875,6 @@ export default function EventEditForm({ eventId }: Props) {
                   onChange={(e) => setPastDescription(e.target.value)}
                   className="min-h-20 rounded-md border border-slate-300 px-3 py-2 text-sm"
                   placeholder="Resumo do evento realizado."
-                />
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm font-semibold text-slate-900">Público estimado (opcional)</span>
-                <input
-                  type="number"
-                  min={0}
-                  value={pastAttendance}
-                  onChange={(e) => setPastAttendance(e.target.value)}
-                  className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-                  placeholder="Ex.: 450"
                 />
               </label>
             </div>

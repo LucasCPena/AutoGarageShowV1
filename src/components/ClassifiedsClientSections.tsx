@@ -162,6 +162,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
   const [stateFilter, setStateFilter] = useState("all");
   const [yearFilter, setYearFilter] = useState("all");
   const [page, setPage] = useState(1);
+  const [pendingPage, setPendingPage] = useState(1);
   const now = Date.now();
 
   const effectiveListings = applyListingOverrides(listings, overrides);
@@ -203,14 +204,14 @@ export default function ClassifiedsClientSections({ listings }: Props) {
     setPage(1);
   }, [makeFilter, modelFilter, stateFilter, yearFilter]);
 
+  useEffect(() => {
+    setPendingPage(1);
+  }, [pending.length]);
+
   const canSlideFeatured = featuredRotated.length > 3;
   const visibleFeatured = canSlideFeatured
     ? Array.from({ length: 3 }, (_, index) => featuredRotated[(featuredCursor + index) % featuredRotated.length])
     : featuredRotated;
-
-  const maxAllowedYear = new Date().getFullYear() - settings.vehicleMinAgeYears;
-
-
 
   const allMakes = Array.from(new Set(latest.map((l) => l.make).filter(Boolean))).sort();
   const allStates = Array.from(new Set(latest.map((l) => l.state).filter(Boolean))).sort();
@@ -227,15 +228,18 @@ export default function ClassifiedsClientSections({ listings }: Props) {
     return true;
   });
 
-  const pageSize = 24;
+  const pageSize = 12;
   const totalPages = Math.max(1, Math.ceil(filteredLatest.length / pageSize));
   const safePage = Math.min(page, totalPages);
   const paginatedLatest = filteredLatest.slice((safePage - 1) * pageSize, safePage * pageSize);
 
-  const noticeText =
-    settings.listingAutoExpireDays > 0
-      ? `Anuncios sao inativados automaticamente apos ${settings.listingAutoExpireDays} dias.`
-      : "Inativacao automatica desativada.";
+  const pendingPageSize = 9;
+  const pendingTotalPages = Math.max(1, Math.ceil(pending.length / pendingPageSize));
+  const safePendingPage = Math.min(pendingPage, pendingTotalPages);
+  const paginatedPending = pending.slice(
+    (safePendingPage - 1) * pendingPageSize,
+    safePendingPage * pendingPageSize
+  );
 
   return (
     <>
@@ -257,7 +261,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
           </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {pending.map((listing) => (
+            {paginatedPending.map((listing) => (
               <ListingCard
                 key={listing.id}
                 listing={listing}
@@ -266,6 +270,32 @@ export default function ClassifiedsClientSections({ listings }: Props) {
               />
             ))}
           </div>
+
+          {pending.length > 0 ? (
+            <div className="mt-5 flex items-center justify-between gap-3 text-sm">
+              <span className="text-slate-600">
+                Pagina {safePendingPage} de {pendingTotalPages} ({pending.length} cadastros)
+              </span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="rounded-md border border-slate-300 px-3 py-1.5 disabled:opacity-50"
+                  disabled={safePendingPage <= 1}
+                  onClick={() => setPendingPage((current) => Math.max(1, current - 1))}
+                >
+                  Anterior
+                </button>
+                <button
+                  type="button"
+                  className="rounded-md border border-slate-300 px-3 py-1.5 disabled:opacity-50"
+                  disabled={safePendingPage >= pendingTotalPages}
+                  onClick={() => setPendingPage((current) => Math.min(pendingTotalPages, current + 1))}
+                >
+                  Proxima
+                </button>
+              </div>
+            </div>
+          ) : null}
         </section>
       ) : null}
 
@@ -318,15 +348,6 @@ export default function ClassifiedsClientSections({ listings }: Props) {
           ) : null}
         </div>
 
-        {filteredLatest.length > pageSize ? (
-          <div className="mt-5 flex items-center justify-between gap-3 text-sm">
-            <span className="text-slate-600">Pagina {safePage} de {totalPages} ({filteredLatest.length} anuncios)</span>
-            <div className="flex gap-2">
-              <button type="button" className="rounded-md border border-slate-300 px-3 py-1.5 disabled:opacity-50" disabled={safePage <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>Anterior</button>
-              <button type="button" className="rounded-md border border-slate-300 px-3 py-1.5 disabled:opacity-50" disabled={safePage >= totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))}>Proxima</button>
-            </div>
-          </div>
-        ) : null}
       </section>
 
       <section className="mt-14">
@@ -370,7 +391,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
           ) : null}
         </div>
 
-        {filteredLatest.length > pageSize ? (
+        {filteredLatest.length > 0 ? (
           <div className="mt-5 flex items-center justify-between gap-3 text-sm">
             <span className="text-slate-600">Pagina {safePage} de {totalPages} ({filteredLatest.length} anuncios)</span>
             <div className="flex gap-2">

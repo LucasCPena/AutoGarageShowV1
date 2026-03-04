@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import Container from "@/components/Container";
+import EventCrudActions from "@/components/EventCrudActions";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import { formatDateLong, formatTime } from "@/lib/date";
@@ -248,6 +249,11 @@ export default async function EventDetailPage({ params }: Props) {
             <div className="mt-6 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
               Apos a data, o evento pode virar Evento realizado com galeria de fotos.
             </div>
+
+            <EventCrudActions
+              eventId={event.id}
+              editHref={`/eventos/gerenciar/${event.id}`}
+            />
           </aside>
         </div>
       </Container>

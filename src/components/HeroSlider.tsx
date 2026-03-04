@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import type { EventRecurrence } from "@/lib/database";
-import { generateEventOccurrences } from "@/lib/eventRecurrence";
+import { findNextOccurrenceInWindow } from "@/lib/eventRecurrence";
 import { normalizeAssetReference } from "@/lib/site-url";
 
 type EventItem = {
@@ -70,13 +71,18 @@ function isEventFeaturedActive(event: EventItem, now: number) {
 function getNextOccurrenceFromToday(event: EventItem, fromTime: number) {
   if (!event.startAt) return null;
   const recurrence = event.recurrence ?? { type: "single" };
-  const occurrences = generateEventOccurrences(event.startAt, recurrence, event.endAt);
-  return (
-    occurrences.find((iso) => {
-      const time = new Date(iso).getTime();
-      return Number.isFinite(time) && time >= fromTime;
-    }) ?? null
+  return findNextOccurrenceInWindow(
+    event.startAt,
+    recurrence,
+    event.endAt,
+    fromTime,
+    Number.POSITIVE_INFINITY
   );
+}
+
+function getSlideImageAlt(title: string | undefined) {
+  const cleanTitle = title?.trim();
+  return cleanTitle && cleanTitle.length > 0 ? cleanTitle : "Banner em destaque";
 }
 
 export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs = 5000 }: Props) {
@@ -105,9 +111,7 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
 
   const slides = useMemo(() => {
     const now = Date.now();
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const windowStart = startOfToday.getTime();
+    const windowStart = now;
 
     const bannerSlides = banners
       .filter((banner) => banner.section === section && isBannerActiveNow(banner, now))
@@ -187,14 +191,16 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-slate-200 shadow-lg">
-      <div
-        className="relative h-64 w-full sm:h-80"
-        style={{
-          backgroundImage: `url(${activeSlide.image})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center"
-        }}
-      >
+      <div className="relative h-64 w-full sm:h-80">
+        <Image
+          src={activeSlide.image}
+          alt={getSlideImageAlt(activeSlide.title)}
+          title={activeSlide.title}
+          fill
+          className="object-cover"
+          sizes="(max-width: 640px) 100vw, 1200px"
+          priority={section === "home"}
+        />
         <div className="absolute inset-0 bg-gradient-to-r from-slate-900/70 to-slate-900/20" />
         <div className="absolute bottom-4 left-4 right-4 text-white">
           <div className="text-sm uppercase tracking-wide text-slate-200">Destaque</div>

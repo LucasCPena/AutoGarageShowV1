@@ -4,9 +4,11 @@ import { useMemo, useState } from "react";
 
 import Link from "next/link";
 
+import Notice from "@/components/Notice";
 import type { Event } from "@/lib/database";
 import { toDateKey } from "@/lib/date";
 import { generateEventOccurrences } from "@/lib/eventRecurrence";
+import { useAuth } from "@/lib/useAuth";
 
 type Props = {
   events: Event[];
@@ -46,6 +48,8 @@ function isToday(date: Date) {
 }
 
 export default function Calendar({ events }: Props) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
 
@@ -65,9 +69,7 @@ export default function Calendar({ events }: Props) {
   }, [calendarStart, calendarEnd]);
 
   const eventsByDay = useMemo(() => {
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const minTime = startOfToday.getTime();
+    const minTime = Date.now();
 
     const map = new Map<string, Event[]>();
     events.forEach((event) => {
@@ -143,7 +145,7 @@ export default function Calendar({ events }: Props) {
                 {(expandedDays[key] ? dayEvents : dayEvents.slice(0, 2)).map((event) => (
                   <Link
                     key={event.id}
-                    href={`/eventos/${event.slug}`}
+                    href={isAdmin ? `/eventos/gerenciar/${event.id}` : `/eventos/${event.slug}`}
                     className="block truncate rounded bg-brand-100 px-1 py-0.5 text-xs leading-tight text-brand-800 hover:bg-brand-200"
                     title={event.title}
                   >
