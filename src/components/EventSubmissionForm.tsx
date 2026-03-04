@@ -77,7 +77,6 @@ export default function EventSubmissionForm() {
     []
   );
 
-<<<<<<< HEAD
   function buildRecurrence(_form: FormData) {
     return { type: "single" as const };
   }
@@ -104,9 +103,6 @@ export default function EventSubmissionForm() {
 
     setSelectedDateKeys((current) => Array.from(new Set([...current, ...allDates])));
   }
-
-=======
->>>>>>> b5e4fd3e4f0757178049f54177fcd7d5e6a4444c
   async function uploadEventImage(file: File) {
     const uploadForm = new FormData();
     uploadForm.append("file", file);
@@ -149,11 +145,7 @@ export default function EventSubmissionForm() {
       const endTime = form.get("endTime")?.toString() || "";
       const liveUrl = form.get("liveUrl")?.toString().trim();
 
-<<<<<<< HEAD
-      if (!title || !description || !city || !state || !location || !contactName || !contactPhone) {
-=======
-      if (!title || !description || !city || !state || !location || !startDate || !contactName) {
->>>>>>> b5e4fd3e4f0757178049f54177fcd7d5e6a4444c
+      if (!title || !description || !city || !state || !location || !contactName) {
         throw new Error("Preencha todos os campos obrigatorios.");
       }
 
@@ -193,15 +185,12 @@ export default function EventSubmissionForm() {
         endAt = end.toISOString();
       }
 
-<<<<<<< HEAD
       const recurrence = useAnnualCalendar
         ? {
             type: "specific" as const,
             dates: selectedDatesSorted.map((date) => `${date}T${startTime}`)
           }
         : buildRecurrence(form);
-=======
->>>>>>> b5e4fd3e4f0757178049f54177fcd7d5e6a4444c
       const uploadedCoverImage = coverImageFile
         ? await uploadEventImage(coverImageFile)
         : undefined;
@@ -228,7 +217,8 @@ export default function EventSubmissionForm() {
           undefined,
         coverImage: uploadedCoverImage || undefined,
         featured: user?.role === "admin" ? featured : false,
-        featuredUntil: user?.role === "admin" && featured ? featuredUntil || undefined : undefined
+        featuredUntil: user?.role === "admin" && featured ? featuredUntil || undefined : undefined,
+        recurrence
       };
 
       const response = await fetch("/api/events", {
@@ -447,8 +437,6 @@ export default function EventSubmissionForm() {
             type="time"
           />
         </label>
-<<<<<<< HEAD
-
         <label className="md:col-span-2 flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
           <input
             type="checkbox"
@@ -568,9 +556,6 @@ export default function EventSubmissionForm() {
         ) : null}
 
         <input type="hidden" name="recurrenceType" value={useAnnualCalendar ? "specific" : "single"} />
-
-=======
->>>>>>> b5e4fd3e4f0757178049f54177fcd7d5e6a4444c
         {user?.role === "admin" ? (
           <>
             <label className="flex items-center gap-2 text-sm text-slate-700">

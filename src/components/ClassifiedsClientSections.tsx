@@ -240,7 +240,6 @@ export default function ClassifiedsClientSections({ listings }: Props) {
   const safePage = Math.min(page, totalPages);
   const paginatedLatest = filteredLatest.slice((safePage - 1) * pageSize, safePage * pageSize);
 
-<<<<<<< HEAD
   const pendingPageSize = 9;
   const pendingTotalPages = Math.max(1, Math.ceil(pending.length / pendingPageSize));
   const safePendingPage = Math.min(pendingPage, pendingTotalPages);
@@ -248,9 +247,6 @@ export default function ClassifiedsClientSections({ listings }: Props) {
     (safePendingPage - 1) * pendingPageSize,
     safePendingPage * pendingPageSize
   );
-
-=======
->>>>>>> b5e4fd3e4f0757178049f54177fcd7d5e6a4444c
   return (
     <>
       {expiredCount > 0 ? (

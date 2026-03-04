@@ -13,6 +13,7 @@ import { listingImageAlt } from "@/lib/image-alt";
 import { normalizeAssetReference } from "@/lib/site-url";
 import { useAuth } from "@/lib/useAuth";
 import { findNextOccurrenceInWindow, generateEventOccurrences } from "@/lib/eventRecurrence";
+import { toYouTubeEmbedUrl } from "@/lib/youtube";
 
 interface HomeConfig {
   heroTitle: string;
