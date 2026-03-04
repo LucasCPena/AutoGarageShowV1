@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import Calendar from "@/components/Calendar";
@@ -6,7 +6,6 @@ import Container from "@/components/Container";
 import HeroSlider from "@/components/HeroSlider";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
-import EventCrudActions from "@/components/EventCrudActions";
 import { formatDateLong, formatTime } from "@/lib/date";
 import { db, Event } from "@/lib/database";
 import { findNextOccurrenceInWindow, formatRecurrence, getSpanDays } from "@/lib/eventRecurrence";
@@ -58,20 +57,19 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
   }
 
   const now = Date.now();
-  const windowStart = now;
-  const limit = windowStart + 30 * 24 * 60 * 60 * 1000;
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const windowStart = startOfToday.getTime();
   const approvedEvents = allEvents.filter((e) => e.status === "approved");
 
   const upcoming = (
     approvedEvents
       .map((event) => {
-        const nextOccurrence = findNextOccurrenceInWindow(
-          event.startAt,
-          event.recurrence,
-          event.endAt,
-          windowStart,
-          limit
-        );
+        const occurrences = generateEventOccurrences(event.startAt, event.recurrence, event.endAt);
+        const nextOccurrence = occurrences.find((iso) => {
+          const time = new Date(iso).getTime();
+          return time >= windowStart;
+        });
         if (!nextOccurrence) return null;
         return { event, nextOccurrence };
       })
@@ -119,39 +117,35 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
           </Notice>
         ) : null}
 
-        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {paginatedUpcoming.map(({ event, nextOccurrence }) => {
-            const spanDays = getSpanDays(event.startAt, event.endAt);
-            const recurrenceLabel = formatRecurrence(event.recurrence, spanDays);
-            const showRecurrenceBadge = event.recurrence.type !== "single" || spanDays > 1;
-
-            return (
-              <article
-                key={event.id}
-                className="rounded-xl border border-slate-200 bg-white p-5"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <img
-                      src={
-                        normalizeAssetReference(event.coverImage || event.images?.[0]) ||
-                        "/placeholders/event.svg"
-                      }
-                      alt={eventImageAlt(event.title)}
-                      className="mb-3 h-28 w-full max-w-xs rounded-lg border border-slate-200 object-cover"
-                    />
-                    <div className="text-sm text-slate-500">
-                      {formatDateLong(nextOccurrence)} • {formatTime(nextOccurrence)}
-                    </div>
-                    <Link
-                      href={`/eventos/${event.slug}`}
-                      className="mt-1 inline-block text-lg font-semibold text-slate-900 hover:text-brand-800"
-                    >
-                      {event.title}
-                    </Link>
-                    <div className="mt-1 text-sm text-slate-600">
-                      {event.city}/{event.state} • {event.location}
-                    </div>
+        <div className="mt-8 grid gap-3">
+          {upcoming.map(({ event, nextOccurrence }) => (
+            <article
+              key={event.id}
+              className="rounded-xl border border-slate-200 bg-white p-5"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <img
+                    src={
+                      normalizeAssetReference(event.coverImage || event.images?.[0]) ||
+                      "/placeholders/event.svg"
+                    }
+                    alt={eventImageAlt(event.title)}
+                    className="mb-3 h-28 w-full max-w-xs rounded-lg border border-slate-200 object-cover"
+                  />
+                  <div className="text-sm text-slate-500">
+                    {formatDateLong(nextOccurrence)} • {event.endAt
+                      ? `${formatTime(event.startAt)} às ${formatTime(event.endAt)}`
+                      : formatTime(nextOccurrence)}
+                  </div>
+                  <Link
+                    href={`/eventos/${event.slug}`}
+                    className="mt-1 inline-block text-lg font-semibold text-slate-900 hover:text-brand-800"
+                  >
+                    {event.title}
+                  </Link>
+                  <div className="mt-1 text-sm text-slate-600">
+                    {event.city}/{event.state} • {event.location}
                   </div>
 
                   {showRecurrenceBadge ? (
@@ -167,18 +161,24 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
                   </div>
                 ) : null}
 
-                <EventCrudActions
-                  eventId={event.id}
-                  editHref={`/eventos/gerenciar/${event.id}`}
-                  compact
-                />
-              </article>
-            );
-          })}
+              {isFeaturedActive(event, now) ? (
+                <div className="mt-3 inline-flex rounded-full bg-brand-100 px-2.5 py-1 text-xs font-semibold text-brand-800">
+                  Evento em destaque
+                </div>
+              ) : null}
+
+              <EventCrudActions
+                eventId={event.id}
+                editHref={`/eventos/gerenciar/${event.id}`}
+                compact
+              />
+
+            </article>
+          ))}
 
           {upcoming.length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-600">
-              Nenhum evento aprovado nos proximos 30 dias.
+              Nenhum evento aprovado a partir de hoje.
             </div>
           ) : null}
         </div>

@@ -1,5 +1,4 @@
 ﻿import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -9,6 +8,8 @@ import ListingDetailSidebar from "@/components/ListingDetailSidebar";
 import ListingCrudActions from "@/components/ListingCrudActions";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
+import ZoomableImage from "@/components/ZoomableImage";
+import ListingGallery from "@/components/ListingGallery";
 import { formatCurrencyBRL } from "@/lib/format";
 import { db } from "@/lib/database";
 import { listingImageAlt } from "@/lib/image-alt";
@@ -20,6 +21,11 @@ type Props = {
     slug: string;
   };
 };
+
+type ListingMediaItem =
+  | { type: "image"; src: string; alt: string }
+  | { type: "youtube"; src: string }
+  | { type: "upload"; src: string };
 
 function toMetaDescription(text: string) {
   const clean = text.replace(/\s+/g, " ").trim();
@@ -84,6 +90,13 @@ export default async function ListingDetailPage({ params }: Props) {
   const listingYearLabel = listingYear ? String(listingYear) : "Ano não informado";
   const images = (listing.images?.length ? listing.images : ["/placeholders/car.svg"])
     .map((image) => normalizeAssetReference(image) || "/placeholders/car.svg");
+
+  const mediaItems: ListingMediaItem[] = images.map((src, index) => ({
+    type: "image",
+    src,
+    alt: listingImageAlt(listing.title, index + 1)
+  }));
+
   const locationLabel = formatLocation(listing.city, listing.state);
   const subtitleParts = [
     locationLabel,
@@ -102,12 +115,6 @@ export default async function ListingDetailPage({ params }: Props) {
           className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
         >
           Voltar
-        </Link>
-        <Link
-          href="/classificados/anunciar"
-          className="rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
-        >
-          Anunciar
         </Link>
       </PageIntro>
 
@@ -132,10 +139,10 @@ export default async function ListingDetailPage({ params }: Props) {
 
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
           <div className="grid gap-6 lg:col-span-2">
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-              <Image
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <ZoomableImage
                 src={images[0]}
-                alt={listingImageAlt(listing.title)}
+                alt={listingImageAlt(listing.title, 1)}
                 width={1200}
                 height={800}
                 className="h-80 w-full object-cover"
@@ -143,24 +150,14 @@ export default async function ListingDetailPage({ params }: Props) {
               />
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              {images.slice(1).map((src, index) => (
-                <div
-                  key={`${src}-${index}`}
-                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
-                >
-                  <Image
-                    src={src}
-                    alt={listingImageAlt(listing.title, index + 2)}
-                    width={1200}
-                    height={800}
-                    className="h-48 w-full object-cover"
-                    loading="lazy"
-                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                  />
-                </div>
-              ))}
-            </div>
+              <div>
+                {/* Client-side gallery with lightbox and video support */}
+                {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+                <ListingGallery
+                  images={images}
+                  title={listing.title}
+                />
+              </div>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-6">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -171,11 +168,7 @@ export default async function ListingDetailPage({ params }: Props) {
                   </p>
                 </div>
 
-                {listing.featured ? (
-                  <span className="rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-800">
-                    Em destaque
-                  </span>
-                ) : null}
+                {null}
               </div>
             </section>
           </div>

@@ -1,36 +1,66 @@
-export function formatDateShort(iso: string | Date) {
-  const date = typeof iso === "string" ? new Date(iso) : iso;
+const EVENT_TIME_ZONE = "America/Sao_Paulo";
+
+function toDate(iso: string | Date) {
+  return typeof iso === "string" ? new Date(iso) : iso;
+}
+
+function formatInEventTimeZone(iso: string | Date, options: Intl.DateTimeFormatOptions) {
+  const date = toDate(iso);
+  if (!Number.isFinite(date.getTime())) return "";
   return new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "short"
+    timeZone: EVENT_TIME_ZONE,
+    ...options
   }).format(date);
 }
 
+export function formatDateShort(iso: string | Date) {
+  return formatInEventTimeZone(iso, {
+    day: "2-digit",
+    month: "short"
+  });
+}
+
 export function toDateKey(iso: string | Date) {
-  const date = typeof iso === "string" ? new Date(iso) : iso;
+  if (iso instanceof Date) {
+    if (!Number.isFinite(iso.getTime())) return "";
+    const year = iso.getFullYear();
+    const month = String(iso.getMonth() + 1).padStart(2, "0");
+    const day = String(iso.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  const date = new Date(iso);
   if (!Number.isFinite(date.getTime())) return "";
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: EVENT_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+
+  if (!year || !month || !day) return "";
   return `${year}-${month}-${day}`;
 }
 
 export function formatDateLong(iso: string | Date) {
-  const date = typeof iso === "string" ? new Date(iso) : iso;
-  return new Intl.DateTimeFormat("pt-BR", {
+  return formatInEventTimeZone(iso, {
     weekday: "long",
     day: "2-digit",
     month: "long",
     year: "numeric"
-  }).format(date);
+  });
 }
 
 export function formatTime(iso: string) {
-  const date = new Date(iso);
-  return new Intl.DateTimeFormat("pt-BR", {
+  return formatInEventTimeZone(iso, {
     hour: "2-digit",
     minute: "2-digit"
-  }).format(date);
+  });
 }
 
 export function isWithinNextDays(iso: string, days: number) {

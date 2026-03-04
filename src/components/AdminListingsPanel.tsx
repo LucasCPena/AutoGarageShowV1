@@ -792,6 +792,53 @@ export default function AdminListingsPanel({ listings, token, onListingsChange }
                       >
                         Editar
                       </button>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          placeholder="ord"
+                          defaultValue={overrides[l.id]?.order ?? undefined}
+                          className="h-9 w-20 rounded-md border border-slate-300 px-2 text-xs"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              const target = e.target as HTMLInputElement;
+                              const val = target.value.trim();
+                              if (val === "") {
+                                clearOverride(l.id);
+                              } else {
+                                const n = Number(val);
+                                if (Number.isFinite(n)) setOverride(l.id, { order: n });
+                              }
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          title="Set order"
+                          className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                          onClick={(e) => {
+                            const container = (e.currentTarget.parentElement as HTMLElement);
+                            const input = container.querySelector('input') as HTMLInputElement | null;
+                            if (!input) return;
+                            const val = input.value.trim();
+                            if (val === "") {
+                              clearOverride(l.id);
+                            } else {
+                              const n = Number(val);
+                              if (Number.isFinite(n)) setOverride(l.id, { order: n });
+                            }
+                          }}
+                        >
+                          Definir
+                        </button>
+                        <button
+                          type="button"
+                          title="Clear order"
+                          className="rounded-md border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50"
+                          onClick={() => setOverride(l.id, { order: null })}
+                        >
+                          Limpar
+                        </button>
+                      </label>
 
                       <button
                         type="button"

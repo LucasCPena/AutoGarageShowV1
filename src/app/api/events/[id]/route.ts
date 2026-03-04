@@ -198,13 +198,6 @@ export async function PUT(
         ? updateData.contactPhone.trim()
         : String(existing.contactPhone || '').trim();
 
-    if (!nextContactPhone) {
-      return NextResponse.json(
-        { error: 'Telefone principal e obrigatorio.' },
-        { status: 400 }
-      );
-    }
-
     const nextContactPhoneSecondary =
       updateData.contactPhoneSecondary === undefined
         ? existing.contactPhoneSecondary
@@ -298,7 +291,7 @@ export async function PUT(
       slug: newSlug,
       status: nextStatus,
       contactDocument: nextContactDocument,
-      contactPhone: nextContactPhone,
+      contactPhone: nextContactPhone || undefined,
       contactPhoneSecondary: nextContactPhoneSecondary,
       liveUrl: nextLiveUrl,
       images: nextImages,

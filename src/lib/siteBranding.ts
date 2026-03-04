@@ -4,6 +4,7 @@ import { normalizeAssetReference } from "@/lib/site-url";
 export type SiteBranding = {
   logoUrl?: string;
   faviconUrl?: string;
+  youtubeLiveUrl?: string;
 };
 
 export const SITE_BRANDING_EVENT = "ags-site-branding-update";
@@ -29,6 +30,10 @@ export function normalizeSiteBranding(input: unknown): SiteBranding {
   return {
     logoUrl: normalizeAssetUrl(raw.logoUrl),
     faviconUrl: normalizeAssetUrl(raw.faviconUrl)
+    ,
+    youtubeLiveUrl: typeof raw.youtubeLiveUrl === "string" && raw.youtubeLiveUrl.trim()
+      ? raw.youtubeLiveUrl.trim()
+      : undefined
   };
 }
 

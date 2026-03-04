@@ -73,14 +73,7 @@ export default function ClassifiedsPage() {
       <PageIntro
         title="Classificados"
         subtitle="Encontre anuncios de veiculos antigos aprovados pela plataforma."
-      >
-        <Link
-          href="/classificados/anunciar"
-          className="rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
-        >
-          Anunciar
-        </Link>
-      </PageIntro>
+      />
 
       <Container className="py-10">
         <section className="mb-8">

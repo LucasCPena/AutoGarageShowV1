@@ -101,10 +101,10 @@ export default function SiteHeader() {
   const navItems = useMemo(() => {
     const items = [
       { href: "/eventos", label: "Eventos" },
+      { href: "/classificados/anunciar", label: "Anuncie aqui" },
       { href: "/organizadores", label: "Organizadores" },
       { href: "/classificados", label: "Classificados" },
-      { href: "/noticias", label: "Noticias" },
-      { href: "/classificados/anunciar", label: "Anuncie aqui" }
+      { href: "/noticias", label: "Noticias" }
     ];
     if (mounted && user?.role === "admin") {
       items.push({ href: "/admin", label: "Admin" });
@@ -169,6 +169,12 @@ export default function SiteHeader() {
             </>
           ) : (
             <>
+              <Link
+                href="/classificados/anunciar"
+                className="rounded-md border border-white/20 px-3 py-2 text-sm font-semibold text-white hover:bg-white/10"
+              >
+                Anunciar
+              </Link>
               <button
                 onClick={() => setAuthModalOpen(true)}
                 className="rounded-md border border-white bg-white px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-200"

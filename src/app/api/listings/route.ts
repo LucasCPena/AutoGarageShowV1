@@ -211,7 +211,22 @@ export async function POST(request: NextRequest) {
         showPlate: listingData.specifications?.showPlate !== false,
         auctionVehicle: listingData.specifications?.auctionVehicle || false,
         ipvaPaid: listingData.specifications?.ipvaPaid || false,
-        vehicleStatus: listingData.specifications?.vehicleStatus || 'paid'
+        vehicleStatus: listingData.specifications?.vehicleStatus || 'paid',
+        mediaVideoUrl:
+          typeof listingData.specifications?.mediaVideoUrl === 'string' &&
+          listingData.specifications.mediaVideoUrl.trim()
+            ? listingData.specifications.mediaVideoUrl.trim()
+            : undefined,
+        mediaVideoType:
+          listingData.specifications?.mediaVideoType === 'youtube' ||
+          listingData.specifications?.mediaVideoType === 'upload'
+            ? listingData.specifications.mediaVideoType
+            : undefined,
+        mediaVideoPosition:
+          typeof listingData.specifications?.mediaVideoPosition === 'number' &&
+          Number.isFinite(listingData.specifications.mediaVideoPosition)
+            ? Math.max(0, Math.floor(listingData.specifications.mediaVideoPosition))
+            : undefined
       }
     });
 

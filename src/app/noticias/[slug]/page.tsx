@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import Container from "@/components/Container";
 import NewsCrudActions from "@/components/NewsCrudActions";
 import PageIntro from "@/components/PageIntro";
+import ZoomableImage from "@/components/ZoomableImage";
 import { formatDateLong } from "@/lib/date";
 import { fetchJson } from "@/lib/fetch-json";
 import { newsImageAlt } from "@/lib/image-alt";
@@ -101,7 +101,7 @@ export default function NewsDetailPage({ params }: Props) {
           />
 
           <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-            <Image
+            <ZoomableImage
               src={getNewsCoverSrc(article.coverImage)}
               alt={newsImageAlt(article.title)}
               width={1200}

@@ -106,7 +106,7 @@ function ListingCard({
           alt={listingImageAlt(listing.title)}
           width={1200}
           height={800}
-          className="h-56 w-full object-cover"
+          className="h-64 w-full object-cover"
           loading="lazy"
         />
       </Link>
@@ -119,11 +119,7 @@ function ListingCard({
           >
             {listing.title}
           </Link>
-          {featuredTag ? (
-            <span className="rounded-full bg-brand-100 px-2.5 py-1 text-xs font-semibold text-brand-800">
-              Destaque
-            </span>
-          ) : null}
+          {null}
         </div>
 
         <div className="mt-1 text-sm text-slate-600">{formatListingMeta(listing)}</div>
@@ -178,17 +174,28 @@ export default function ClassifiedsClientSections({ listings }: Props) {
     isExpired(listing, settings.listingAutoExpireDays, now)
   ).length;
 
+  function sortByOrderThen(primary: (a: Listing, b: Listing) => number) {
+    return (a: Listing, b: Listing) => {
+      const ao = overrides[a.id]?.order;
+      const bo = overrides[b.id]?.order;
+      if (typeof ao === "number" && typeof bo === "number") return ao - bo;
+      if (typeof ao === "number") return ao - (bo ?? 1e9);
+      if (typeof bo === "number") return (ao ?? 1e9) - bo;
+      return primary(a, b);
+    };
+  }
+
   const visible = approved
     .filter((listing) => !isExpired(listing, settings.listingAutoExpireDays, now))
-    .sort(byCreatedAtDesc);
+    .sort(sortByOrderThen(byCreatedAtDesc));
 
   const featuredActive = visible
     .filter((listing) => isFeaturedActive(listing, now))
-    .sort(byFeaturedUntilDesc);
+    .sort(sortByOrderThen(byFeaturedUntilDesc));
 
   const latest = visible
     .filter((listing) => !isFeaturedActive(listing, now))
-    .sort(byCreatedAtDesc);
+    .sort(sortByOrderThen(byCreatedAtDesc));
 
   const featuredRotated = useMemo(() => {
     if (featuredActive.length <= 1) return featuredActive;
@@ -233,6 +240,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
   const safePage = Math.min(page, totalPages);
   const paginatedLatest = filteredLatest.slice((safePage - 1) * pageSize, safePage * pageSize);
 
+<<<<<<< HEAD
   const pendingPageSize = 9;
   const pendingTotalPages = Math.max(1, Math.ceil(pending.length / pendingPageSize));
   const safePendingPage = Math.min(pendingPage, pendingTotalPages);
@@ -241,6 +249,8 @@ export default function ClassifiedsClientSections({ listings }: Props) {
     safePendingPage * pendingPageSize
   );
 
+=======
+>>>>>>> b5e4fd3e4f0757178049f54177fcd7d5e6a4444c
   return (
     <>
       {expiredCount > 0 ? (

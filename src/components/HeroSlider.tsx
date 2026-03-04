@@ -203,16 +203,7 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
         />
         <div className="absolute inset-0 bg-gradient-to-r from-slate-900/70 to-slate-900/20" />
         <div className="absolute bottom-4 left-4 right-4 text-white">
-          <div className="text-sm uppercase tracking-wide text-slate-200">Destaque</div>
           <h3 className="text-2xl font-bold">{activeSlide.title}</h3>
-          {activeSlide.link ? (
-            <Link
-              href={activeSlide.link}
-              className="mt-3 inline-flex items-center gap-2 rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
-            >
-              Ver detalhes
-            </Link>
-          ) : null}
         </div>
       </div>
 

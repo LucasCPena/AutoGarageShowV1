@@ -3,6 +3,8 @@ export type ListingOverride = {
   reactivatedAt?: string;
   isFeatured?: boolean;
   featuredUntil?: string | null;
+  // optional numeric order used by admin to pin custom position (lower = higher priority)
+  order?: number | null;
 };
 
 export type ListingOverrideMap = Record<string, ListingOverride | undefined>;

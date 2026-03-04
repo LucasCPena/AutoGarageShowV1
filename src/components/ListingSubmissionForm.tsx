@@ -52,6 +52,7 @@ export default function ListingSubmissionForm() {
 
   const [photos, setPhotos] = useState<ListingPhotoItem[]>([]);
   const [coverPhotoId, setCoverPhotoId] = useState<string | null>(null);
+  
 
   const maxAllowedYear = useMemo(
     () => getVehicleMaxAllowedYear(settings),
@@ -110,6 +111,9 @@ export default function ListingSubmissionForm() {
       return next;
     });
   }
+
+  
+
 
   useEffect(() => {
     const loadBrands = async () => {
@@ -193,6 +197,8 @@ export default function ListingSubmissionForm() {
 
     return uploadedUrls;
   }
+
+  
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -288,6 +294,8 @@ export default function ListingSubmissionForm() {
       const orderedFiles = photos.map((item) => item.file);
       const uploadedImages = orderedFiles.length > 0 ? await uploadListingImages(orderedFiles) : [];
 
+      
+
       const selectedCoverIndex = coverPhotoId
         ? photos.findIndex((item) => item.id === coverPhotoId)
         : 0;
@@ -322,6 +330,14 @@ export default function ListingSubmissionForm() {
           phone: contactPhone.trim()
         },
         images: orderedImages,
+        specifications: {
+          singleOwner: false,
+          blackPlate: false,
+          showPlate: true,
+          auctionVehicle: false,
+          ipvaPaid: false,
+          vehicleStatus: "paid"
+        },
         status: user?.role === "admin" ? "active" : undefined
       };
 
@@ -352,6 +368,7 @@ export default function ListingSubmissionForm() {
       photos.forEach((item) => URL.revokeObjectURL(item.previewUrl));
       setPhotos([]);
       setCoverPhotoId(null);
+      
     } catch (submitError) {
       setError(
         submitError instanceof Error
@@ -671,6 +688,8 @@ export default function ListingSubmissionForm() {
           />
         </label>
 
+
+        
         <label className="grid gap-1 md:col-span-2">
           <span className="text-sm font-semibold text-slate-900">Fotos</span>
           <input

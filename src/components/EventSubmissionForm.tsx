@@ -77,6 +77,7 @@ export default function EventSubmissionForm() {
     []
   );
 
+<<<<<<< HEAD
   function buildRecurrence(_form: FormData) {
     return { type: "single" as const };
   }
@@ -104,6 +105,8 @@ export default function EventSubmissionForm() {
     setSelectedDateKeys((current) => Array.from(new Set([...current, ...allDates])));
   }
 
+=======
+>>>>>>> b5e4fd3e4f0757178049f54177fcd7d5e6a4444c
   async function uploadEventImage(file: File) {
     const uploadForm = new FormData();
     uploadForm.append("file", file);
@@ -146,7 +149,11 @@ export default function EventSubmissionForm() {
       const endTime = form.get("endTime")?.toString() || "";
       const liveUrl = form.get("liveUrl")?.toString().trim();
 
+<<<<<<< HEAD
       if (!title || !description || !city || !state || !location || !contactName || !contactPhone) {
+=======
+      if (!title || !description || !city || !state || !location || !startDate || !contactName) {
+>>>>>>> b5e4fd3e4f0757178049f54177fcd7d5e6a4444c
         throw new Error("Preencha todos os campos obrigatorios.");
       }
 
@@ -186,12 +193,15 @@ export default function EventSubmissionForm() {
         endAt = end.toISOString();
       }
 
+<<<<<<< HEAD
       const recurrence = useAnnualCalendar
         ? {
             type: "specific" as const,
             dates: selectedDatesSorted.map((date) => `${date}T${startTime}`)
           }
         : buildRecurrence(form);
+=======
+>>>>>>> b5e4fd3e4f0757178049f54177fcd7d5e6a4444c
       const uploadedCoverImage = coverImageFile
         ? await uploadEventImage(coverImageFile)
         : undefined;
@@ -205,7 +215,7 @@ export default function EventSubmissionForm() {
         state,
         location,
         contactName,
-        contactPhone,
+        contactPhone: contactPhone || undefined,
         contactPhoneSecondary: contactPhoneSecondary || undefined,
         contactEmail: contactEmail || undefined,
         startAt: startAt.toISOString(),
@@ -216,7 +226,6 @@ export default function EventSubmissionForm() {
           uploadedOrganizerLogo ||
           form.get("organizerLogoUrl")?.toString().trim() ||
           undefined,
-        recurrence,
         coverImage: uploadedCoverImage || undefined,
         featured: user?.role === "admin" ? featured : false,
         featuredUntil: user?.role === "admin" && featured ? featuredUntil || undefined : undefined
@@ -369,9 +378,8 @@ export default function EventSubmissionForm() {
         </label>
 
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Telefone principal (obrigatorio)</span>
+          <span className="text-sm font-semibold text-slate-900">Telefone principal (opcional)</span>
           <input
-            required
             name="contactPhone"
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="(11) 99999-9999"
@@ -439,6 +447,7 @@ export default function EventSubmissionForm() {
             type="time"
           />
         </label>
+<<<<<<< HEAD
 
         <label className="md:col-span-2 flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
           <input
@@ -560,6 +569,8 @@ export default function EventSubmissionForm() {
 
         <input type="hidden" name="recurrenceType" value={useAnnualCalendar ? "specific" : "single"} />
 
+=======
+>>>>>>> b5e4fd3e4f0757178049f54177fcd7d5e6a4444c
         {user?.role === "admin" ? (
           <>
             <label className="flex items-center gap-2 text-sm text-slate-700">

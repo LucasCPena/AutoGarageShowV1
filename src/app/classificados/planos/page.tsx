@@ -31,12 +31,7 @@ export default function ListingPlansPage() {
           </article>
         </div>
 
-        <Link
-          href="/classificados/anunciar"
-          className="mt-6 inline-flex rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
-        >
-          Quero anunciar
-        </Link>
+        
       </Container>
     </>
   );
