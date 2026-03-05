@@ -103,10 +103,13 @@ export default function EventSubmissionForm() {
 
     setSelectedDateKeys((current) => Array.from(new Set([...current, ...allDates])));
   }
-  async function uploadEventImage(file: File) {
+  async function uploadEventImage(file: File, altLabel?: string) {
     const uploadForm = new FormData();
     uploadForm.append("file", file);
     uploadForm.append("type", "event");
+    if (altLabel?.trim()) {
+      uploadForm.append("alt", altLabel.trim());
+    }
 
     const response = await fetch("/api/upload", {
       method: "POST",
@@ -192,10 +195,10 @@ export default function EventSubmissionForm() {
           }
         : buildRecurrence(form);
       const uploadedCoverImage = coverImageFile
-        ? await uploadEventImage(coverImageFile)
+        ? await uploadEventImage(coverImageFile, eventImageAlt(title))
         : undefined;
       const uploadedOrganizerLogo = organizerLogoFile
-        ? await uploadEventImage(organizerLogoFile)
+        ? await uploadEventImage(organizerLogoFile, eventImageAlt(`logo do organizador ${contactName}`))
         : undefined;
       const payload = {
         title,

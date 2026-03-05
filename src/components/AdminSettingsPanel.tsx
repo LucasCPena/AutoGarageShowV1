@@ -130,6 +130,13 @@ export default function AdminSettingsPanel() {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("type", "site");
+      const brandingAlt =
+        field === "logoUrl"
+          ? "logo do auto garage show"
+          : field === "faviconUrl"
+            ? "favicon do auto garage show"
+            : "arquivo do site";
+      formData.append("alt", brandingAlt);
 
       const response = await fetch("/api/upload", {
         method: "POST",

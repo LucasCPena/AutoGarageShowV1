@@ -173,10 +173,10 @@ export default function EventEditForm({ eventId }: Props) {
       const recurrence = { type: "single" as const };
       const parsedVideos = sanitizeLinesToList(pastVideosText);
       const uploadedCoverImage = coverImageFile
-        ? await uploadEventImage(coverImageFile)
+        ? await uploadEventImage(coverImageFile, eventImageAlt(title))
         : undefined;
       const uploadedOrganizerLogo = organizerLogoFile
-        ? await uploadEventImage(organizerLogoFile)
+        ? await uploadEventImage(organizerLogoFile, eventImageAlt(`logo do organizador ${contactName}`))
         : undefined;
 
       if (user?.role === "admin" && status === "completed" && pastImages.length === 0 && parsedVideos.length === 0) {
@@ -286,10 +286,13 @@ export default function EventEditForm({ eventId }: Props) {
     }
   }
 
-  async function uploadEventImage(file: File) {
+  async function uploadEventImage(file: File, altLabel?: string) {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("type", "event");
+    if (altLabel?.trim()) {
+      formData.append("alt", altLabel.trim());
+    }
 
     const response = await fetch("/api/upload", {
       method: "POST",
@@ -312,7 +315,7 @@ export default function EventEditForm({ eventId }: Props) {
     try {
       const uploaded: string[] = [];
       for (const file of files) {
-        const url = await uploadEventImage(file);
+        const url = await uploadEventImage(file, eventImageAlt(eventData?.title || "evento realizado"));
         if (url) uploaded.push(url);
       }
       if (uploaded.length > 0) {

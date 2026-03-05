@@ -180,10 +180,13 @@ export default function ListingManagePage({ params }: Props) {
 
     try {
       const uploadedUrls = await Promise.all(
-        files.map(async (file) => {
+        files.map(async (file, index) => {
           const formData = new FormData();
           formData.append("file", file);
           formData.append("type", "listing");
+          if (formState.title.trim()) {
+            formData.append("alt", `${formState.title.trim()} foto ${index + 1}`);
+          }
 
           const response = await fetch("/api/upload", {
             method: "POST",

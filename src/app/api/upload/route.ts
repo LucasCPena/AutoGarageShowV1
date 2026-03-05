@@ -6,6 +6,42 @@ import { getUploadsStorageDir, resolveUploadPathFromUrlPath } from '@/lib/upload
 
 const UPLOAD_DIR = getUploadsStorageDir();
 
+function sanitizeFileBaseName(value: string) {
+  const cleaned = value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\.[^/.]+$/, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+
+  return cleaned || "arquivo";
+}
+
+async function buildUniqueFileName(directory: string, baseName: string, extension: string) {
+  let attempt = 0;
+
+  while (attempt < 9999) {
+    const suffix = attempt === 0 ? "" : `-${attempt + 1}`;
+    const candidate = `${baseName}${suffix}.${extension}`;
+    const candidatePath = path.join(directory, candidate);
+
+    try {
+      await fs.access(candidatePath);
+      attempt += 1;
+    } catch {
+      return { fileName: candidate, filePath: candidatePath };
+    }
+  }
+
+  const fallbackName = `${baseName}-${Date.now()}.${extension}`;
+  return {
+    fileName: fallbackName,
+    filePath: path.join(directory, fallbackName)
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -72,10 +108,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Gerar nome único
-    const timestamp = Date.now();
-    const randomString = Math.random().toString(36).substring(2);
-    const fileName = `${timestamp}_${randomString}.${fileExtension}`;
-    const filePath = path.join(typeDir, fileName);
+    const rawAlt = formData.get("alt");
+    const baseSource =
+      typeof rawAlt === "string" && rawAlt.trim()
+        ? rawAlt
+        : file.name;
+    const baseName = sanitizeFileBaseName(baseSource);
+    const { fileName, filePath } = await buildUniqueFileName(typeDir, baseName, fileExtension);
 
     // Salvar arquivo
     const bytes = await file.arrayBuffer();

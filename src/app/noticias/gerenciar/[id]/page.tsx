@@ -155,6 +155,9 @@ export default function NewsManagePage({ params }: Props) {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("type", "news");
+      if (formState.title.trim()) {
+        formData.append("alt", formState.title.trim());
+      }
 
       const response = await fetch("/api/upload", {
         method: "POST",

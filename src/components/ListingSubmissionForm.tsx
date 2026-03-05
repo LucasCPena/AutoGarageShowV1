@@ -173,10 +173,13 @@ export default function ListingSubmissionForm() {
 
   async function uploadListingImages(files: File[]) {
     const uploadedUrls = await Promise.all(
-      files.map(async (file) => {
+      files.map(async (file, index) => {
         const formData = new FormData();
         formData.append("file", file);
         formData.append("type", "listing");
+        if (generatedTitle.trim()) {
+          formData.append("alt", `${generatedTitle.trim()} foto ${index + 1}`);
+        }
 
         const response = await fetch("/api/upload", {
           method: "POST",

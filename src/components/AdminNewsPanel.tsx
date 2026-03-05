@@ -90,6 +90,9 @@ export default function AdminNewsPanel({ token }: Props) {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("type", "news");
+      if (form.title.trim()) {
+        formData.append("alt", form.title.trim());
+      }
 
       const res = await fetch("/api/upload", {
         method: "POST",

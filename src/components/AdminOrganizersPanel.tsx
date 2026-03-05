@@ -105,6 +105,8 @@ export default function AdminOrganizersPanel({ token }: Props) {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("type", "event");
+      const logoAlt = form.altText.trim() || form.name.trim() || eventImageAlt("logo do organizador");
+      formData.append("alt", logoAlt);
 
       const response = await fetch("/api/upload", {
         method: "POST",
