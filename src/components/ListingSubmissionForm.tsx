@@ -4,7 +4,7 @@ import type { ChangeEvent, FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 import Notice from "@/components/Notice";
-import { validateCNPJ, validateCPF } from "@/lib/document";
+import { onlyDigits, validateCNPJ, validateCPF } from "@/lib/document";
 import { getVehicleMaxAllowedYear } from "@/lib/siteSettings";
 import { useAuth } from "@/lib/useAuth";
 import { useSiteSettings } from "@/lib/useSiteSettings";
@@ -17,6 +17,45 @@ type ListingPhotoItem = {
   file: File;
   previewUrl: string;
 };
+
+function formatDocumentInput(value: string, type: "cpf" | "cnpj") {
+  const digits = onlyDigits(value).slice(0, type === "cpf" ? 11 : 14);
+
+  if (type === "cpf") {
+    return digits
+      .replace(/^(\d{3})(\d)/, "$1.$2")
+      .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+      .replace(/\.(\d{3})(\d)/, ".$1-$2");
+  }
+
+  return digits
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2");
+}
+
+function formatPhoneInput(value: string) {
+  const digits = onlyDigits(value).slice(0, 11);
+  if (!digits) return "";
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
+function formatIntegerInput(value: string) {
+  const digits = onlyDigits(value).replace(/^0+(?=\d)/, "");
+  if (!digits) return "";
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+function parseFormattedInteger(value: string) {
+  const digits = onlyDigits(value);
+  return digits ? Number(digits) : Number.NaN;
+}
 
 export default function ListingSubmissionForm() {
   const { settings, isReady } = useSiteSettings();
@@ -40,8 +79,8 @@ export default function ListingSubmissionForm() {
 
   const [yearManufacture, setYearManufacture] = useState<number | "">("");
   const [yearModel, setYearModel] = useState<number | "">("");
-  const [mileage, setMileage] = useState<number | "">("");
-  const [price, setPrice] = useState<number | "">("");
+  const [mileage, setMileage] = useState("");
+  const [price, setPrice] = useState("");
 
   const [city, setCity] = useState("");
   const [stateUf, setStateUf] = useState("");
@@ -241,13 +280,15 @@ export default function ListingSubmissionForm() {
       return;
     }
 
-    if (typeof mileage !== "number" || mileage < 0) {
+    const mileageValue = parseFormattedInteger(mileage);
+    if (!Number.isFinite(mileageValue) || mileageValue < 0) {
       setError("Informe uma quilometragem valida.");
       setSubmitted(false);
       return;
     }
 
-    if (typeof price !== "number" || price <= 0) {
+    const priceValue = parseFormattedInteger(price);
+    if (!Number.isFinite(priceValue) || priceValue <= 0) {
       setError("Informe um preco valido.");
       setSubmitted(false);
       return;
@@ -259,7 +300,8 @@ export default function ListingSubmissionForm() {
       return;
     }
 
-    if (!contactPhone.trim()) {
+    const phoneDigits = onlyDigits(contactPhone);
+    if (phoneDigits.length < 10) {
       setError("Informe telefone para contato.");
       setSubmitted(false);
       return;
@@ -321,8 +363,8 @@ export default function ListingSubmissionForm() {
         modelYear: yearModel,
         manufactureYear: yearManufacture,
         year: yearModel,
-        mileage,
-        price,
+        mileage: mileageValue,
+        price: priceValue,
         city: city.trim(),
         state: stateUf.trim().toUpperCase(),
         description: description.trim(),
@@ -415,7 +457,9 @@ export default function ListingSubmissionForm() {
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             value={documentType}
             onChange={(event) => {
-              setDocumentType(event.target.value as "cpf" | "cnpj");
+              const nextType = event.target.value as "cpf" | "cnpj";
+              setDocumentType(nextType);
+              setDocumentValue((current) => formatDocumentInput(current, nextType));
               setError(null);
             }}
           >
@@ -435,7 +479,7 @@ export default function ListingSubmissionForm() {
             placeholder={documentType === "cpf" ? "CPF" : "CNPJ"}
             value={documentValue}
             onChange={(event) => {
-              setDocumentValue(event.target.value);
+              setDocumentValue(formatDocumentInput(event.target.value, documentType));
               setError(null);
             }}
           />
@@ -575,14 +619,12 @@ export default function ListingSubmissionForm() {
           <input
             required
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-            type="number"
+            type="text"
             inputMode="numeric"
-            min={0}
-            placeholder="123456"
+            placeholder="123.456"
             value={mileage}
             onChange={(event) => {
-              const value = event.target.value;
-              setMileage(value ? Number(value) : "");
+              setMileage(formatIntegerInput(event.target.value));
               setError(null);
             }}
           />
@@ -593,14 +635,12 @@ export default function ListingSubmissionForm() {
           <input
             required
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-            type="number"
-            step="0.01"
-            min={0}
-            placeholder="79000"
+            type="text"
+            inputMode="numeric"
+            placeholder="79.000"
             value={price}
             onChange={(event) => {
-              const value = event.target.value;
-              setPrice(value ? Number(value) : "");
+              setPrice(formatIntegerInput(event.target.value));
               setError(null);
             }}
           />
@@ -657,7 +697,7 @@ export default function ListingSubmissionForm() {
             type="tel"
             value={contactPhone}
             onChange={(event) => {
-              setContactPhone(event.target.value);
+              setContactPhone(formatPhoneInput(event.target.value));
               setError(null);
             }}
           />

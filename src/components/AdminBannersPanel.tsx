@@ -4,7 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 
 import Notice from "@/components/Notice";
 
-type BannerSection = "home" | "events" | "listings" | "news";
+type BannerSection = "home" | "events" | "listings" | "news" | "plans";
+
+const SECTION_OPTIONS: Array<{ value: BannerSection; label: string }> = [
+  { value: "home", label: "Home (topo principal)" },
+  { value: "events", label: "Eventos" },
+  { value: "listings", label: "Classificados" },
+  { value: "news", label: "Noticias" },
+  { value: "plans", label: "Planos dos classificados" }
+];
 
 type Banner = {
   id: string;
@@ -40,11 +48,16 @@ function sectionLabel(section: string) {
   if (normalized === "events") return "Eventos";
   if (normalized === "listings") return "Classificados";
   if (normalized === "news") return "Noticias";
+  if (normalized === "plans") return "Planos dos classificados";
   return normalized
     .split(/[-_\s]+/)
     .filter(Boolean)
     .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
     .join(" ");
+}
+
+function statusLabel(status: "active" | "inactive") {
+  return status === "active" ? "Ativo" : "Inativo";
 }
 
 export default function AdminBannersPanel({
@@ -91,7 +104,7 @@ export default function AdminBannersPanel({
     description ??
     (backgroundMode
       ? "Use esta area para trocar somente o banner de fundo do topo da home."
-      : "Cadastre banners e escolha em qual secao/pagina eles devem aparecer.");
+      : "Cadastre banners e escolha em qual pagina eles devem aparecer.");
 
   function authHeaders(): Record<string, string> {
     return token ? { Authorization: `Bearer ${token}` } : {};
@@ -204,16 +217,16 @@ export default function AdminBannersPanel({
         setBanners((prev) => [...prev, data.banner]);
       }
 
-      setForm({
+      setForm((current) => ({
         title: "",
         image: "",
         link: "",
-        section: fixedSection ?? ("events" as BannerSection),
+        section: fixedSection ?? current.section,
         position: 1,
         startDate: "",
         endDate: "",
         status: "active"
-      });
+      }));
       setMessage({
         type: "success",
         text: backgroundMode ? "Banner de fundo atualizado." : "Banner criado."
@@ -358,7 +371,7 @@ export default function AdminBannersPanel({
           <>
             {fixedSection ? (
               <label className="grid gap-1">
-                <span className="text-sm font-semibold text-slate-900">Secao</span>
+                <span className="text-sm font-semibold text-slate-900">Pagina</span>
                 <input
                   readOnly
                   className="h-11 rounded-md border border-slate-300 bg-slate-50 px-3 text-sm text-slate-700"
@@ -367,16 +380,20 @@ export default function AdminBannersPanel({
               </label>
             ) : (
               <label className="grid gap-1">
-                <span className="text-sm font-semibold text-slate-900">Secao / aba da pagina</span>
-                <input
+                <span className="text-sm font-semibold text-slate-900">Pagina de exibicao</span>
+                <select
                   className="h-11 rounded-md border border-slate-300 px-3 text-sm"
                   value={form.section}
-                  onChange={(e) => setForm((f) => ({ ...f, section: e.target.value }))}
-                  placeholder="events, listings, news, home..."
-                />
-                <span className="text-xs text-slate-500">
-                  Ex.: events, listings, news, organizadores.
-                </span>
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, section: e.target.value as BannerSection }))
+                  }
+                >
+                  {SECTION_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </label>
             )}
 
@@ -420,11 +437,11 @@ export default function AdminBannersPanel({
         >
           {busy
             ? "Salvando..."
-            : uploadingImage
-              ? "Enviando imagem..."
+              : uploadingImage
+                ? "Enviando imagem..."
               : backgroundMode
                 ? "Salvar banner de fundo"
-                : "Adicionar destaque"}
+                : "Adicionar banner"}
         </button>
       </form>
 
@@ -440,7 +457,7 @@ export default function AdminBannersPanel({
               ? "Defina uma imagem para o fundo da home."
               : fixedSection
                 ? "Crie banners para esta secao."
-                : "Crie ate 3 imagens para o carrossel."}
+                : "Crie ate 3 banners para o carrossel."}
           </Notice>
         ) : (
           bannersToRender.map((banner) => (
@@ -452,15 +469,15 @@ export default function AdminBannersPanel({
                 <div className="text-sm font-semibold text-slate-900">{banner.title}</div>
                 <div className="text-xs text-slate-600">
                   {backgroundMode
-                    ? `fundo home - ${isActiveNow(banner) ? "Ativo agora" : banner.status}`
-                    : `${banner.section} - posicao ${banner.position} - ${isActiveNow(banner) ? "Ativo agora" : banner.status}`}
+                    ? `Fundo da home - ${isActiveNow(banner) ? "Ativo agora" : statusLabel(banner.status)}`
+                    : `${sectionLabel(banner.section)} - posicao ${banner.position} - ${isActiveNow(banner) ? "Ativo agora" : statusLabel(banner.status)}`}
                 </div>
                 <div className="text-xs text-slate-500">
                   {banner.startDate
                     ? new Date(banner.startDate).toLocaleString("pt-BR")
                     : "inicio imediato"}
                   {banner.endDate
-                    ? ` -> ${new Date(banner.endDate).toLocaleString("pt-BR")}`
+                    ? ` ate ${new Date(banner.endDate).toLocaleString("pt-BR")}`
                     : " (sem termino)"}
                 </div>
               </div>

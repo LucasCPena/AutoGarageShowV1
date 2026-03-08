@@ -43,7 +43,7 @@ export default function AdminBannersPage() {
     <>
       <PageIntro
         title="Banners"
-        subtitle="Cadastre banners e escolha a aba/pagina onde deseja exibir cada um."
+        subtitle="Cadastre banners e escolha a pagina onde deseja exibir cada um."
       >
         <Link
           href="/admin"
@@ -57,7 +57,7 @@ export default function AdminBannersPage() {
         <AdminBannersPanel
           token={token}
           title="Cadastro de banners"
-          description="Defina titulo, imagem, link e secao de destino (events, listings, news etc)."
+          description="Defina titulo, imagem, link e a pagina de destino."
         />
       </Container>
     </>

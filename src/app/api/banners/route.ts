@@ -9,7 +9,8 @@ const SECTION_ALIASES: Record<string, string[]> = {
   home: ['home', 'topo', 'top', 'inicio', 'inicial'],
   events: ['events', 'event', 'evento', 'eventos', 'o evento'],
   listings: ['listings', 'listing', 'classificado', 'classificados', 'anuncio', 'anuncios'],
-  news: ['news', 'new', 'noticia', 'noticias']
+  news: ['news', 'new', 'noticia', 'noticias'],
+  plans: ['plans', 'plan', 'plano', 'planos']
 };
 
 function normalizeBannerSection(input: unknown) {
@@ -93,7 +94,7 @@ export async function POST(request: NextRequest) {
 
     if (!normalizedSection) {
       return NextResponse.json(
-        { error: 'Secao invalida. Informe uma secao como home, events, listings, news etc.' },
+        { error: 'Secao invalida. Informe uma secao como home, events, listings, news ou plans.' },
         { status: 400 }
       );
     }
