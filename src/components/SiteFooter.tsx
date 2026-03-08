@@ -3,19 +3,28 @@ import { db } from "@/lib/database";
 
 const defaultSocialLinks = [
   { platform: "YouTube", url: "https://www.youtube.com/" },
-  { platform: "X", url: "https://x.com/" },
   { platform: "Pinterest", url: "https://www.pinterest.com/" },
   { platform: "Instagram", url: "https://www.instagram.com/" },
-  { platform: "Facebook", url: "https://www.facebook.com/" },
-  { platform: "TikTok", url: "https://www.tiktok.com/" }
+  { platform: "Facebook", url: "https://www.facebook.com/" }
 ];
+
+const blockedPlatforms = new Set(["x", "twitter", "tiktok"]);
+
+function filterSocialLinks(links: Array<{ platform: string; url: string }> | undefined | null) {
+  return (links || []).filter((link) => {
+    const platform = String(link?.platform || "").trim().toLowerCase();
+    return platform && !blockedPlatforms.has(platform);
+  });
+}
 
 export default async function SiteFooter() {
   const year = new Date().getFullYear();
   let socialLinks = defaultSocialLinks;
+
   try {
     const settings = await db.settings.get();
-    socialLinks = settings?.social?.links?.length ? settings.social.links : defaultSocialLinks;
+    const filteredSettingsLinks = filterSocialLinks(settings?.social?.links);
+    socialLinks = filteredSettingsLinks.length ? filteredSettingsLinks : defaultSocialLinks;
   } catch (error) {
     console.error("Erro ao carregar links sociais no rodape:", error);
   }
@@ -27,7 +36,7 @@ export default async function SiteFooter() {
           <div>
             <div className="text-sm font-semibold text-slate-900">Auto Garage Show</div>
             <div className="mt-1 text-xs text-slate-500">
-              Calendário, classificados e notícias de carros antigos.
+              Calendario, classificados e noticias de carros antigos.
             </div>
           </div>
 
@@ -49,9 +58,7 @@ export default async function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-8 text-xs text-slate-500">
-          © {year} Auto Garage Show. Links editáveis em settings.json.
-        </div>
+        <div className="mt-8 text-xs text-slate-500">(c) {year} Auto Garage Show.</div>
       </Container>
     </footer>
   );

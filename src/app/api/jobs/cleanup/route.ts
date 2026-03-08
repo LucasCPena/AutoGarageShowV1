@@ -1,10 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database';
 
+function resolveAutoInactiveMonths(settings: unknown) {
+  const fallback = 4;
+
+  if (!settings || typeof settings !== 'object') return fallback;
+
+  const source = settings as Record<string, unknown>;
+
+  const autoExpireDays = source.listingAutoExpireDays;
+  if (typeof autoExpireDays === 'number' && Number.isFinite(autoExpireDays)) {
+    if (autoExpireDays <= 0) return 0;
+    return Math.max(1, Math.round(autoExpireDays / 30));
+  }
+
+  const listings =
+    source.listings && typeof source.listings === 'object'
+      ? (source.listings as Record<string, unknown>)
+      : null;
+  const legacyMonths = listings?.autoInactiveMonths;
+
+  if (typeof legacyMonths === 'number' && Number.isFinite(legacyMonths) && legacyMonths >= 0) {
+    return Math.round(legacyMonths);
+  }
+
+  return fallback;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const settings = await db.settings.get();
-    const autoInactiveMonths = settings?.listings.autoInactiveMonths || 4;
+    const autoInactiveMonths = resolveAutoInactiveMonths(settings);
     
     // Atualizar status de destacados expirados
     await db.listings.updateFeaturedStatus();

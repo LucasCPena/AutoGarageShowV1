@@ -55,7 +55,7 @@ export default function AdminPage() {
           /eventos, /classificados e /noticias.
         </Notice>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-4">
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <Link
             href="/eventos"
             className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 hover:border-brand-300 hover:text-brand-700"
@@ -79,6 +79,12 @@ export default function AdminPage() {
             className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 hover:border-brand-300 hover:text-brand-700"
           >
             Gerenciar banners
+          </Link>
+          <Link
+            href="/admin/planos"
+            className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 hover:border-brand-300 hover:text-brand-700"
+          >
+            Gerenciar planos
           </Link>
         </div>
 

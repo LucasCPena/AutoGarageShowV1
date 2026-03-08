@@ -11,9 +11,15 @@ type Props = {
   isOpen: boolean;
   onClose: () => void;
   defaultMode?: "login" | "register";
+  redirectTo?: string;
 };
 
-export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Props) {
+export default function AuthModal({
+  isOpen,
+  onClose,
+  defaultMode = "login",
+  redirectTo = "/"
+}: Props) {
   const { login, register } = useAuth();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -28,6 +34,11 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Pr
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setMode(defaultMode);
+  }, [defaultMode, isOpen]);
 
   // Reset form when mode changes
   useEffect(() => {
@@ -48,7 +59,11 @@ export default function AuthModal({ isOpen, onClose, defaultMode = "login" }: Pr
     setPassword("");
     setName("");
     setCpf("");
-    router.push("/");
+    if (redirectTo) {
+      router.push(redirectTo);
+      return;
+    }
+    router.refresh();
   }
 
   function onSubmit(e: React.FormEvent) {

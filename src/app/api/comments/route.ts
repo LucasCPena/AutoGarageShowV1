@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     }
 
     const settings = await db.settings.get();
-    const maxLength = settings?.comments.maxLength || 1000;
+    const maxLength = settings?.comments?.maxLength || 1000;
     if (String(commentData.message).length > maxLength) {
       return NextResponse.json(
         { error: `Mensagem muito longa. Maximo: ${maxLength} caracteres` },

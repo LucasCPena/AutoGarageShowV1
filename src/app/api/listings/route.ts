@@ -4,6 +4,38 @@ import { getUserFromToken, requireAuth } from '@/lib/auth-middleware';
 import { db, isMysqlRequiredError, type Listing } from '@/lib/database';
 import { onlyDigits, validateBrazilianDocument } from '@/lib/document';
 
+function resolveListingLimit(settings: unknown, documentType: 'cpf' | 'cnpj') {
+  const fallback = documentType === 'cnpj' ? 20 : 4;
+
+  if (!settings || typeof settings !== 'object') return fallback;
+
+  const source = settings as Record<string, unknown>;
+
+  const listingLimits =
+    source.listingLimits && typeof source.listingLimits === 'object'
+      ? (source.listingLimits as Record<string, unknown>)
+      : null;
+
+  const modernValue = listingLimits?.[documentType];
+  if (typeof modernValue === 'number' && Number.isFinite(modernValue) && modernValue >= 0) {
+    return Math.round(modernValue);
+  }
+
+  const listings =
+    source.listings && typeof source.listings === 'object'
+      ? (source.listings as Record<string, unknown>)
+      : null;
+
+  const legacyKey =
+    documentType === 'cnpj' ? 'freeListingsPerCNPJ' : 'freeListingsPerCPF';
+  const legacyValue = listings?.[legacyKey];
+  if (typeof legacyValue === 'number' && Number.isFinite(legacyValue) && legacyValue >= 0) {
+    return Math.round(legacyValue);
+  }
+
+  return fallback;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -133,9 +165,7 @@ export async function POST(request: NextRequest) {
       const settings = await db.settings.get();
       const activeCount = await db.listings.getActiveCount(normalizedDocument);
       const isCNPJ = normalizedDocument.length === 14;
-      const maxFree = isCNPJ
-        ? settings?.listings.freeListingsPerCNPJ || 20
-        : settings?.listings.freeListingsPerCPF || 4;
+      const maxFree = resolveListingLimit(settings, isCNPJ ? 'cnpj' : 'cpf');
 
       if (activeCount >= maxFree) {
         return NextResponse.json(

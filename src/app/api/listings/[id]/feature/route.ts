@@ -2,6 +2,41 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database';
 import { requireAuth } from '@/lib/auth-middleware';
 
+function resolveHighlightOptions(settings: unknown) {
+  const fallback = [7, 14, 21, 30];
+
+  if (!settings || typeof settings !== 'object') return fallback;
+
+  const source = settings as Record<string, unknown>;
+
+  const modernOptions = source.listingFeaturedDurationsDays;
+  if (Array.isArray(modernOptions)) {
+    const normalized = modernOptions
+      .filter((item) => typeof item === 'number' && Number.isFinite(item))
+      .map((item) => Math.max(1, Math.round(item)))
+      .filter((item) => item > 0);
+
+    if (normalized.length > 0) return Array.from(new Set(normalized)).sort((a, b) => a - b);
+  }
+
+  const legacyListings =
+    source.listings && typeof source.listings === 'object'
+      ? (source.listings as Record<string, unknown>)
+      : null;
+  const legacyOptions = legacyListings?.highlightOptions;
+
+  if (Array.isArray(legacyOptions)) {
+    const normalized = legacyOptions
+      .filter((item) => typeof item === 'number' && Number.isFinite(item))
+      .map((item) => Math.max(1, Math.round(item)))
+      .filter((item) => item > 0);
+
+    if (normalized.length > 0) return Array.from(new Set(normalized)).sort((a, b) => a - b);
+  }
+
+  return fallback;
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -19,7 +54,7 @@ export async function POST(
     
     // Validar se dias está nas opções permitidas
     const settings = await db.settings.get();
-    const validOptions = settings?.listings.highlightOptions || [7, 14, 21, 30];
+    const validOptions = resolveHighlightOptions(settings);
     
     if (!validOptions.includes(days)) {
       return NextResponse.json(

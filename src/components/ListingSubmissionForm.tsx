@@ -1,7 +1,7 @@
 "use client";
 
 import type { ChangeEvent, FormEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import Notice from "@/components/Notice";
 import { onlyDigits, validateCNPJ, validateCPF } from "@/lib/document";
@@ -91,6 +91,7 @@ export default function ListingSubmissionForm() {
 
   const [photos, setPhotos] = useState<ListingPhotoItem[]>([]);
   const [coverPhotoId, setCoverPhotoId] = useState<string | null>(null);
+  const feedbackRef = useRef<HTMLDivElement | null>(null);
   
 
   const maxAllowedYear = useMemo(
@@ -104,6 +105,11 @@ export default function ListingSubmissionForm() {
       photos.forEach((item) => URL.revokeObjectURL(item.previewUrl));
     };
   }, [photos]);
+
+  useEffect(() => {
+    if (!error && !successMessage) return;
+    feedbackRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [error, successMessage]);
 
   function onPhotoFilesChange(event: ChangeEvent<HTMLInputElement>) {
     const files = event.target.files ? Array.from(event.target.files) : [];
@@ -407,9 +413,6 @@ export default function ListingSubmissionForm() {
             ? "Classificado publicado com sucesso."
             : "Classificado enviado com sucesso.");
       setSuccessMessage(successText);
-      if (typeof window !== "undefined") {
-        window.alert(successText);
-      }
       photos.forEach((item) => URL.revokeObjectURL(item.previewUrl));
       setPhotos([]);
       setCoverPhotoId(null);
@@ -808,6 +811,22 @@ export default function ListingSubmissionForm() {
             ? "Publicar classificado (admin)"
             : "Enviar classificado"}
       </button>
+
+      <div ref={feedbackRef}>
+        {successMessage ? (
+          <Notice title="Envio concluido" variant="success">
+            {user?.role === "admin"
+              ? successMessage
+              : `${successMessage} Aguarde a liberacao para o anuncio entrar no ar.`}
+          </Notice>
+        ) : null}
+
+        {error ? (
+          <Notice title="Verifique os dados" variant="warning">
+            {error}
+          </Notice>
+        ) : null}
+      </div>
     </form>
   );
 }

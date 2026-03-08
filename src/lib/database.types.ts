@@ -1,3 +1,5 @@
+import type { ListingPlan } from "./listingPlans";
+
 export interface User {
   id: string;
   name: string;
@@ -170,6 +172,7 @@ export interface Settings {
   social?: {
     links: { platform: string; url: string }[];
   };
+  listingPlans?: ListingPlan[];
   branding?: {
     logoUrl?: string;
     faviconUrl?: string;

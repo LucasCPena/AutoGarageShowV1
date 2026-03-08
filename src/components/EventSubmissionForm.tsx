@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import type { ChangeEvent, FormEvent } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import Image from "next/image";
 
@@ -65,6 +65,7 @@ export default function EventSubmissionForm() {
   const [useAnnualCalendar, setUseAnnualCalendar] = useState(false);
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
   const [selectedDateKeys, setSelectedDateKeys] = useState<string[]>([]);
+  const feedbackRef = useRef<HTMLDivElement | null>(null);
 
   const selectedDatesSorted = useMemo(
     () => [...selectedDateKeys].sort((a, b) => a.localeCompare(b)),
@@ -76,6 +77,11 @@ export default function EventSubmissionForm() {
       "Envie seu encontro com data unica ou selecione varias datas no calendario anual.",
     []
   );
+
+  useEffect(() => {
+    if (!message) return;
+    feedbackRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [message]);
 
   function buildRecurrence(_form: FormData) {
     return { type: "single" as const };
@@ -656,6 +662,17 @@ export default function EventSubmissionForm() {
             ? "Publicar (admin)"
             : "Enviar para aprovacao"}
       </button>
+
+      <div ref={feedbackRef}>
+        {message ? (
+          <Notice
+            title={message.type === "success" ? "Envio concluido" : "Erro"}
+            variant={message.type === "success" ? "success" : "warning"}
+          >
+            {message.text}
+          </Notice>
+        ) : null}
+      </div>
     </form>
   );
 }

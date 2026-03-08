@@ -11,7 +11,7 @@ const SECTION_OPTIONS: Array<{ value: BannerSection; label: string }> = [
   { value: "events", label: "Eventos" },
   { value: "listings", label: "Classificados" },
   { value: "news", label: "Noticias" },
-  { value: "plans", label: "Planos dos classificados" }
+  { value: "plans", label: "Planos" }
 ];
 
 type Banner = {
@@ -48,7 +48,7 @@ function sectionLabel(section: string) {
   if (normalized === "events") return "Eventos";
   if (normalized === "listings") return "Classificados";
   if (normalized === "news") return "Noticias";
-  if (normalized === "plans") return "Planos dos classificados";
+  if (normalized === "plans") return "Planos";
   return normalized
     .split(/[-_\s]+/)
     .filter(Boolean)

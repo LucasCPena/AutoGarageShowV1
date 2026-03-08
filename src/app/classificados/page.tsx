@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import ClassifiedsClientSections from "@/components/ClassifiedsClientSections";
 import Container from "@/components/Container";
 import HeroSlider from "@/components/HeroSlider";
-import ListingPlansSection from "@/components/ListingPlansSection";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import type { Listing } from "@/lib/database";
@@ -79,8 +78,6 @@ export default function ClassifiedsPage() {
         <section className="mb-8">
           <HeroSlider section="listings" />
         </section>
-
-        <ListingPlansSection className="mb-10" />
 
         <ClassifiedsClientSections listings={listings} />
       </Container>
