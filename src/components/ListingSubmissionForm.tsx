@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import Notice from "@/components/Notice";
 import { onlyDigits, validateCNPJ, validateCPF } from "@/lib/document";
+import { listingImageAlt } from "@/lib/image-alt";
 import { getVehicleMaxAllowedYear } from "@/lib/siteSettings";
 import { useAuth } from "@/lib/useAuth";
 import { useSiteSettings } from "@/lib/useSiteSettings";
@@ -755,7 +756,7 @@ export default function ListingSubmissionForm() {
                   <div key={item.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                     <img
                       src={item.previewUrl}
-                      alt={`Preview da foto ${index + 1}`}
+                      alt={listingImageAlt(generatedTitle || "anuncio em cadastro", index + 1)}
                       className="h-48 w-full object-cover"
                     />
                     <div className="grid gap-2 p-2">

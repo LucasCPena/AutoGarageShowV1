@@ -3,18 +3,33 @@ import { db } from "@/lib/database";
 
 const defaultSocialLinks = [
   { platform: "YouTube", url: "https://www.youtube.com/" },
-  { platform: "Pinterest", url: "https://www.pinterest.com/" },
+  { platform: "TikTok", url: "https://www.tiktok.com/" },
   { platform: "Instagram", url: "https://www.instagram.com/" },
   { platform: "Facebook", url: "https://www.facebook.com/" }
 ];
 
-const blockedPlatforms = new Set(["x", "twitter", "tiktok"]);
+const blockedPlatforms = new Set(["x", "twitter", "pinterest"]);
+
+function normalizePlatform(value: string | undefined | null) {
+  return String(value || "").trim().toLowerCase();
+}
 
 function filterSocialLinks(links: Array<{ platform: string; url: string }> | undefined | null) {
   return (links || []).filter((link) => {
-    const platform = String(link?.platform || "").trim().toLowerCase();
+    const platform = normalizePlatform(link?.platform);
     return platform && !blockedPlatforms.has(platform);
   });
+}
+
+function ensureTikTokLink(links: Array<{ platform: string; url: string }>) {
+  const hasTikTok = links.some((link) => normalizePlatform(link.platform) === "tiktok");
+  if (hasTikTok) return links;
+
+  const tikTokDefault = defaultSocialLinks.find(
+    (link) => normalizePlatform(link.platform) === "tiktok"
+  );
+
+  return tikTokDefault ? [...links, tikTokDefault] : links;
 }
 
 export default async function SiteFooter() {
@@ -23,7 +38,7 @@ export default async function SiteFooter() {
 
   try {
     const settings = await db.settings.get();
-    const filteredSettingsLinks = filterSocialLinks(settings?.social?.links);
+    const filteredSettingsLinks = ensureTikTokLink(filterSocialLinks(settings?.social?.links));
     socialLinks = filteredSettingsLinks.length ? filteredSettingsLinks : defaultSocialLinks;
   } catch (error) {
     console.error("Erro ao carregar links sociais no rodape:", error);
@@ -58,7 +73,7 @@ export default async function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-8 text-xs text-slate-500">(c) {year} Auto Garage Show.</div>
+        <div className="mt-8 text-xs text-slate-500">Auto Garage Show {year}</div>
       </Container>
     </footer>
   );

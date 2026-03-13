@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Notice from "@/components/Notice";
 import {
   cloneDefaultListingPlans,
+  isListingPlanReadyForPublic,
   normalizeListingPlans,
   type ListingPlan
 } from "@/lib/listingPlans";
@@ -26,6 +27,21 @@ function createPlan() {
     featured: false,
     active: true
   } satisfies ListingPlan;
+}
+
+function validatePlans(plans: ListingPlan[]) {
+  const firstInvalidActivePlan = plans.find(
+    (plan) => plan.active && !isListingPlanReadyForPublic(plan)
+  );
+
+  if (!firstInvalidActivePlan) return null;
+
+  const missingFields: string[] = [];
+  if (!firstInvalidActivePlan.name.trim()) missingFields.push("nome");
+  if (!firstInvalidActivePlan.description.trim()) missingFields.push("descricao");
+  if (!firstInvalidActivePlan.priceLabel.trim()) missingFields.push("preco exibido");
+
+  return `Preencha ${missingFields.join(", ")} nos planos ativos antes de salvar.`;
 }
 
 export default function AdminPlansPanel({ token }: Props) {
@@ -98,6 +114,11 @@ export default function AdminPlansPanel({ token }: Props) {
     setError(null);
 
     try {
+      const validationError = validatePlans(plans);
+      if (validationError) {
+        throw new Error(validationError);
+      }
+
       const normalized = normalizeListingPlans(plans);
 
       const response = await fetch("/api/settings", {

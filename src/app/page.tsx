@@ -151,6 +151,7 @@ export default function HomePage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [news, setNews] = useState<News[]>([]);
   const [siteSettings, setSiteSettings] = useState<any>({});
+  const [pendingEventsCount, setPendingEventsCount] = useState(0);
   const [pendingListingsCount, setPendingListingsCount] = useState(0);
   const [pendingCommentsCount, setPendingCommentsCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -276,6 +277,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (user?.role !== "admin" || !token) {
+      setPendingEventsCount(0);
       setPendingListingsCount(0);
       setPendingCommentsCount(0);
       return;
@@ -285,10 +287,17 @@ export default function HomePage() {
     const headers: HeadersInit = { Authorization: `Bearer ${token}` };
 
     Promise.allSettled([
+      fetchJson<{ events?: Array<{ id: string }> }>("/api/admin/events/pending", { headers }),
       fetchJson<{ listings?: Listing[] }>("/api/admin/listings/pending", { headers }),
       fetchJson<{ comments?: Array<{ id: string }> }>("/api/comments?pending=true", { headers })
-    ]).then(([listingsResult, commentsResult]) => {
+    ]).then(([eventsResult, listingsResult, commentsResult]) => {
       if (cancelled) return;
+
+      if (eventsResult.status === "fulfilled") {
+        setPendingEventsCount((eventsResult.value.events || []).length);
+      } else {
+        console.error("Falha ao carregar pendencias de eventos:", eventsResult.reason);
+      }
 
       if (listingsResult.status === "fulfilled") {
         setPendingListingsCount((listingsResult.value.listings || []).length);
@@ -422,7 +431,7 @@ export default function HomePage() {
       <Container className="py-10">
         {/* Resumo Estatistico */}
         {canViewHomeStats ? (
-          <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <div className="text-xs font-semibold text-slate-600">Ocorrencias futuras de eventos</div>
               <div className="mt-2 text-2xl font-bold text-slate-900">{totalEventOccurrencesCount}</div>
@@ -434,6 +443,10 @@ export default function HomePage() {
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <div className="text-xs font-semibold text-slate-600">Noticias</div>
               <div className="mt-2 text-2xl font-bold text-slate-900">{publishedNewsCount}</div>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-xs font-semibold text-slate-600">Eventos para liberar</div>
+              <div className="mt-2 text-2xl font-bold text-slate-900">{pendingEventsCount}</div>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <div className="text-xs font-semibold text-slate-600">Classificados para liberar</div>

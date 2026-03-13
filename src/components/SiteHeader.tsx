@@ -101,8 +101,7 @@ export default function SiteHeader() {
   const navItems = useMemo(() => {
     const items = [
       { href: "/eventos", label: "Eventos" },
-      { href: "/classificados/anunciar", label: "Anuncie aqui" },
-      { href: "/planos", label: "Planos" },
+      { href: "/classificados/anunciar", label: "Anuncie" },
       { href: "/organizadores", label: "Organizadores" },
       { href: "/classificados", label: "Classificados" },
       { href: "/noticias", label: "Noticias" }

@@ -2,6 +2,7 @@
 
 import { getUserFromToken, requireAuth } from '@/lib/auth-middleware';
 import { db } from '@/lib/database';
+import { normalizeRecurrence } from '@/lib/eventRecurrence';
 import { normalizeAssetReference } from '@/lib/site-url';
 import { normalizeYouTubeUrl } from '@/lib/youtube';
 
@@ -157,7 +158,17 @@ export async function PUT(
       );
     }
 
-    const recurrence = { type: "single" as const };
+    const recurrence =
+      updateData.recurrence === undefined
+        ? existing.recurrence
+        : normalizeRecurrence(updateData.recurrence, baseStart.toISOString());
+
+    if (recurrence.type === 'specific' && (!recurrence.dates || recurrence.dates.length === 0)) {
+      return NextResponse.json(
+        { error: 'Selecione pelo menos uma data no calendario anual.' },
+        { status: 400 }
+      );
+    }
 
     const nextImages =
       updateData.images !== undefined

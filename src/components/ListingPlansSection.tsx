@@ -4,6 +4,7 @@ import Notice from "@/components/Notice";
 import { db } from "@/lib/database";
 import {
   cloneDefaultListingPlans,
+  isListingPlanReadyForPublic,
   normalizeListingPlans,
   type ListingPlan
 } from "@/lib/listingPlans";
@@ -48,7 +49,9 @@ export default async function ListingPlansSection({
   className = "",
   showTitle = true
 }: Props) {
-  const plans = (await loadPlans()).filter((plan) => plan.active);
+  const plans = (await loadPlans()).filter(
+    (plan) => plan.active && isListingPlanReadyForPublic(plan)
+  );
 
   return (
     <section className={className}>

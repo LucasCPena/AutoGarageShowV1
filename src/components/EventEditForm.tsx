@@ -89,6 +89,9 @@ export default function EventEditForm({ eventId }: Props) {
       "Edição de evento. Admin mantém status; criador comum volta para pendente.",
     []
   );
+  const isRecurringEvent = Boolean(
+    eventData?.recurrence?.type && eventData.recurrence.type !== "single"
+  );
 
   useEffect(() => {
     async function loadEvent() {
@@ -140,7 +143,7 @@ export default function EventEditForm({ eventId }: Props) {
       const contactPhoneSecondary = form.get("contactPhoneSecondary")?.toString().trim();
       const contactEmail = form.get("contactEmail")?.toString().trim();
       const liveUrl = form.get("liveUrl")?.toString().trim();
-      const startDate = form.get("startDate")?.toString();
+      const startDate = isRecurringEvent ? isoToDate(eventData.startAt) : form.get("startDate")?.toString();
       const startTime = form.get("startTime")?.toString() || "00:00";
       const endTime = form.get("endTime")?.toString() || "";
 
@@ -170,7 +173,7 @@ export default function EventEditForm({ eventId }: Props) {
         endAt = end.toISOString();
       }
 
-      const recurrence = { type: "single" as const };
+      const recurrence = eventData.recurrence;
       const parsedVideos = sanitizeLinesToList(pastVideosText);
       const uploadedCoverImage = coverImageFile
         ? await uploadEventImage(coverImageFile, eventImageAlt(title))
@@ -202,7 +205,7 @@ export default function EventEditForm({ eventId }: Props) {
           form.get("organizerLogoUrl")?.toString().trim() ||
           eventData.organizerLogo ||
           undefined,
-        recurrence,
+        ...(recurrence ? { recurrence } : {}),
         coverImage: uploadedCoverImage || undefined,
         status: user?.role === "admin" ? status : undefined,
         featured: user?.role === "admin" ? featured : undefined,
@@ -527,6 +530,7 @@ export default function EventEditForm({ eventId }: Props) {
             defaultValue={isoToDate(eventData.startAt)}
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             type="date"
+            disabled={Boolean(isRecurringEvent)}
           />
         </label>
 
@@ -551,6 +555,12 @@ export default function EventEditForm({ eventId }: Props) {
             type="time"
           />
         </label>
+
+        {isRecurringEvent ? (
+          <div className="md:col-span-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            Este evento usa calendario recorrente. As datas ja cadastradas serao preservadas nesta edicao.
+          </div>
+        ) : null}
 
         <label className="grid gap-1 md:col-span-2">
           <span className="text-sm font-semibold text-slate-900">Capa do evento (opcional)</span>
@@ -590,7 +600,7 @@ export default function EventEditForm({ eventId }: Props) {
             <div className="mt-2">
               <Image
                 src={organizerLogoPreview}
-                alt={eventImageAlt("logo do organizador")}
+                alt={eventImageAlt(`logo do organizador ${eventData.contactName || "do evento"}`)}
                 className="h-24 w-24 rounded-lg border border-slate-200 object-cover"
                 width={96}
                 height={96}

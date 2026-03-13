@@ -55,6 +55,10 @@ export function cloneDefaultListingPlans() {
   return DEFAULT_LISTING_PLANS.map((plan) => ({ ...plan }));
 }
 
+export function isListingPlanReadyForPublic(plan: ListingPlan) {
+  return Boolean(plan.name.trim() && plan.description.trim() && plan.priceLabel.trim());
+}
+
 export function normalizeListingPlans(input: unknown) {
   if (!Array.isArray(input)) {
     return cloneDefaultListingPlans();
@@ -65,24 +69,16 @@ export function normalizeListingPlans(input: unknown) {
       if (!raw || typeof raw !== "object") return null;
 
       const item = raw as Record<string, unknown>;
-      const name = normalizeText(item.name);
-      const description = normalizeText(item.description);
-      const badge = normalizeText(item.badge);
-      const priceLabel = normalizeText(item.priceLabel);
-      const ctaLabel = normalizeText(item.ctaLabel, "Saiba mais");
-      const ctaHref = normalizeText(item.ctaHref, "/classificados/anunciar");
-
-      if (!name || !description || !priceLabel) return null;
 
       return {
         id: normalizeText(item.id, `plan-${index + 1}`),
-        badge,
-        name,
-        description,
-        priceLabel,
+        badge: normalizeText(item.badge),
+        name: normalizeText(item.name),
+        description: normalizeText(item.description),
+        priceLabel: normalizeText(item.priceLabel),
         durationDays: normalizePositiveInt(item.durationDays, 0),
-        ctaLabel,
-        ctaHref,
+        ctaLabel: normalizeText(item.ctaLabel, "Saiba mais"),
+        ctaHref: normalizeText(item.ctaHref, "/classificados/anunciar"),
         featured: normalizeBoolean(item.featured, false),
         active: normalizeBoolean(item.active, true)
       } as ListingPlan;

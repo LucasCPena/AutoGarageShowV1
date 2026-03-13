@@ -58,6 +58,8 @@ export default function EventSubmissionForm() {
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
   const [organizerLogoPreview, setOrganizerLogoPreview] = useState<string | null>(null);
   const [organizerLogoFile, setOrganizerLogoFile] = useState<File | null>(null);
+  const [titlePreview, setTitlePreview] = useState("");
+  const [contactNamePreview, setContactNamePreview] = useState("");
   const [message, setMessage] = useState<MessageState>(null);
   const [submitting, setSubmitting] = useState(false);
   const [featured, setFeatured] = useState(false);
@@ -256,6 +258,8 @@ export default function EventSubmissionForm() {
       setCoverImageFile(null);
       setOrganizerLogoPreview(null);
       setOrganizerLogoFile(null);
+      setTitlePreview("");
+      setContactNamePreview("");
     } catch (error) {
       setMessage({
         type: "error",
@@ -312,6 +316,7 @@ export default function EventSubmissionForm() {
             name="title"
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="Ex.: Encontro de Classicos"
+            onChange={(event) => setTitlePreview(event.target.value)}
           />
         </label>
 
@@ -332,6 +337,7 @@ export default function EventSubmissionForm() {
             name="contactName"
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             placeholder="Nome do organizador"
+            onChange={(event) => setContactNamePreview(event.target.value)}
           />
         </label>
 
@@ -446,15 +452,38 @@ export default function EventSubmissionForm() {
             type="time"
           />
         </label>
-        <label className="md:col-span-2 flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-          <input
-            type="checkbox"
-            checked={useAnnualCalendar}
-            onChange={(event) => setUseAnnualCalendar(event.target.checked)}
-            className="h-4 w-4 rounded border-slate-300"
-          />
-          Selecionar varias datas no calendario anual (sem duplicar cadastro).
-        </label>
+        <div className="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <div className="text-sm font-semibold text-slate-900">Modo das datas</div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setUseAnnualCalendar(false)}
+              className={
+                useAnnualCalendar
+                  ? "rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                  : "rounded-md border border-brand-500 bg-brand-100 px-3 py-2 text-sm font-semibold text-brand-800"
+              }
+            >
+              Data unica
+            </button>
+            <button
+              type="button"
+              onClick={() => setUseAnnualCalendar(true)}
+              className={
+                useAnnualCalendar
+                  ? "rounded-md border border-brand-500 bg-brand-100 px-3 py-2 text-sm font-semibold text-brand-800"
+                  : "rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+              }
+            >
+              Calendario anual
+            </button>
+          </div>
+          <p className="mt-2 text-xs text-slate-600">
+            {useAnnualCalendar
+              ? "Selecione varias datas do ano no calendario abaixo sem precisar duplicar o evento."
+              : "Use data unica para encontros que acontecem uma vez so."}
+          </p>
+        </div>
 
         {useAnnualCalendar ? (
           <div className="md:col-span-2 rounded-xl border border-slate-200 bg-white p-4">
@@ -606,7 +635,7 @@ export default function EventSubmissionForm() {
             <div className="mt-2">
               <Image
                 src={coverImagePreview}
-                alt={eventImageAlt("capa do evento")}
+                alt={eventImageAlt(titlePreview || "capa do evento")}
                 className="h-32 w-48 rounded-lg border border-slate-200 object-cover"
                 width={192}
                 height={128}
@@ -630,7 +659,7 @@ export default function EventSubmissionForm() {
             <div className="mt-2">
               <Image
                 src={organizerLogoPreview}
-                alt={eventImageAlt("logo do organizador")}
+                alt={eventImageAlt(`logo do organizador ${contactNamePreview || "do evento"}`)}
                 className="h-24 w-24 rounded-lg border border-slate-200 object-cover"
                 width={96}
                 height={96}

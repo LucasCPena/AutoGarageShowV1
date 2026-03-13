@@ -2,6 +2,7 @@
 
 import { getUserFromToken } from '@/lib/auth-middleware';
 import { db, isMysqlRequiredError } from '@/lib/database';
+import { normalizeRecurrence } from '@/lib/eventRecurrence';
 import { normalizeAssetReference } from '@/lib/site-url';
 import { normalizeYouTubeUrl } from '@/lib/youtube';
 
@@ -117,7 +118,13 @@ export async function POST(request: NextRequest) {
       endAtIso = endDate.toISOString();
     }
 
-    const recurrence = { type: "single" as const };
+    const recurrence = normalizeRecurrence(eventData.recurrence, startDate.toISOString());
+    if (recurrence.type === "specific" && (!recurrence.dates || recurrence.dates.length === 0)) {
+      return NextResponse.json(
+        { error: 'Selecione pelo menos uma data no calendario anual.' },
+        { status: 400 }
+      );
+    }
 
     let slug = slugify(eventData.title);
     const existingEvent = await db.events.findBySlug(slug);
