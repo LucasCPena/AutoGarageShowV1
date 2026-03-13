@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import Container from "@/components/Container";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
-import { db } from "@/lib/database";
+import { db, type Organizer } from "@/lib/database";
+import { mergeOrganizersWithEventLogos } from "@/lib/organizers-sync";
 import { normalizeAssetReference } from "@/lib/site-url";
 
 export const metadata: Metadata = {
@@ -12,17 +13,6 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = "force-dynamic";
-
-type Organizer = {
-  id: string;
-  name: string;
-  logo: string;
-  altText?: string;
-  bannerTop?: string;
-  link?: string;
-  createdAt: string;
-  updatedAt: string;
-};
 
 function normalizeOrganizerLink(value: string | undefined) {
   if (!value) return undefined;
@@ -41,7 +31,11 @@ export default async function OrganizersPage() {
   let loadError = false;
 
   try {
-    organizers = await db.organizers.getAll();
+    const [savedOrganizers, events] = await Promise.all([
+      db.organizers.getAll(),
+      db.events.getAll()
+    ]);
+    organizers = mergeOrganizersWithEventLogos(savedOrganizers, events);
     organizers.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   } catch (error) {
     loadError = true;

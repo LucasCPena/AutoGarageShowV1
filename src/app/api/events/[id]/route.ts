@@ -3,6 +3,7 @@
 import { getUserFromToken, requireAuth } from '@/lib/auth-middleware';
 import { db } from '@/lib/database';
 import { normalizeRecurrence } from '@/lib/eventRecurrence';
+import { syncOrganizerFromEvent } from '@/lib/organizers-sync';
 import { normalizeAssetReference } from '@/lib/site-url';
 import { normalizeYouTubeUrl } from '@/lib/youtube';
 
@@ -322,6 +323,7 @@ export async function PUT(
         { status: 404 }
       );
     }
+    await syncOrganizerFromEvent(event);
 
     let pastEvent = existingPastEvent;
     if (canBeCompleted || existingPastEvent || pastPayload) {

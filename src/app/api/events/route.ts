@@ -3,6 +3,7 @@
 import { getUserFromToken } from '@/lib/auth-middleware';
 import { db, isMysqlRequiredError } from '@/lib/database';
 import { normalizeRecurrence } from '@/lib/eventRecurrence';
+import { syncOrganizerFromEvent } from '@/lib/organizers-sync';
 import { normalizeAssetReference } from '@/lib/site-url';
 import { normalizeYouTubeUrl } from '@/lib/youtube';
 
@@ -205,6 +206,7 @@ export async function POST(request: NextRequest) {
         ? parsedFeaturedUntil || defaultFeaturedUntil(startDate.toISOString())
         : undefined
     });
+    await syncOrganizerFromEvent(event);
 
     return NextResponse.json(
       {
