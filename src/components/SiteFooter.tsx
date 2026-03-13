@@ -2,13 +2,14 @@ import Container from "@/components/Container";
 import { db } from "@/lib/database";
 
 const defaultSocialLinks = [
-  { platform: "YouTube", url: "https://www.youtube.com/" },
-  { platform: "TikTok", url: "https://www.tiktok.com/" },
-  { platform: "Instagram", url: "https://www.instagram.com/" },
-  { platform: "Facebook", url: "https://www.facebook.com/" }
+  { platform: "YouTube", url: "https://www.youtube.com/@AUTO_GARAGE_SHOW" },
+  { platform: "TikTok", url: "https://www.tiktok.com/@autogarageshow" },
+  { platform: "Instagram", url: "https://www.instagram.com/autogarageshow/" },
+  { platform: "Facebook", url: "https://www.facebook.com/profile.php?id=100095277923726" },
+  { platform: "Pinterest", url: "https://br.pinterest.com/autogarageshow/" }
 ];
 
-const blockedPlatforms = new Set(["x", "twitter", "pinterest"]);
+const blockedPlatforms = new Set(["x", "twitter"]);
 
 function normalizePlatform(value: string | undefined | null) {
   return String(value || "").trim().toLowerCase();
@@ -21,15 +22,10 @@ function filterSocialLinks(links: Array<{ platform: string; url: string }> | und
   });
 }
 
-function ensureTikTokLink(links: Array<{ platform: string; url: string }>) {
-  const hasTikTok = links.some((link) => normalizePlatform(link.platform) === "tiktok");
-  if (hasTikTok) return links;
-
-  const tikTokDefault = defaultSocialLinks.find(
-    (link) => normalizePlatform(link.platform) === "tiktok"
-  );
-
-  return tikTokDefault ? [...links, tikTokDefault] : links;
+function mergeSocialLinks(links: Array<{ platform: string; url: string }>) {
+  const defaultPlatforms = new Set(defaultSocialLinks.map((link) => normalizePlatform(link.platform)));
+  const extras = links.filter((link) => !defaultPlatforms.has(normalizePlatform(link.platform)));
+  return [...defaultSocialLinks, ...extras];
 }
 
 export default async function SiteFooter() {
@@ -38,8 +34,8 @@ export default async function SiteFooter() {
 
   try {
     const settings = await db.settings.get();
-    const filteredSettingsLinks = ensureTikTokLink(filterSocialLinks(settings?.social?.links));
-    socialLinks = filteredSettingsLinks.length ? filteredSettingsLinks : defaultSocialLinks;
+    const filteredSettingsLinks = filterSocialLinks(settings?.social?.links);
+    socialLinks = mergeSocialLinks(filteredSettingsLinks);
   } catch (error) {
     console.error("Erro ao carregar links sociais no rodape:", error);
   }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import Calendar from "@/components/Calendar";
 import Container from "@/components/Container";
 import EventCrudActions from "@/components/EventCrudActions";
+import EventsModerationSection from "@/components/EventsModerationSection";
 import HeroSlider from "@/components/HeroSlider";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
@@ -117,6 +118,8 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
         <section>
           <Calendar events={approvedEvents} />
         </section>
+
+        <EventsModerationSection />
 
         {dbError ? (
           <Notice title="Banco indisponivel" variant="warning" className="mt-6">

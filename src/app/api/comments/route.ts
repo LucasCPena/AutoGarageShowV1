@@ -10,6 +10,27 @@ export async function GET(request: NextRequest) {
     const eventId = searchParams.get("eventId");
     const pending = searchParams.get("pending");
 
+    if (pending === "true") {
+      requireAdmin(request);
+
+      if (listingId) {
+        const comments = await db.comments.getPending();
+        return NextResponse.json({
+          comments: comments.filter((comment) => comment.listingId === listingId)
+        });
+      }
+
+      if (eventId) {
+        const comments = await db.comments.getPending();
+        return NextResponse.json({
+          comments: comments.filter((comment) => comment.eventId === eventId)
+        });
+      }
+
+      const comments = await db.comments.getPending();
+      return NextResponse.json({ comments });
+    }
+
     if (listingId) {
       const comments = await db.comments.findByListing(listingId);
       return NextResponse.json({ comments });
@@ -17,12 +38,6 @@ export async function GET(request: NextRequest) {
 
     if (eventId) {
       const comments = await db.comments.findByEvent(eventId);
-      return NextResponse.json({ comments });
-    }
-
-    if (pending === "true") {
-      requireAdmin(request);
-      const comments = await db.comments.getPending();
       return NextResponse.json({ comments });
     }
 

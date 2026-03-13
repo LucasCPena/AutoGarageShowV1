@@ -85,12 +85,14 @@ function ListingCard({
   listing,
   featuredTag,
   detailHref,
-  showContact = false
+  showContact = false,
+  onStatusChange
 }: {
   listing: Listing;
   featuredTag?: boolean;
   detailHref?: string;
   showContact?: boolean;
+  onStatusChange?: (status: Listing["status"]) => void;
 }) {
   const contact = getContactInfo(listing);
   const href = detailHref || `/classificados/${listing.slug}`;
@@ -136,8 +138,10 @@ function ListingCard({
 
         <ListingCrudActions
           listingId={listing.id}
+          status={listing.status}
           editHref={`/classificados/gerenciar/${listing.id}`}
           compact
+          onStatusChange={onStatusChange}
         />
       </div>
     </article>
@@ -261,7 +265,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
             <div>
               <h2 className="text-xl font-bold text-slate-900">Pendentes (admin)</h2>
               <p className="mt-1 text-sm text-slate-600">
-                Cada post pendente possui CRUD dentro do card.
+                Cada anuncio pendente pode ser aprovado, rejeitado, editado ou excluido no proprio card.
               </p>
             </div>
           </div>
@@ -273,6 +277,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
                 listing={listing}
                 detailHref={`/classificados/gerenciar/${listing.id}`}
                 showContact={Boolean(user)}
+                onStatusChange={() => window.location.reload()}
               />
             ))}
           </div>

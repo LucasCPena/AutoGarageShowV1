@@ -36,19 +36,23 @@
     "links": [
       {
         "platform": "YouTube",
-        "url": "https://www.youtube.com/"
+        "url": "https://www.youtube.com/@AUTO_GARAGE_SHOW"
       },
       {
         "platform": "TikTok",
-        "url": "https://www.tiktok.com/"
+        "url": "https://www.tiktok.com/@autogarageshow"
       },
       {
         "platform": "Instagram",
-        "url": "https://www.instagram.com/"
+        "url": "https://www.instagram.com/autogarageshow/"
       },
       {
         "platform": "Facebook",
-        "url": "https://www.facebook.com/"
+        "url": "https://www.facebook.com/profile.php?id=100095277923726"
+      },
+      {
+        "platform": "Pinterest",
+        "url": "https://br.pinterest.com/autogarageshow/"
       }
     ]
   },
