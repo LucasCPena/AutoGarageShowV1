@@ -15,7 +15,7 @@ export default function ListingSubmitPage() {
     <>
       <PageIntro
         title="Anunciar veiculo"
-        subtitle="Cadastro gratuito de classificado. Admin publica automaticamente; usuario comum passa por aprovacao."
+        subtitle="Primeiro validamos o anunciante. Depois liberamos os dados do veiculo e o envio das fotos."
       />
 
       <Container className="py-10">

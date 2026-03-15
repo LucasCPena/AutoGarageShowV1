@@ -11,10 +11,10 @@ export type SiteSettings = {
 };
 
 export const defaultSiteSettings: SiteSettings = {
-  vehicleMinAgeYears: 10,
+  vehicleMinAgeYears: 20,
   vehicleModelYearMin: 1908,
   listingLimits: {
-    cpf: 4,
+    cpf: 1,
     cnpj: 20
   },
   listingFeaturedDurationsDays: [30],
@@ -54,31 +54,64 @@ export function normalizeSiteSettings(input: unknown): SiteSettings {
   }
 
   const obj = input as Record<string, unknown>;
+  const listings =
+    obj.listings && typeof obj.listings === "object"
+      ? (obj.listings as Record<string, unknown>)
+      : null;
+  const modernLimits =
+    obj.listingLimits && typeof obj.listingLimits === "object"
+      ? (obj.listingLimits as Record<string, unknown>)
+      : null;
 
-  if (typeof obj.vehicleMinAgeYears === "number") {
-    normalized.vehicleMinAgeYears = clampInt(obj.vehicleMinAgeYears, 0, 80);
+  const vehicleMinAgeYears =
+    typeof obj.vehicleMinAgeYears === "number"
+      ? obj.vehicleMinAgeYears
+      : typeof listings?.maxYearOffset === "number"
+        ? listings.maxYearOffset
+        : undefined;
+  if (typeof vehicleMinAgeYears === "number") {
+    normalized.vehicleMinAgeYears = clampInt(vehicleMinAgeYears, 0, 80);
   }
 
   if (typeof obj.vehicleModelYearMin === "number") {
     normalized.vehicleModelYearMin = clampInt(obj.vehicleModelYearMin, 1908, currentYear);
   }
 
-  if (obj.listingLimits && typeof obj.listingLimits === "object") {
-    const limits = obj.listingLimits as Record<string, unknown>;
-
-    if (typeof limits.cpf === "number") {
-      normalized.listingLimits.cpf = clampInt(limits.cpf, 0, 999);
-    }
-
-    if (typeof limits.cnpj === "number") {
-      normalized.listingLimits.cnpj = clampInt(limits.cnpj, 0, 999);
-    }
+  const cpfLimit =
+    typeof modernLimits?.cpf === "number"
+      ? modernLimits.cpf
+      : typeof listings?.freeListingsPerCPF === "number"
+        ? listings.freeListingsPerCPF
+        : undefined;
+  if (typeof cpfLimit === "number") {
+    normalized.listingLimits.cpf = clampInt(cpfLimit, 0, 999);
   }
 
-  normalized.listingFeaturedDurationsDays = [30];
+  const cnpjLimit =
+    typeof modernLimits?.cnpj === "number"
+      ? modernLimits.cnpj
+      : typeof listings?.freeListingsPerCNPJ === "number"
+        ? listings.freeListingsPerCNPJ
+        : undefined;
+  if (typeof cnpjLimit === "number") {
+    normalized.listingLimits.cnpj = clampInt(cnpjLimit, 0, 999);
+  }
 
-  if (typeof obj.listingAutoExpireDays === "number") {
-    normalized.listingAutoExpireDays = clampInt(obj.listingAutoExpireDays, 0, 3650);
+  const featuredDurations =
+    normalizeNumberArray(obj.listingFeaturedDurationsDays) ??
+    normalizeNumberArray(listings?.highlightOptions) ??
+    [30];
+  normalized.listingFeaturedDurationsDays =
+    featuredDurations.length > 0 ? featuredDurations : [30];
+
+  const listingAutoExpireDays =
+    typeof obj.listingAutoExpireDays === "number"
+      ? obj.listingAutoExpireDays
+      : typeof listings?.autoInactiveMonths === "number"
+        ? Math.max(0, Math.round(listings.autoInactiveMonths * 30))
+        : undefined;
+  if (typeof listingAutoExpireDays === "number") {
+    normalized.listingAutoExpireDays = clampInt(listingAutoExpireDays, 0, 3650);
   }
 
   if (typeof obj.listingExpireNoticeDays === "number") {
@@ -91,4 +124,29 @@ export function normalizeSiteSettings(input: unknown): SiteSettings {
 export function getVehicleMaxAllowedYear(settings: SiteSettings, referenceDate = new Date()) {
   const year = referenceDate.getFullYear();
   return year - settings.vehicleMinAgeYears;
+}
+
+export function buildSiteSettingsUpdate(settings: SiteSettings) {
+  const normalized = normalizeSiteSettings(settings);
+
+  return {
+    vehicleMinAgeYears: normalized.vehicleMinAgeYears,
+    vehicleModelYearMin: normalized.vehicleModelYearMin,
+    listingLimits: {
+      ...normalized.listingLimits
+    },
+    listingFeaturedDurationsDays: [...normalized.listingFeaturedDurationsDays],
+    listingAutoExpireDays: normalized.listingAutoExpireDays,
+    listingExpireNoticeDays: normalized.listingExpireNoticeDays,
+    listings: {
+      maxYearOffset: normalized.vehicleMinAgeYears,
+      freeListingsPerCPF: normalized.listingLimits.cpf,
+      freeListingsPerCNPJ: normalized.listingLimits.cnpj,
+      autoInactiveMonths:
+        normalized.listingAutoExpireDays > 0
+          ? Math.ceil(normalized.listingAutoExpireDays / 30)
+          : 0,
+      highlightOptions: [...normalized.listingFeaturedDurationsDays]
+    }
+  };
 }

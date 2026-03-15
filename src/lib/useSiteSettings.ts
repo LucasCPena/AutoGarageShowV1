@@ -3,75 +3,108 @@
 import { useCallback, useEffect, useState } from "react";
 
 import {
+  buildSiteSettingsUpdate,
+  defaultSiteSettings,
   normalizeSiteSettings,
   type SiteSettings
 } from "@/lib/siteSettings";
 
-const STORAGE_KEY = "ags.siteSettings.v1";
+export const SITE_SETTINGS_EVENT = "ags-site-settings-update";
 
-function readFromStorage() {
-  if (typeof window === "undefined") return normalizeSiteSettings(undefined);
+async function fetchSettingsFromApi() {
+  const response = await fetch("/api/settings", {
+    cache: "no-store"
+  });
+  const data = await response.json().catch(() => ({}));
 
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return normalizeSiteSettings(undefined);
-    return normalizeSiteSettings(JSON.parse(raw));
-  } catch {
-    return normalizeSiteSettings(undefined);
+  if (!response.ok) {
+    throw new Error(
+      typeof data?.error === "string" && data.error
+        ? data.error
+        : "Nao foi possivel carregar configuracoes."
+    );
   }
-}
 
-function writeToStorage(settings: SiteSettings) {
-  if (typeof window === "undefined") return;
-
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-  } catch {
-    return;
-  }
-}
-
-function removeFromStorage() {
-  if (typeof window === "undefined") return;
-
-  try {
-    window.localStorage.removeItem(STORAGE_KEY);
-  } catch {
-    return;
-  }
+  return normalizeSiteSettings(data?.settings);
 }
 
 export function useSiteSettings() {
   const [settings, setSettings] = useState<SiteSettings>(() =>
-    normalizeSiteSettings(undefined)
+    defaultSiteSettings
   );
   const [isReady, setIsReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const reloadSettings = useCallback(async () => {
+    try {
+      const next = await fetchSettingsFromApi();
+      setSettings(next);
+      setError(null);
+    } catch (loadError) {
+      setSettings(defaultSiteSettings);
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Nao foi possivel carregar configuracoes."
+      );
+    } finally {
+      setIsReady(true);
+    }
+  }, []);
 
   useEffect(() => {
-    setSettings(readFromStorage());
-    setIsReady(true);
+    reloadSettings();
 
-    function onStorage(e: StorageEvent) {
-      if (e.key !== STORAGE_KEY) return;
-      setSettings(readFromStorage());
+    function onSettingsUpdated() {
+      reloadSettings();
     }
 
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
+    window.addEventListener(SITE_SETTINGS_EVENT, onSettingsUpdated);
+    return () => window.removeEventListener(SITE_SETTINGS_EVENT, onSettingsUpdated);
+  }, [reloadSettings]);
 
-  const saveSettings = useCallback((next: SiteSettings) => {
-    const normalized = normalizeSiteSettings(next);
-    writeToStorage(normalized);
-    setSettings(normalized);
-  }, []);
+  const saveSettings = useCallback(
+    async (next: SiteSettings, token?: string | null) => {
+      if (!token) {
+        throw new Error("Sessao expirada. Faca login novamente como admin.");
+      }
 
-  const resetSettings = useCallback(() => {
-    removeFromStorage();
-    setSettings(normalizeSiteSettings(undefined));
-  }, []);
+      const normalized = normalizeSiteSettings(next);
+      const response = await fetch("/api/settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(buildSiteSettingsUpdate(normalized))
+      });
+      const data = await response.json().catch(() => ({}));
 
-  return { settings, isReady, saveSettings, resetSettings };
+      if (!response.ok) {
+        throw new Error(
+          typeof data?.error === "string" && data.error
+            ? data.error
+            : "Nao foi possivel salvar configuracoes."
+        );
+      }
+
+      const savedSettings = normalizeSiteSettings(data?.settings);
+      setSettings(savedSettings);
+      setError(null);
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event(SITE_SETTINGS_EVENT));
+      }
+
+      return savedSettings;
+    },
+    []
+  );
+
+  const resetSettings = useCallback(
+    async (token?: string | null) => saveSettings(defaultSiteSettings, token),
+    [saveSettings]
+  );
+
+  return { settings, isReady, error, reloadSettings, saveSettings, resetSettings };
 }
-
-export { STORAGE_KEY as SITE_SETTINGS_STORAGE_KEY };

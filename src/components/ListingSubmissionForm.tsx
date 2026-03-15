@@ -19,6 +19,15 @@ type ListingPhotoItem = {
   previewUrl: string;
 };
 
+type AdvertiserValidation = {
+  document: string;
+  documentType: "cpf" | "cnpj";
+  activeCount: number;
+  limit: number | null;
+  remaining: number | null;
+  adminBypass?: boolean;
+};
+
 function formatDocumentInput(value: string, type: "cpf" | "cnpj") {
   const digits = onlyDigits(value).slice(0, type === "cpf" ? 11 : 14);
 
@@ -72,6 +81,8 @@ export default function ListingSubmissionForm() {
 
   const [documentType, setDocumentType] = useState<"cpf" | "cnpj">("cpf");
   const [documentValue, setDocumentValue] = useState("");
+  const [validatingAdvertiser, setValidatingAdvertiser] = useState(false);
+  const [advertiserValidation, setAdvertiserValidation] = useState<AdvertiserValidation | null>(null);
 
   const [make, setMake] = useState<string>("");
   const [customMake, setCustomMake] = useState<string>("");
@@ -99,6 +110,8 @@ export default function ListingSubmissionForm() {
     () => getVehicleMaxAllowedYear(settings),
     [settings]
   );
+  const requiresAdvertiserValidation = user?.role !== "admin";
+  const isAdvertiserValidated = !requiresAdvertiserValidation || Boolean(advertiserValidation);
 
 
   useEffect(() => {
@@ -247,6 +260,65 @@ export default function ListingSubmissionForm() {
     return uploadedUrls;
   }
 
+  async function validateAdvertiserBeforeProceeding() {
+    if (!token) {
+      setError("Faca login para validar o anunciante.");
+      return;
+    }
+
+    if (user?.role !== "admin") {
+      const validDocument =
+        documentType === "cpf"
+          ? validateCPF(documentValue)
+          : validateCNPJ(documentValue);
+
+      if (!validDocument) {
+        setError(documentType === "cpf" ? "CPF invalido." : "CNPJ invalido.");
+        return;
+      }
+    }
+
+    setValidatingAdvertiser(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/listings/validate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          document: documentValue.trim()
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.canProceed) {
+        throw new Error(data.error || data.message || "Nao foi possivel validar o anunciante.");
+      }
+
+      setAdvertiserValidation({
+        document: data.document,
+        documentType: data.documentType,
+        activeCount: data.activeCount ?? 0,
+        limit: data.limit ?? null,
+        remaining: data.remaining ?? null,
+        adminBypass: Boolean(data.adminBypass)
+      });
+    } catch (validationError) {
+      setAdvertiserValidation(null);
+      setError(
+        validationError instanceof Error
+          ? validationError.message
+          : "Nao foi possivel validar o anunciante."
+      );
+    } finally {
+      setValidatingAdvertiser(false);
+    }
+  }
+
   
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -260,6 +332,12 @@ export default function ListingSubmissionForm() {
 
     if (!generatedTitle.trim()) {
       setError("Preencha marca, modelo e anos para gerar o titulo.");
+      setSubmitted(false);
+      return;
+    }
+
+    if (!isAdvertiserValidated) {
+      setError("Valide o anunciante antes de continuar para o envio do anuncio.");
       setSubmitted(false);
       return;
     }
@@ -326,19 +404,6 @@ export default function ListingSubmissionForm() {
       return;
     }
 
-    if (user?.role !== "admin") {
-      const validDocument =
-        documentType === "cpf"
-          ? validateCPF(documentValue)
-          : validateCNPJ(documentValue);
-
-      if (!validDocument) {
-        setError(documentType === "cpf" ? "CPF invalido." : "CNPJ invalido.");
-        setSubmitted(false);
-        return;
-      }
-    }
-
     setSubmitting(true);
     setError(null);
 
@@ -375,7 +440,7 @@ export default function ListingSubmissionForm() {
         city: city.trim(),
         state: stateUf.trim().toUpperCase(),
         description: description.trim(),
-        document: documentValue.trim(),
+        document: advertiserValidation?.document || documentValue.trim(),
         contact: {
           name: contactName.trim() || user?.name || "Anunciante",
           email: contactEmail.trim(),
@@ -438,7 +503,7 @@ export default function ListingSubmissionForm() {
         </Notice>
       ) : (
         <Notice title="Regras" variant="info">
-          Cadastro gratuito. Limites por documento: CPF ate {settings.listingLimits.cpf} anuncios ativos, CNPJ ate {settings.listingLimits.cnpj}. Apenas veiculos com {settings.vehicleMinAgeYears}+ anos (ano maximo: {maxAllowedYear}).
+          Cadastro gratuito. Limites por documento: {settings.listingLimits.cpf} anuncio por CPF e {settings.listingLimits.cnpj} anuncios por CNPJ. Apenas veiculos com {settings.vehicleMinAgeYears}+ anos (ano maximo: {maxAllowedYear}).
         </Notice>
       )}
 
@@ -464,6 +529,7 @@ export default function ListingSubmissionForm() {
               const nextType = event.target.value as "cpf" | "cnpj";
               setDocumentType(nextType);
               setDocumentValue((current) => formatDocumentInput(current, nextType));
+              setAdvertiserValidation(null);
               setError(null);
             }}
           >
@@ -484,11 +550,64 @@ export default function ListingSubmissionForm() {
             value={documentValue}
             onChange={(event) => {
               setDocumentValue(formatDocumentInput(event.target.value, documentType));
+              setAdvertiserValidation(null);
               setError(null);
             }}
           />
         </label>
+        {requiresAdvertiserValidation ? (
+          <div className="md:col-span-2 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            {advertiserValidation ? (
+              <div className="grid gap-3">
+                <div className="text-sm font-semibold text-slate-900">
+                  Anunciante validado antes do envio das fotos
+                </div>
+                <div className="text-sm text-slate-600">
+                  Documento: {advertiserValidation.documentType.toUpperCase()} •{" "}
+                  {documentValue || advertiserValidation.document}
+                </div>
+                <div className="text-sm text-slate-600">
+                  Anuncios ativos: {advertiserValidation.activeCount} de {advertiserValidation.limit}
+                  {typeof advertiserValidation.remaining === "number"
+                    ? ` • restantes: ${advertiserValidation.remaining}`
+                    : ""}
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAdvertiserValidation(null);
+                      setError(null);
+                    }}
+                    className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-700 hover:bg-white"
+                  >
+                    Alterar documento
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                <div className="text-sm font-semibold text-slate-900">
+                  Etapa 1: validar o anunciante
+                </div>
+                <p className="text-sm text-slate-600">
+                  Antes de liberar os dados do veiculo e o envio das fotos, valide o CPF ou CNPJ do anunciante.
+                </p>
+                <button
+                  type="button"
+                  onClick={validateAdvertiserBeforeProceeding}
+                  disabled={validatingAdvertiser}
+                  className="inline-flex h-11 items-center justify-center rounded-md bg-slate-900 px-5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+                >
+                  {validatingAdvertiser ? "Validando..." : "Validar anunciante e continuar"}
+                </button>
+              </div>
+            )}
+          </div>
+        ) : null}
 
+        {isAdvertiserValidated ? (
+          <>
         <label className="grid gap-1 md:col-span-2">
           <span className="text-sm font-semibold text-slate-900">Titulo do anuncio (automatico)</span>
           <input
@@ -799,11 +918,13 @@ export default function ListingSubmissionForm() {
             </div>
           ) : null}
         </label>
+          </>
+        ) : null}
       </div>
 
       <button
         type="submit"
-        disabled={submitting}
+        disabled={submitting || !isAdvertiserValidated}
         className="inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
       >
         {submitting

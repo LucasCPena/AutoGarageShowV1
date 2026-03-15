@@ -1,8 +1,8 @@
 {
   "listings": {
-    "maxYearOffset": 10,
+    "maxYearOffset": 20,
     "maxImages": 10,
-    "freeListingsPerCPF": 4,
+    "freeListingsPerCPF": 1,
     "freeListingsPerCNPJ": 20,
     "autoInactiveMonths": 4,
     "highlightOptions": [
@@ -25,7 +25,8 @@
       "events",
       "listings",
       "news",
-      "about"
+      "about",
+      "sidebar"
     ]
   },
   "comments": {
@@ -55,6 +56,30 @@
         "url": "https://br.pinterest.com/autogarageshow/"
       }
     ]
+  },
+  "vehicleMinAgeYears": 20,
+  "vehicleModelYearMin": 1908,
+  "listingLimits": {
+    "cpf": 1,
+    "cnpj": 20
+  },
+  "listingFeaturedDurationsDays": [
+    30
+  ],
+  "listingAutoExpireDays": 120,
+  "listingExpireNoticeDays": 7,
+  "content": {
+    "about": {
+      "title": "Auto Garage Show",
+      "subtitle": "Calendario, classificados, noticias e conteudo sobre carros antigos.",
+      "body": "O Auto Garage Show reune encontros, classificados e noticias para quem vive o antigomobilismo no dia a dia.\n\nEsta pagina pode ser editada pelo admin para contar a historia do canal, destacar parceiros e atualizar informacoes institucionais sempre que necessario.",
+      "footerSummary": "Calendario, classificados e noticias de carros antigos."
+    },
+    "privacy": {
+      "title": "Politica de Privacidade",
+      "subtitle": "Transparencia sobre dados e uso da plataforma.",
+      "body": "Esta pagina pode ser atualizada pelo admin com a politica oficial de privacidade do Auto Garage Show.\n\nEnquanto isso, utilize somente os dados necessarios para operacao do site e para o contato entre usuarios e anunciantes."
+    }
   },
   "branding": {
     "logoUrl": "/uploads/site/logo-site.png"

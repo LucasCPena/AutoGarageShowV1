@@ -8,6 +8,7 @@ import EventsModerationSection from "@/components/EventsModerationSection";
 import HeroSlider from "@/components/HeroSlider";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
+import SidebarBannerStack from "@/components/SidebarBannerStack";
 import { db, type Event } from "@/lib/database";
 import { formatDateLong, formatTime } from "@/lib/date";
 import {
@@ -25,13 +26,18 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-const EVENTS_PER_PAGE = 3;
-const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+const EVENTS_PER_PAGE = 6;
 
 type EventsPageProps = {
   searchParams?: {
     page?: string;
   };
+};
+
+type EventCardItem = {
+  event: Event;
+  displayDate: string;
+  hasUpcomingOccurrence: boolean;
 };
 
 function parsePage(value: string | undefined) {
@@ -52,6 +58,36 @@ function isFeaturedActive(event: Event, now: number) {
   return Number.isFinite(until) ? until > now : true;
 }
 
+function buildEventCards(events: Event[], now: number) {
+  return events
+    .map((event) => {
+      const nextOccurrence = findNextOccurrenceInWindow(
+        event.startAt,
+        event.recurrence,
+        event.endAt,
+        now,
+        Number.POSITIVE_INFINITY
+      );
+
+      return {
+        event,
+        displayDate: nextOccurrence || event.startAt,
+        hasUpcomingOccurrence: Boolean(nextOccurrence)
+      } as EventCardItem;
+    })
+    .sort((a, b) => {
+      const aFeatured = isFeaturedActive(a.event, now);
+      const bFeatured = isFeaturedActive(b.event, now);
+      if (aFeatured !== bFeatured) return aFeatured ? -1 : 1;
+
+      if (a.hasUpcomingOccurrence !== b.hasUpcomingOccurrence) {
+        return a.hasUpcomingOccurrence ? -1 : 1;
+      }
+
+      return new Date(a.displayDate).getTime() - new Date(b.displayDate).getTime();
+    });
+}
+
 export default async function EventsPage({ searchParams }: EventsPageProps) {
   let allEvents: Event[] = [];
   let dbError = false;
@@ -64,34 +100,12 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
   }
 
   const now = Date.now();
-  const windowStart = now;
-  const windowEnd = windowStart + THIRTY_DAYS_MS;
   const approvedEvents = allEvents.filter((event) => event.status === "approved");
+  const eventCards = buildEventCards(approvedEvents, now);
 
-  const upcoming = approvedEvents
-    .map((event) => {
-      const nextOccurrence = findNextOccurrenceInWindow(
-        event.startAt,
-        event.recurrence,
-        event.endAt,
-        windowStart,
-        windowEnd
-      );
-      if (!nextOccurrence) return null;
-      return { event, nextOccurrence };
-    })
-    .filter(Boolean) as Array<{ event: Event; nextOccurrence: string }>;
-
-  upcoming.sort((a, b) => {
-    const aFeatured = isFeaturedActive(a.event, now);
-    const bFeatured = isFeaturedActive(b.event, now);
-    if (aFeatured !== bFeatured) return aFeatured ? -1 : 1;
-    return new Date(a.nextOccurrence).getTime() - new Date(b.nextOccurrence).getTime();
-  });
-
-  const totalPages = Math.max(1, Math.ceil(upcoming.length / EVENTS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(eventCards.length / EVENTS_PER_PAGE));
   const currentPage = Math.min(parsePage(searchParams?.page), totalPages);
-  const paginatedUpcoming = upcoming.slice(
+  const paginatedEvents = eventCards.slice(
     (currentPage - 1) * EVENTS_PER_PAGE,
     currentPage * EVENTS_PER_PAGE
   );
@@ -111,123 +125,136 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
       </PageIntro>
 
       <Container className="py-10">
-        <section className="mb-8">
-          <HeroSlider section="events" />
-        </section>
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_300px]">
+          <div>
+            <section className="mb-8">
+              <HeroSlider section="events" />
+            </section>
 
-        <section>
-          <Calendar events={approvedEvents} />
-        </section>
+            <section>
+              <Calendar events={approvedEvents} />
+            </section>
 
-        <EventsModerationSection />
+            <EventsModerationSection />
 
-        {dbError ? (
-          <Notice title="Banco indisponivel" variant="warning" className="mt-6">
-            Nao foi possivel carregar os eventos agora. Tente novamente em instantes.
-          </Notice>
-        ) : null}
+            {dbError ? (
+              <Notice title="Banco indisponivel" variant="warning" className="mt-6">
+                Nao foi possivel carregar os eventos agora. Tente novamente em instantes.
+              </Notice>
+            ) : null}
 
-        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {paginatedUpcoming.map(({ event, nextOccurrence }) => {
-            const spanDays = getSpanDays(event.startAt, event.endAt);
-            const recurrenceLabel = formatRecurrence(event.recurrence, spanDays);
-            const showRecurrenceBadge = event.recurrence.type !== "single" || spanDays > 1;
+            <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {paginatedEvents.map(({ event, displayDate, hasUpcomingOccurrence }) => {
+                const spanDays = getSpanDays(event.startAt, event.endAt);
+                const recurrenceLabel = formatRecurrence(event.recurrence, spanDays);
+                const showRecurrenceBadge = event.recurrence.type !== "single" || spanDays > 1;
 
-            return (
-              <article
-                key={event.id}
-                className="rounded-xl border border-slate-200 bg-white p-5"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <img
-                      src={
-                        normalizeAssetReference(event.coverImage || event.images?.[0]) ||
-                        "/placeholders/event.svg"
-                      }
-                      alt={eventImageAlt(event.title)}
-                      className="mb-3 h-28 w-full max-w-xs rounded-lg border border-slate-200 object-cover"
+                return (
+                  <article
+                    key={event.id}
+                    className="rounded-xl border border-slate-200 bg-white p-5"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <img
+                          src={
+                            normalizeAssetReference(event.coverImage || event.images?.[0]) ||
+                            "/placeholders/event.svg"
+                          }
+                          alt={eventImageAlt(event.title)}
+                          className="mb-3 h-28 w-full max-w-xs rounded-lg border border-slate-200 object-cover"
+                        />
+                        <div className="text-sm text-slate-500">
+                          {formatDateLong(displayDate)} | {formatTime(displayDate)}
+                        </div>
+                        <Link
+                          href={`/eventos/${event.slug}`}
+                          className="mt-1 inline-block text-lg font-semibold text-slate-900 hover:text-brand-800"
+                        >
+                          {event.title}
+                        </Link>
+                        <div className="mt-1 text-sm text-slate-600">
+                          {event.city}/{event.state} | {event.location}
+                        </div>
+                      </div>
+
+                      {showRecurrenceBadge ? (
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                          {recurrenceLabel}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {isFeaturedActive(event, now) ? (
+                        <div className="inline-flex rounded-full bg-brand-100 px-2.5 py-1 text-xs font-semibold text-brand-800">
+                          Evento em destaque
+                        </div>
+                      ) : null}
+                      {!hasUpcomingOccurrence ? (
+                        <div className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                          Sem nova data futura
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <EventCrudActions
+                      eventId={event.id}
+                      editHref={`/eventos/gerenciar/${event.id}`}
+                      compact
                     />
-                    <div className="text-sm text-slate-500">
-                      {formatDateLong(nextOccurrence)} | {formatTime(nextOccurrence)}
-                    </div>
-                    <Link
-                      href={`/eventos/${event.slug}`}
-                      className="mt-1 inline-block text-lg font-semibold text-slate-900 hover:text-brand-800"
-                    >
-                      {event.title}
-                    </Link>
-                    <div className="mt-1 text-sm text-slate-600">
-                      {event.city}/{event.state} | {event.location}
-                    </div>
-                  </div>
+                  </article>
+                );
+              })}
 
-                  {showRecurrenceBadge ? (
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                      {recurrenceLabel}
-                    </span>
-                  ) : null}
+              {eventCards.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-600">
+                  Nenhum evento aprovado cadastrado.
                 </div>
-
-                {isFeaturedActive(event, now) ? (
-                  <div className="mt-3 inline-flex rounded-full bg-brand-100 px-2.5 py-1 text-xs font-semibold text-brand-800">
-                    Evento em destaque
-                  </div>
-                ) : null}
-
-                <EventCrudActions
-                  eventId={event.id}
-                  editHref={`/eventos/gerenciar/${event.id}`}
-                  compact
-                />
-              </article>
-            );
-          })}
-
-          {upcoming.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-600">
-              Nenhum evento aprovado nos proximos 30 dias.
+              ) : null}
             </div>
-          ) : null}
+
+            {eventCards.length > 0 ? (
+              <nav
+                className="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm"
+                aria-label="Paginacao de eventos"
+              >
+                <span className="text-slate-600">
+                  Pagina {currentPage} de {totalPages} ({eventCards.length} eventos)
+                </span>
+                <div className="flex items-center gap-2">
+                  {currentPage > 1 ? (
+                    <Link
+                      href={pageHref(currentPage - 1)}
+                      className="rounded-md border border-slate-300 px-3 py-1.5 hover:bg-slate-50"
+                    >
+                      Anterior
+                    </Link>
+                  ) : (
+                    <span className="rounded-md border border-slate-200 px-3 py-1.5 text-slate-400">
+                      Anterior
+                    </span>
+                  )}
+
+                  {currentPage < totalPages ? (
+                    <Link
+                      href={pageHref(currentPage + 1)}
+                      className="rounded-md border border-slate-300 px-3 py-1.5 hover:bg-slate-50"
+                    >
+                      Proxima
+                    </Link>
+                  ) : (
+                    <span className="rounded-md border border-slate-200 px-3 py-1.5 text-slate-400">
+                      Proxima
+                    </span>
+                  )}
+                </div>
+              </nav>
+            ) : null}
+          </div>
+
+          <SidebarBannerStack />
         </div>
-
-        {upcoming.length > 0 ? (
-          <nav
-            className="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm"
-            aria-label="Paginacao de eventos"
-          >
-            <span className="text-slate-600">
-              Pagina {currentPage} de {totalPages} ({upcoming.length} eventos)
-            </span>
-            <div className="flex items-center gap-2">
-              {currentPage > 1 ? (
-                <Link
-                  href={pageHref(currentPage - 1)}
-                  className="rounded-md border border-slate-300 px-3 py-1.5 hover:bg-slate-50"
-                >
-                  Anterior
-                </Link>
-              ) : (
-                <span className="rounded-md border border-slate-200 px-3 py-1.5 text-slate-400">
-                  Anterior
-                </span>
-              )}
-
-              {currentPage < totalPages ? (
-                <Link
-                  href={pageHref(currentPage + 1)}
-                  className="rounded-md border border-slate-300 px-3 py-1.5 hover:bg-slate-50"
-                >
-                  Proxima
-                </Link>
-              ) : (
-                <span className="rounded-md border border-slate-200 px-3 py-1.5 text-slate-400">
-                  Proxima
-                </span>
-              )}
-            </div>
-          </nav>
-        ) : null}
       </Container>
     </>
   );

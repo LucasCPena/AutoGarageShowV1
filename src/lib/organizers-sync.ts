@@ -86,19 +86,12 @@ export async function syncOrganizerFromEvent(event: Event) {
     );
 
     if (!existing) {
-      await db.organizers.create({
-        name: organizerFromEvent.name,
-        logo: organizerFromEvent.logo,
-        altText: organizerFromEvent.altText,
-        bannerTop: organizerFromEvent.bannerTop,
-        link: organizerFromEvent.link
-      });
       return;
     }
 
     await db.organizers.update(existing.id, {
       name: existing.name || organizerFromEvent.name,
-      logo: organizerFromEvent.logo || existing.logo,
+      logo: existing.logo,
       altText: existing.altText || organizerFromEvent.altText,
       bannerTop: existing.bannerTop,
       link: existing.link || organizerFromEvent.link

@@ -7,6 +7,7 @@ import Container from "@/components/Container";
 import HeroSlider from "@/components/HeroSlider";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
+import SidebarBannerStack from "@/components/SidebarBannerStack";
 import type { Listing } from "@/lib/database";
 import { fetchJson } from "@/lib/fetch-json";
 import { useAuth } from "@/lib/useAuth";
@@ -75,11 +76,17 @@ export default function ClassifiedsPage() {
       />
 
       <Container className="py-10">
-        <section className="mb-8">
-          <HeroSlider section="listings" />
-        </section>
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_300px]">
+          <div>
+            <section className="mb-8">
+              <HeroSlider section="listings" />
+            </section>
 
-        <ClassifiedsClientSections listings={listings} />
+            <ClassifiedsClientSections listings={listings} />
+          </div>
+
+          <SidebarBannerStack />
+        </div>
       </Container>
     </>
   );

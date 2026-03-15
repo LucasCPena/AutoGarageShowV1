@@ -8,16 +8,16 @@ export async function POST(request: NextRequest) {
     const normalizedName = typeof name === "string" ? name.trim() : "";
     const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
     const normalizedDocument = onlyDigits(typeof document === "string" ? document : "");
-    const role = normalizedEmail.includes("admin") ? "admin" : "user";
+    const role = "user";
 
-    if (!normalizedName || !normalizedEmail || !password) {
+    if (!normalizedName || !normalizedEmail || !password || !normalizedDocument) {
       return NextResponse.json(
-        { error: 'Nome, email e senha sao obrigatorios' },
+        { error: 'Nome, email, senha e CPF sao obrigatorios' },
         { status: 400 }
       );
     }
 
-    if (role !== "admin" && !validateCPF(normalizedDocument)) {
+    if (!validateCPF(normalizedDocument)) {
       return NextResponse.json(
         { error: "CPF invalido" },
         { status: 400 }

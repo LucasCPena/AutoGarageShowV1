@@ -1,5 +1,8 @@
+import Link from "next/link";
+
 import Container from "@/components/Container";
 import { db } from "@/lib/database";
+import { getAboutPageContent } from "@/lib/siteContent";
 
 const defaultSocialLinks = [
   { platform: "YouTube", url: "https://www.youtube.com/@AUTO_GARAGE_SHOW" },
@@ -31,11 +34,13 @@ function mergeSocialLinks(links: Array<{ platform: string; url: string }>) {
 export default async function SiteFooter() {
   const year = new Date().getFullYear();
   let socialLinks = defaultSocialLinks;
+  let footerSummary = "Calendario, classificados e noticias de carros antigos.";
 
   try {
     const settings = await db.settings.get();
     const filteredSettingsLinks = filterSocialLinks(settings?.social?.links);
     socialLinks = mergeSocialLinks(filteredSettingsLinks);
+    footerSummary = getAboutPageContent(settings).footerSummary || footerSummary;
   } catch (error) {
     console.error("Erro ao carregar links sociais no rodape:", error);
   }
@@ -45,9 +50,19 @@ export default async function SiteFooter() {
       <Container className="py-10">
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="text-sm font-semibold text-slate-900">Auto Garage Show</div>
-            <div className="mt-1 text-xs text-slate-500">
-              Calendario, classificados e noticias de carros antigos.
+            <div className="flex flex-col gap-2 text-sm font-semibold">
+              <Link href="/auto-garage-show" className="text-slate-900 hover:text-brand-700">
+                Auto Garage Show
+              </Link>
+              <Link
+                href="/politica-de-privacidade"
+                className="text-slate-700 hover:text-brand-700"
+              >
+                Politica de Privacidade
+              </Link>
+            </div>
+            <div className="mt-2 text-xs text-slate-500">
+              {footerSummary}
             </div>
           </div>
 

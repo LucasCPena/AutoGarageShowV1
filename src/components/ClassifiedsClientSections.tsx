@@ -161,6 +161,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
   const [modelFilter, setModelFilter] = useState("all");
   const [stateFilter, setStateFilter] = useState("all");
   const [yearFilter, setYearFilter] = useState("all");
+  const [blackPlateFilter, setBlackPlateFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [pendingPage, setPendingPage] = useState(1);
   const now = Date.now();
@@ -213,7 +214,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
 
   useEffect(() => {
     setPage(1);
-  }, [makeFilter, modelFilter, stateFilter, yearFilter]);
+  }, [blackPlateFilter, makeFilter, modelFilter, stateFilter, yearFilter]);
 
   useEffect(() => {
     setPendingPage(1);
@@ -236,6 +237,8 @@ export default function ClassifiedsClientSections({ listings }: Props) {
     if (modelFilter !== "all" && listing.model !== modelFilter) return false;
     if (stateFilter !== "all" && listing.state !== stateFilter) return false;
     if (yearFilter !== "all" && String(listing.modelYear || listing.year) !== yearFilter) return false;
+    if (blackPlateFilter === "sim" && !listing.specifications?.blackPlate) return false;
+    if (blackPlateFilter === "nao" && listing.specifications?.blackPlate) return false;
     return true;
   });
 
@@ -371,7 +374,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-4 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2 lg:grid-cols-5">
           <select className="h-10 rounded-md border border-slate-300 px-2 text-sm" value={makeFilter} onChange={(e)=>{ setMakeFilter(e.target.value); setModelFilter("all"); }}>
             <option value="all">Todas as marcas</option>
             {allMakes.map((make)=><option key={make} value={make}>{make}</option>)}
@@ -387,6 +390,11 @@ export default function ClassifiedsClientSections({ listings }: Props) {
           <select className="h-10 rounded-md border border-slate-300 px-2 text-sm" value={yearFilter} onChange={(e)=>setYearFilter(e.target.value)}>
             <option value="all">Todos os anos</option>
             {allYears.map((year)=><option key={year} value={year}>{year}</option>)}
+          </select>
+          <select className="h-10 rounded-md border border-slate-300 px-2 text-sm" value={blackPlateFilter} onChange={(e)=>setBlackPlateFilter(e.target.value)}>
+            <option value="all">Placa preta: todos</option>
+            <option value="sim">Placa preta: sim</option>
+            <option value="nao">Placa preta: nao</option>
           </select>
         </div>
 

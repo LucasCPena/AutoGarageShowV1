@@ -12,6 +12,7 @@ import type {
   User,
   VehicleBrand
 } from "./database.types";
+import { deepMerge } from "./deep-merge";
 import { toPublicAssetUrl, toPublicAssetUrls } from "./site-url";
 import { loadRuntimeEnvFiles } from "./runtime-env";
 
@@ -1065,7 +1066,7 @@ export const dbMysql = {
     },
     update: async (settings: Partial<Settings>) => {
       const current = (await dbMysql.settings.get()) || ({} as Settings);
-      const updated = { ...current, ...settings };
+      const updated = deepMerge(current, settings);
       await query(
         "INSERT INTO settings (id, data) VALUES (1, ?) ON DUPLICATE KEY UPDATE data = VALUES(data)",
         [JSON.stringify(updated)]

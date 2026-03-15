@@ -4,14 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 
 import Notice from "@/components/Notice";
 
-type BannerSection = "home" | "events" | "listings" | "news" | "plans";
+type BannerSection = "home" | "events" | "listings" | "news" | "plans" | "sidebar";
 
 const SECTION_OPTIONS: Array<{ value: BannerSection; label: string }> = [
   { value: "home", label: "Home (topo principal)" },
   { value: "events", label: "Eventos" },
   { value: "listings", label: "Classificados" },
   { value: "news", label: "Noticias" },
-  { value: "plans", label: "Planos" }
+  { value: "plans", label: "Planos" },
+  { value: "sidebar", label: "Banner lateral" }
 ];
 
 type Banner = {
@@ -49,6 +50,7 @@ function sectionLabel(section: string) {
   if (normalized === "listings") return "Classificados";
   if (normalized === "news") return "Noticias";
   if (normalized === "plans") return "Planos";
+  if (normalized === "sidebar") return "Banner lateral";
   return normalized
     .split(/[-_\s]+/)
     .filter(Boolean)

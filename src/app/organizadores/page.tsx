@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import Container from "@/components/Container";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
+import SidebarBannerStack from "@/components/SidebarBannerStack";
 import { db, type Organizer } from "@/lib/database";
-import { mergeOrganizersWithEventLogos } from "@/lib/organizers-sync";
 import { normalizeAssetReference } from "@/lib/site-url";
 
 export const metadata: Metadata = {
@@ -31,11 +31,7 @@ export default async function OrganizersPage() {
   let loadError = false;
 
   try {
-    const [savedOrganizers, events] = await Promise.all([
-      db.organizers.getAll(),
-      db.events.getAll()
-    ]);
-    organizers = mergeOrganizersWithEventLogos(savedOrganizers, events);
+    organizers = await db.organizers.getAll();
     organizers.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   } catch (error) {
     loadError = true;
@@ -50,67 +46,73 @@ export default async function OrganizersPage() {
       />
 
       <Container className="py-10">
-        {organizers[0]?.bannerTop ? (
-          <section className="mb-8 overflow-hidden rounded-2xl border border-slate-200">
-            <img
-              src={normalizeAssetReference(organizers[0].bannerTop) || ""}
-              alt="Banner dos organizadores"
-              className="h-44 w-full object-cover sm:h-56"
-            />
-          </section>
-        ) : null}
-        {loadError ? (
-          <Notice title="Erro" variant="warning">
-            Nao foi possivel carregar os organizadores agora.
-          </Notice>
-        ) : null}
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_300px]">
+          <div>
+            {organizers[0]?.bannerTop ? (
+              <section className="mb-8 overflow-hidden rounded-2xl border border-slate-200">
+                <img
+                  src={normalizeAssetReference(organizers[0].bannerTop) || ""}
+                  alt="Banner dos organizadores"
+                  className="h-44 w-full object-cover sm:h-56"
+                />
+              </section>
+            ) : null}
+            {loadError ? (
+              <Notice title="Erro" variant="warning">
+                Nao foi possivel carregar os organizadores agora.
+              </Notice>
+            ) : null}
 
-        {!loadError && organizers.length === 0 ? (
-          <Notice title="Sem organizadores" variant="info">
-            Nenhum organizador cadastrado no momento.
-          </Notice>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {organizers.map((organizer, index) => {
-              const logo = normalizeAssetReference(organizer.logo);
-              if (!logo) return null;
+            {!loadError && organizers.length === 0 ? (
+              <Notice title="Sem organizadores" variant="info">
+                Nenhum organizador cadastrado no momento.
+              </Notice>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {organizers.map((organizer, index) => {
+                  const logo = normalizeAssetReference(organizer.logo);
+                  if (!logo) return null;
 
-              const href = normalizeOrganizerLink(organizer.link);
-              const card = (
-                <div className="flex h-44 items-center justify-center rounded-2xl border border-slate-200 bg-white p-6">
-                  <img
-                    src={logo}
-                    alt={organizer.altText?.trim() || organizer.name?.trim() || `Organizador ${index + 1}`}
-                    className="max-w-[50%] h-auto object-contain"
-                  />
-                </div>
-              );
+                  const href = normalizeOrganizerLink(organizer.link);
+                  const card = (
+                    <div className="flex h-36 items-center justify-center rounded-2xl border border-slate-200 bg-white p-6">
+                      <img
+                        src={logo}
+                        alt={organizer.altText?.trim() || organizer.name?.trim() || `Organizador ${index + 1}`}
+                        className="max-h-16 w-auto max-w-[55%] object-contain"
+                      />
+                    </div>
+                  );
 
-              if (!href) {
-                return (
-                  <article key={organizer.id}>
-                    {card}
-                  </article>
-                );
-              }
+                  if (!href) {
+                    return (
+                      <article key={organizer.id}>
+                        {card}
+                      </article>
+                    );
+                  }
 
-              const external = !href.startsWith("/");
+                  const external = !href.startsWith("/");
 
-              return (
-                <article key={organizer.id}>
-                  <a
-                    href={href}
-                    className="block transition hover:scale-[1.01]"
-                    target={external ? "_blank" : undefined}
-                    rel={external ? "noopener noreferrer nofollow" : undefined}
-                  >
-                    {card}
-                  </a>
-                </article>
-              );
-            })}
+                  return (
+                    <article key={organizer.id}>
+                      <a
+                        href={href}
+                        className="block transition hover:scale-[1.01]"
+                        target={external ? "_blank" : undefined}
+                        rel={external ? "noopener noreferrer nofollow" : undefined}
+                      >
+                        {card}
+                      </a>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
+
+          <SidebarBannerStack />
+        </div>
       </Container>
     </>
   );

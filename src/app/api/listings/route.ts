@@ -3,38 +3,7 @@
 import { getUserFromToken, requireAuth } from '@/lib/auth-middleware';
 import { db, isMysqlRequiredError, type Listing } from '@/lib/database';
 import { onlyDigits, validateBrazilianDocument } from '@/lib/document';
-
-function resolveListingLimit(settings: unknown, documentType: 'cpf' | 'cnpj') {
-  const fallback = documentType === 'cnpj' ? 20 : 4;
-
-  if (!settings || typeof settings !== 'object') return fallback;
-
-  const source = settings as Record<string, unknown>;
-
-  const listingLimits =
-    source.listingLimits && typeof source.listingLimits === 'object'
-      ? (source.listingLimits as Record<string, unknown>)
-      : null;
-
-  const modernValue = listingLimits?.[documentType];
-  if (typeof modernValue === 'number' && Number.isFinite(modernValue) && modernValue >= 0) {
-    return Math.round(modernValue);
-  }
-
-  const listings =
-    source.listings && typeof source.listings === 'object'
-      ? (source.listings as Record<string, unknown>)
-      : null;
-
-  const legacyKey =
-    documentType === 'cnpj' ? 'freeListingsPerCNPJ' : 'freeListingsPerCPF';
-  const legacyValue = listings?.[legacyKey];
-  if (typeof legacyValue === 'number' && Number.isFinite(legacyValue) && legacyValue >= 0) {
-    return Math.round(legacyValue);
-  }
-
-  return fallback;
-}
+import { resolveListingLimit } from '@/lib/listingRules';
 
 export async function GET(request: NextRequest) {
   try {
@@ -48,6 +17,7 @@ export async function GET(request: NextRequest) {
     const priceMin = searchParams.get('priceMin');
     const priceMax = searchParams.get('priceMax');
     const mileageMax = searchParams.get('mileageMax');
+    const blackPlate = searchParams.get('blackPlate');
     const user = getUserFromToken(request);
     const isAdmin = user?.role === 'admin';
 
@@ -97,6 +67,14 @@ export async function GET(request: NextRequest) {
 
     if (mileageMax) {
       listings = listings.filter((listing) => listing.mileage <= parseInt(mileageMax, 10));
+    }
+
+    if (blackPlate === 'true') {
+      listings = listings.filter((listing) => Boolean(listing.specifications?.blackPlate));
+    }
+
+    if (blackPlate === 'false') {
+      listings = listings.filter((listing) => !listing.specifications?.blackPlate);
     }
 
     // Ordenar: destacados primeiro, depois por data de criacao.

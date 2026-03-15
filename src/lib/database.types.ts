@@ -148,6 +148,13 @@ export interface Organizer {
   updatedAt: string;
 }
 
+export interface SitePageContentSettings {
+  title?: string;
+  subtitle?: string;
+  body?: string;
+  footerSummary?: string;
+}
+
 export interface Settings {
   listings: {
     maxYearOffset: number;
@@ -173,9 +180,23 @@ export interface Settings {
     links: { platform: string; url: string }[];
   };
   listingPlans?: ListingPlan[];
+  vehicleMinAgeYears?: number;
+  vehicleModelYearMin?: number;
+  listingLimits?: {
+    cpf: number;
+    cnpj: number;
+  };
+  listingFeaturedDurationsDays?: number[];
+  listingAutoExpireDays?: number;
+  listingExpireNoticeDays?: number;
+  content?: {
+    about?: SitePageContentSettings;
+    privacy?: SitePageContentSettings;
+  };
   branding?: {
     logoUrl?: string;
     faviconUrl?: string;
+    youtubeLiveUrl?: string;
   };
 }
 

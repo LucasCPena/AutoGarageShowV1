@@ -13,6 +13,7 @@ import type {
   VehicleBrand,
   Listing
 } from "./database.types";
+import { deepMerge } from "./deep-merge";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 async function readData<T>(filename: string): Promise<T[]> {
@@ -339,7 +340,7 @@ export const dbFile = {
     get: () => readSingleData<Settings>('settings.json'),
     update: async (settings: Partial<Settings>) => {
       const current = await readSingleData<Settings>('settings.json') || {} as Settings;
-      const updated = { ...current, ...settings };
+      const updated = deepMerge(current, settings);
       await writeSingleData('settings.json', updated);
       return updated;
     }

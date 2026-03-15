@@ -399,9 +399,9 @@ export default function HomePage() {
         className="min-h-[420px] border-b border-brand-900/30 bg-slate-900/80"
         style={{
           backgroundImage:
-            `linear-gradient(110deg, rgba(10, 12, 10, 0.9), rgba(67, 64, 3, 0.72)), url('${heroBackgroundImage}')`,
+            `linear-gradient(110deg, rgba(10, 12, 10, 0.58), rgba(67, 64, 3, 0.3)), url('${heroBackgroundImage}')`,
           backgroundSize: "cover",
-          backgroundPosition: "center"
+          backgroundPosition: "center 35%"
         }}
       >
         <Container className="py-16 md:py-20">
@@ -631,16 +631,27 @@ export default function HomePage() {
                 <Link
                   key={article.id}
                   href={`/noticias/${article.slug}`}
-                  className="group block rounded-2xl border border-slate-200 bg-white p-6 hover:border-brand-200 transition-colors"
+                  className="group block overflow-hidden rounded-2xl border border-slate-200 bg-white hover:border-brand-200 transition-colors"
                 >
-                  <h3 className="text-lg font-semibold text-slate-900 group-hover:text-brand-800">
-                    {article.title}
-                  </h3>
-                  <p className="mt-2 text-sm text-slate-600 line-clamp-2">
-                    {article.excerpt}
-                  </p>
-                  <div className="mt-3 text-xs text-slate-500">
-                    {formatDateLong(article.createdAt)}
+                  <div className="relative h-48 w-full">
+                    <Image
+                      src={safeImageSrc(article.coverImage, "/placeholders/news.svg")}
+                      alt={article.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 1200px"
+                    />
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-lg font-semibold text-slate-900 group-hover:text-brand-800">
+                      {article.title}
+                    </h3>
+                    <p className="mt-2 text-sm text-slate-600 line-clamp-3">
+                      {article.excerpt}
+                    </p>
+                    <div className="mt-3 text-xs text-slate-500">
+                      {formatDateLong(article.createdAt)}
+                    </div>
                   </div>
                 </Link>
               ))}

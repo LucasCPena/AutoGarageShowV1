@@ -10,7 +10,8 @@ const SECTION_ALIASES: Record<string, string[]> = {
   events: ['events', 'event', 'evento', 'eventos', 'o evento'],
   listings: ['listings', 'listing', 'classificado', 'classificados', 'anuncio', 'anuncios'],
   news: ['news', 'new', 'noticia', 'noticias'],
-  plans: ['plans', 'plan', 'plano', 'planos']
+  plans: ['plans', 'plan', 'plano', 'planos'],
+  sidebar: ['sidebar', 'side-bar', 'lateral', 'banner-lateral', 'banners-laterais']
 };
 
 function normalizeBannerSection(input: unknown) {

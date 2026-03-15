@@ -69,9 +69,8 @@ export default function AuthModal({
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    const shouldRequireCpf = mode === "register" && !email.toLowerCase().includes("admin");
 
-    if (!email || !password || (mode === "register" && !name) || (shouldRequireCpf && !cpf)) {
+    if (!email || !password || (mode === "register" && (!name || !cpf))) {
       setError("Preencha todos os campos.");
       return;
     }
@@ -90,16 +89,13 @@ export default function AuthModal({
           setSubmitted(false);
         });
     } else {
-      console.log('Tentando fazer login com:', email);
       login(email, password)
-        .then((user) => {
-          console.log('Login successful:', user);
+        .then(() => {
           setTimeout(() => {
             finishSuccess();
           }, 1000);
         })
         .catch((err) => {
-          console.error('Login error:', err);
           setError(err.message || "Erro ao autenticar. Tente novamente.");
           setSubmitted(false);
         });
@@ -160,11 +156,11 @@ export default function AuthModal({
         </label>
         <input
           id="document"
-          required={!email.toLowerCase().includes("admin")}
+          required
           value={cpf}
           onChange={(e) => setCpf(e.target.value)}
           className="h-11 w-full rounded-md border border-slate-300 px-3 text-sm"
-          placeholder={email.toLowerCase().includes("admin") ? "Opcional para admin" : "Digite seu CPF"}
+          placeholder="Digite seu CPF"
           inputMode="numeric"
         />
       </div>
@@ -240,9 +236,6 @@ export default function AuthModal({
     )}
   </div>
 
-  <div className="text-xs text-slate-500">
-    Dica: use e-mail contendo &quot;admin&quot; para acesso de administrador.
-  </div>
 </form>
 
       )}

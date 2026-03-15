@@ -6,6 +6,7 @@ import AdminCatalogPanel from "@/components/AdminCatalogPanel";
 import AdminCommentsPanel from "@/components/AdminCommentsPanel";
 import AdminOrganizersPanel from "@/components/AdminOrganizersPanel";
 import AdminSettingsPanel from "@/components/AdminSettingsPanel";
+import AdminUsersPanel from "@/components/AdminUsersPanel";
 import Container from "@/components/Container";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
@@ -98,6 +99,10 @@ export default function AdminPage() {
 
         <div className="mt-10">
           <AdminCommentsPanel token={token} />
+        </div>
+
+        <div className="mt-10">
+          <AdminUsersPanel token={token} />
         </div>
 
         <div className="mt-10">

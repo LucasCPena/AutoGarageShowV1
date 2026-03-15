@@ -10,6 +10,7 @@ import HeroSlider from "@/components/HeroSlider";
 import NewsCrudActions from "@/components/NewsCrudActions";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
+import SidebarBannerStack from "@/components/SidebarBannerStack";
 import { formatDateLong } from "@/lib/date";
 import { fetchJson } from "@/lib/fetch-json";
 import { newsImageAlt } from "@/lib/image-alt";
@@ -103,107 +104,111 @@ export default function NewsPage() {
       />
 
       <Container className="py-10">
-        <section className="mb-8">
-          <HeroSlider section="news" />
-        </section>
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_300px]">
+          <div>
+            <section className="mb-8">
+              <HeroSlider section="news" />
+            </section>
 
-        {authLoading ? null : user?.role === "admin" ? (
-          <div className="mb-6 flex justify-end">
-            <button
-              type="button"
-              onClick={() => setShowCrud((current) => !current)}
-              className="inline-flex h-10 items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700"
-            >
-              {showCrud ? "Fechar editor" : "Nova noticia"}
-            </button>
-          </div>
-        ) : null}
+            {authLoading ? null : user?.role === "admin" ? (
+              <div className="mb-6 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowCrud((current) => !current)}
+                  className="inline-flex h-10 items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700"
+                >
+                  {showCrud ? "Fechar editor" : "Nova noticia"}
+                </button>
+              </div>
+            ) : null}
 
-        {!authLoading && user?.role === "admin" && showCrud ? (
-          <div className="mb-8">
-            <AdminNewsPanel token={token} />
-          </div>
-        ) : null}
+            {!authLoading && user?.role === "admin" && showCrud ? (
+              <div className="mb-8">
+                <AdminNewsPanel token={token} />
+              </div>
+            ) : null}
 
-        <div className="mt-8 grid gap-4 lg:grid-cols-2">
-          {items.map((article) => {
-            const expanded = Boolean(expandedCards[article.id]);
-            const canExpand = article.excerpt.trim().length > 220;
+            <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {items.map((article) => {
+                const expanded = Boolean(expandedCards[article.id]);
+                const canExpand = article.excerpt.trim().length > 220;
 
-            return (
-              <article
-                key={article.id}
-                className="overflow-hidden rounded-xl border border-slate-200 bg-white"
-              >
-                <div className="sm:flex">
-                  <Link href={`/noticias/${article.slug}`} className="group block shrink-0 sm:w-52">
-                    <Image
-                      src={getNewsCoverSrc(article.coverImage)}
-                      alt={newsImageAlt(article.title)}
-                      width={1200}
-                      height={800}
-                      className="h-36 w-full object-cover sm:h-full sm:min-h-[190px]"
-                    />
-                  </Link>
-
-                  <div className="flex-1 p-4">
-                    <Link
-                      href={`/noticias/${article.slug}`}
-                      className="text-base font-semibold text-slate-900 hover:text-brand-800"
-                    >
-                      {article.title}
+                return (
+                  <article
+                    key={article.id}
+                    className="overflow-hidden rounded-xl border border-slate-200 bg-white"
+                  >
+                    <Link href={`/noticias/${article.slug}`} className="group block">
+                      <Image
+                        src={getNewsCoverSrc(article.coverImage)}
+                        alt={newsImageAlt(article.title)}
+                        width={1200}
+                        height={800}
+                        className="h-52 w-full object-cover"
+                      />
                     </Link>
 
-                    <p className={`mt-2 text-sm text-slate-600 ${expanded ? "" : "line-clamp-4"}`}>
-                      {article.excerpt}
-                    </p>
-
-                    {canExpand ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setExpandedCards((current) => ({
-                            ...current,
-                            [article.id]: !current[article.id]
-                          }))
-                        }
-                        className="mt-1 text-xs font-semibold text-brand-700 hover:text-brand-800"
+                    <div className="p-4">
+                      <Link
+                        href={`/noticias/${article.slug}`}
+                        className="text-base font-semibold text-slate-900 hover:text-brand-800"
                       >
-                        {expanded ? "Ler menos" : "Leia mais"}
-                      </button>
+                        {article.title}
+                      </Link>
+
+                      <p className={`mt-2 text-sm text-slate-600 ${expanded ? "" : "line-clamp-4"}`}>
+                        {article.excerpt}
+                      </p>
+
+                      {canExpand ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedCards((current) => ({
+                              ...current,
+                              [article.id]: !current[article.id]
+                            }))
+                          }
+                          className="mt-1 text-xs font-semibold text-brand-700 hover:text-brand-800"
+                        >
+                          {expanded ? "Ler menos" : "Leia mais"}
+                        </button>
+                      ) : null}
+
+                      <div className="mt-3 text-xs text-slate-500">
+                        Por {article.author} • {formatDateLong(article.createdAt)}
+                      </div>
+
+                      <Link
+                        href={`/noticias/${article.slug}`}
+                        className="mt-2 inline-flex text-xs font-semibold text-brand-700 hover:text-brand-800"
+                      >
+                        Ler noticia completa
+                      </Link>
+                    </div>
+
+                    {user?.role === "admin" ? (
+                      <div className="border-t border-slate-200 bg-slate-50 px-4 py-3">
+                        <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Status: {article.status}
+                        </div>
+                        <NewsCrudActions
+                          newsId={article.id}
+                          editHref={`/noticias/gerenciar/${article.id}`}
+                          compact
+                          onDeleted={() =>
+                            setNews((current) => current.filter((item) => item.id !== article.id))
+                          }
+                        />
+                      </div>
                     ) : null}
+                  </article>
+                );
+              })}
+            </div>
+          </div>
 
-                    <div className="mt-3 text-xs text-slate-500">
-                      Por {article.author} • {formatDateLong(article.createdAt)}
-                    </div>
-
-                    <Link
-                      href={`/noticias/${article.slug}`}
-                      className="mt-2 inline-flex text-xs font-semibold text-brand-700 hover:text-brand-800"
-                    >
-                      Ler noticia completa
-                    </Link>
-                  </div>
-                </div>
-
-                {user?.role === "admin" ? (
-                  <div className="border-t border-slate-200 bg-slate-50 px-4 py-3">
-                    <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Status: {article.status}
-                    </div>
-                    <NewsCrudActions
-                      newsId={article.id}
-                      editHref={`/noticias/gerenciar/${article.id}`}
-                      compact
-                      onDeleted={() =>
-                        setNews((current) => current.filter((item) => item.id !== article.id))
-                      }
-                    />
-                  </div>
-                ) : null}
-              </article>
-            );
-          })}
+          <SidebarBannerStack />
         </div>
       </Container>
     </>

@@ -4,41 +4,56 @@ import type { ChangeEvent, FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 import Notice from "@/components/Notice";
-import {
-  type SiteSettings,
-  getVehicleMaxAllowedYear,
-  normalizeSiteSettings
-} from "@/lib/siteSettings";
+import { getAboutPageContent } from "@/lib/siteContent";
 import {
   SITE_BRANDING_EVENT,
   normalizeSiteBranding,
   type SiteBranding
 } from "@/lib/siteBranding";
+import {
+  type SiteSettings,
+  getVehicleMaxAllowedYear,
+  normalizeSiteSettings
+} from "@/lib/siteSettings";
+import { SITE_SETTINGS_EVENT, useSiteSettings } from "@/lib/useSiteSettings";
 import { useAuth } from "@/lib/useAuth";
-import { useSiteSettings } from "@/lib/useSiteSettings";
 
 type BrandingDraft = {
   logoUrl: string;
   faviconUrl: string;
-  youtubeLiveUrl?: string;
+  youtubeLiveUrl: string;
+};
+
+type AboutPageDraft = {
+  title: string;
+  subtitle: string;
+  body: string;
+  footerSummary: string;
 };
 
 function durationsToText(values: number[]) {
   return values.join(", ");
 }
 
-
 function toBrandingDraft(branding: SiteBranding): BrandingDraft {
   return {
     logoUrl: branding.logoUrl ?? "",
-    faviconUrl: branding.faviconUrl ?? ""
-    ,
+    faviconUrl: branding.faviconUrl ?? "",
     youtubeLiveUrl: branding.youtubeLiveUrl ?? ""
   };
 }
 
+function toAboutDraft(input: ReturnType<typeof getAboutPageContent>): AboutPageDraft {
+  return {
+    title: input.title,
+    subtitle: input.subtitle,
+    body: input.body,
+    footerSummary: input.footerSummary ?? ""
+  };
+}
+
 export default function AdminSettingsPanel() {
-  const { settings, isReady, saveSettings, resetSettings } = useSiteSettings();
+  const { settings, isReady, error, saveSettings, resetSettings } = useSiteSettings();
   const { token } = useAuth();
 
   const [draft, setDraft] = useState<SiteSettings>(() =>
@@ -48,11 +63,12 @@ export default function AdminSettingsPanel() {
     durationsToText(draft.listingFeaturedDurationsDays)
   );
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [savingSettings, setSavingSettings] = useState(false);
 
   const [brandingDraft, setBrandingDraft] = useState<BrandingDraft>({
     logoUrl: "",
-    faviconUrl: ""
-    ,
+    faviconUrl: "",
     youtubeLiveUrl: ""
   });
   const [brandingLoading, setBrandingLoading] = useState(true);
@@ -62,20 +78,31 @@ export default function AdminSettingsPanel() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingFavicon, setUploadingFavicon] = useState(false);
 
+  const [aboutDraft, setAboutDraft] = useState<AboutPageDraft>(() =>
+    toAboutDraft(getAboutPageContent(undefined))
+  );
+  const [aboutLoading, setAboutLoading] = useState(true);
+  const [aboutSaving, setAboutSaving] = useState(false);
+  const [aboutSaved, setAboutSaved] = useState(false);
+  const [aboutError, setAboutError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!isReady) return;
 
     setDraft(settings);
     setFeaturedDurationsText(durationsToText(settings.listingFeaturedDurationsDays));
     setSaved(false);
+    setSaveError(null);
   }, [isReady, settings]);
 
   useEffect(() => {
     let active = true;
 
-    async function loadBranding() {
+    async function loadAdminContent() {
       setBrandingLoading(true);
+      setAboutLoading(true);
       setBrandingError(null);
+      setAboutError(null);
 
       try {
         const response = await fetch("/api/settings", { cache: "no-store" });
@@ -85,7 +112,7 @@ export default function AdminSettingsPanel() {
           throw new Error(
             typeof data?.error === "string" && data.error
               ? data.error
-              : "Nao foi possivel carregar identidade visual."
+              : "Nao foi possivel carregar configuracoes do admin."
           );
         }
 
@@ -93,21 +120,24 @@ export default function AdminSettingsPanel() {
 
         const branding = normalizeSiteBranding(data?.settings?.branding);
         setBrandingDraft(toBrandingDraft(branding));
-      } catch (error) {
+        setAboutDraft(toAboutDraft(getAboutPageContent(data?.settings)));
+      } catch (loadError) {
         if (!active) return;
-        setBrandingError(
-          error instanceof Error
-            ? error.message
-            : "Nao foi possivel carregar identidade visual."
-        );
+        const message =
+          loadError instanceof Error
+            ? loadError.message
+            : "Nao foi possivel carregar configuracoes do admin.";
+        setBrandingError(message);
+        setAboutError(message);
       } finally {
         if (active) {
           setBrandingLoading(false);
+          setAboutLoading(false);
         }
       }
     }
 
-    loadBranding();
+    loadAdminContent();
 
     return () => {
       active = false;
@@ -157,15 +187,13 @@ export default function AdminSettingsPanel() {
         throw new Error("Upload concluido sem URL valida.");
       }
 
-      const uploadedUrl = data.url.trim();
-
       setBrandingDraft((current) => ({
         ...current,
-        [field]: uploadedUrl
+        [field]: data.url.trim()
       }));
-    } catch (error) {
+    } catch (uploadError) {
       setBrandingError(
-        error instanceof Error ? error.message : "Erro ao enviar arquivo."
+        uploadError instanceof Error ? uploadError.message : "Erro ao enviar arquivo."
       );
     } finally {
       setUploading(false);
@@ -223,10 +251,10 @@ export default function AdminSettingsPanel() {
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event(SITE_BRANDING_EVENT));
       }
-    } catch (error) {
+    } catch (brandingSaveError) {
       setBrandingError(
-        error instanceof Error
-          ? error.message
+        brandingSaveError instanceof Error
+          ? brandingSaveError.message
           : "Nao foi possivel salvar identidade visual."
       );
     } finally {
@@ -234,25 +262,108 @@ export default function AdminSettingsPanel() {
     }
   }
 
-  async function onSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function saveAboutPage() {
+    if (!token) {
+      setAboutError("Sessao expirada. Faca login novamente como admin.");
+      return;
+    }
 
-    const durations = [30];
+    setAboutSaving(true);
+    setAboutSaved(false);
+    setAboutError(null);
+
+    try {
+      const response = await fetch("/api/settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders()
+        },
+        body: JSON.stringify({
+          content: {
+            about: {
+              title: aboutDraft.title.trim(),
+              subtitle: aboutDraft.subtitle.trim(),
+              body: aboutDraft.body.trim(),
+              footerSummary: aboutDraft.footerSummary.trim()
+            }
+          }
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          typeof data?.error === "string" && data.error
+            ? data.error
+            : "Nao foi possivel salvar a pagina Auto Garage Show."
+        );
+      }
+
+      setAboutDraft(toAboutDraft(getAboutPageContent(data?.settings)));
+      setAboutSaved(true);
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event(SITE_SETTINGS_EVENT));
+      }
+    } catch (aboutSaveError) {
+      setAboutError(
+        aboutSaveError instanceof Error
+          ? aboutSaveError.message
+          : "Nao foi possivel salvar a pagina Auto Garage Show."
+      );
+    } finally {
+      setAboutSaving(false);
+    }
+  }
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
 
     const next = normalizeSiteSettings({
       ...draft,
-      listingFeaturedDurationsDays: durations
+      listingFeaturedDurationsDays: [30]
     });
 
-    saveSettings(next);
-    setDraft(next);
-    setFeaturedDurationsText(durationsToText(next.listingFeaturedDurationsDays));
-    setSaved(true);
-    // Also persist branding (youtube live link) when saving the main settings
+    setSavingSettings(true);
+    setSaved(false);
+    setSaveError(null);
+
     try {
-      await saveBranding();
-    } catch {
-      // saveBranding handles its own errors; ignore here
+      const persisted = await saveSettings(next, token);
+      setDraft(persisted);
+      setFeaturedDurationsText(durationsToText(persisted.listingFeaturedDurationsDays));
+      setSaved(true);
+    } catch (settingsError) {
+      setSaveError(
+        settingsError instanceof Error
+          ? settingsError.message
+          : "Nao foi possivel salvar configuracoes."
+      );
+    } finally {
+      setSavingSettings(false);
+    }
+  }
+
+  async function handleResetDefaults() {
+    setSavingSettings(true);
+    setSaved(false);
+    setSaveError(null);
+
+    try {
+      const persisted = await resetSettings(token);
+      setDraft(persisted);
+      setFeaturedDurationsText(durationsToText(persisted.listingFeaturedDurationsDays));
+      setSaved(true);
+    } catch (resetError) {
+      setSaveError(
+        resetError instanceof Error
+          ? resetError.message
+          : "Nao foi possivel restaurar configuracoes."
+      );
+    } finally {
+      setSavingSettings(false);
     }
   }
 
@@ -260,19 +371,16 @@ export default function AdminSettingsPanel() {
     <div className="rounded-2xl border border-slate-200 bg-white p-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="text-sm font-semibold text-slate-900">Configuracao sistema</div>
+          <div className="text-sm font-semibold text-slate-900">Configuracao do sistema</div>
           <div className="mt-1 text-sm text-slate-600">
-            Regras de classificados ficam neste navegador. Logo e favicon sao salvos no
-            backend.
+            As regras abaixo agora sao salvas no backend e lidas pelo site publico.
           </div>
         </div>
         <button
           type="button"
           className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-          onClick={() => {
-            resetSettings();
-            setSaved(false);
-          }}
+          onClick={handleResetDefaults}
+          disabled={savingSettings}
         >
           Restaurar padrao
         </button>
@@ -281,7 +389,19 @@ export default function AdminSettingsPanel() {
       <form onSubmit={onSubmit} className="mt-6 grid gap-5">
         {saved ? (
           <Notice title="Salvo" variant="success">
-            As configuracoes locais foram atualizadas.
+            As configuracoes de classificados foram atualizadas no backend.
+          </Notice>
+        ) : null}
+
+        {saveError ? (
+          <Notice title="Erro" variant="warning">
+            {saveError}
+          </Notice>
+        ) : null}
+
+        {error ? (
+          <Notice title="Atencao" variant="warning">
+            {error}
           </Notice>
         ) : null}
 
@@ -339,7 +459,7 @@ export default function AdminSettingsPanel() {
 
           <label className="grid gap-1">
             <span className="text-sm font-semibold text-slate-900">
-              Limite por CPF (anuncios ativos)
+              Limite por CPF
             </span>
             <input
               className="h-11 rounded-md border border-slate-300 px-3 text-sm"
@@ -363,7 +483,7 @@ export default function AdminSettingsPanel() {
 
           <label className="grid gap-1">
             <span className="text-sm font-semibold text-slate-900">
-              Limite por CNPJ (anuncios ativos)
+              Limite por CNPJ
             </span>
             <input
               className="h-11 rounded-md border border-slate-300 px-3 text-sm"
@@ -387,16 +507,15 @@ export default function AdminSettingsPanel() {
 
           <label className="grid gap-1 md:col-span-2">
             <span className="text-sm font-semibold text-slate-900">
-              Duracoes de destaque (dias)
+              Duracao de destaque (dias)
             </span>
             <input
               className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-              placeholder="30"
               value={featuredDurationsText}
               readOnly
             />
             <span className="text-xs text-slate-500">
-              A duracao do destaque e fixa em 30 dias.
+              A duracao do destaque permanece fixa em 30 dias.
             </span>
           </label>
 
@@ -419,9 +538,7 @@ export default function AdminSettingsPanel() {
                 }));
               }}
             />
-            <span className="text-xs text-slate-500">
-              Use 0 para desativar.
-            </span>
+            <span className="text-xs text-slate-500">Use 0 para desativar.</span>
           </label>
 
           <label className="grid gap-1">
@@ -444,42 +561,124 @@ export default function AdminSettingsPanel() {
               }}
             />
             <span className="text-xs text-slate-500">
-              Prototipo: sem envio de e-mail.
+              Prototipo atual: sem envio automatico de e-mail.
             </span>
-          </label>
-
-          <label className="grid gap-1 md:col-span-2">
-            <span className="text-sm font-semibold text-slate-900">YouTube ao vivo (home)</span>
-            <input
-              className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-              placeholder="https://www.youtube.com/watch?v=..."
-              value={brandingDraft.youtubeLiveUrl}
-              onChange={(e) => {
-                setBrandingSaved(false);
-                setBrandingDraft((current) => ({
-                  ...current,
-                  youtubeLiveUrl: e.target.value
-                }));
-              }}
-            />
-            <span className="text-xs text-slate-500">Opcional: link para transmissao ao vivo exibida na Home.</span>
           </label>
         </div>
 
         <div className="flex flex-wrap gap-3">
           <button
             type="submit"
-            className="inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700"
+            disabled={savingSettings}
+            className="inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
           >
-            Salvar configuracoes locais
+            {savingSettings ? "Salvando..." : "Salvar configuracoes"}
           </button>
         </div>
       </form>
 
       <div className="mt-8 border-t border-slate-200 pt-6">
+        <div className="text-sm font-semibold text-slate-900">Pagina Auto Garage Show</div>
+        <div className="mt-1 text-sm text-slate-600">
+          Conteudo usado no link do rodape para apresentar o canal e o projeto.
+        </div>
+
+        {aboutSaved ? (
+          <div className="mt-4">
+            <Notice title="Salvo" variant="success">
+              A pagina Auto Garage Show foi atualizada com sucesso.
+            </Notice>
+          </div>
+        ) : null}
+
+        {aboutError ? (
+          <div className="mt-4">
+            <Notice title="Erro" variant="warning">
+              {aboutError}
+            </Notice>
+          </div>
+        ) : null}
+
+        {aboutLoading ? (
+          <div className="mt-4">
+            <Notice title="Carregando" variant="info">
+              Lendo conteudo atual da pagina Auto Garage Show.
+            </Notice>
+          </div>
+        ) : null}
+
+        <div className="mt-4 grid gap-4">
+          <label className="grid gap-1">
+            <span className="text-sm font-semibold text-slate-900">Titulo</span>
+            <input
+              className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+              value={aboutDraft.title}
+              onChange={(e) => {
+                setAboutSaved(false);
+                setAboutDraft((current) => ({ ...current, title: e.target.value }));
+              }}
+            />
+          </label>
+
+          <label className="grid gap-1">
+            <span className="text-sm font-semibold text-slate-900">Subtitulo</span>
+            <input
+              className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+              value={aboutDraft.subtitle}
+              onChange={(e) => {
+                setAboutSaved(false);
+                setAboutDraft((current) => ({ ...current, subtitle: e.target.value }));
+              }}
+            />
+          </label>
+
+          <label className="grid gap-1">
+            <span className="text-sm font-semibold text-slate-900">Resumo curto do rodape</span>
+            <input
+              className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+              value={aboutDraft.footerSummary}
+              onChange={(e) => {
+                setAboutSaved(false);
+                setAboutDraft((current) => ({
+                  ...current,
+                  footerSummary: e.target.value
+                }));
+              }}
+            />
+          </label>
+
+          <label className="grid gap-1">
+            <span className="text-sm font-semibold text-slate-900">Conteudo da pagina</span>
+            <textarea
+              className="min-h-40 rounded-md border border-slate-300 px-3 py-2 text-sm"
+              value={aboutDraft.body}
+              onChange={(e) => {
+                setAboutSaved(false);
+                setAboutDraft((current) => ({ ...current, body: e.target.value }));
+              }}
+            />
+            <span className="text-xs text-slate-500">
+              Use linhas em branco para separar paragrafos.
+            </span>
+          </label>
+        </div>
+
+        <div className="mt-5 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={saveAboutPage}
+            disabled={aboutLoading || aboutSaving}
+            className="inline-flex h-11 items-center justify-center rounded-md bg-slate-900 px-5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+          >
+            {aboutSaving ? "Salvando..." : "Salvar pagina Auto Garage Show"}
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-8 border-t border-slate-200 pt-6">
         <div className="text-sm font-semibold text-slate-900">Identidade visual do site</div>
         <div className="mt-1 text-sm text-slate-600">
-          Defina a logo do topo e o favicon exibido no navegador.
+          Defina a logo do topo, o favicon e o link opcional do YouTube ao vivo na home.
         </div>
 
         {brandingSaved ? (
@@ -579,7 +778,9 @@ export default function AdminSettingsPanel() {
           </label>
 
           <label className="grid gap-1 md:col-span-2">
-            <span className="text-sm font-semibold text-slate-900">YouTube ao vivo (URL da home)</span>
+            <span className="text-sm font-semibold text-slate-900">
+              YouTube ao vivo (home)
+            </span>
             <input
               className="h-11 rounded-md border border-slate-300 px-3 text-sm"
               placeholder="https://www.youtube.com/watch?v=..."
@@ -592,7 +793,9 @@ export default function AdminSettingsPanel() {
                 }));
               }}
             />
-            <span className="text-xs text-slate-500">Opcional: se preenchido, o video sera exibido na home quando nao houver evento ao vivo.</span>
+            <span className="text-xs text-slate-500">
+              Opcional: se preenchido, o video sera exibido na home quando nao houver evento ao vivo.
+            </span>
           </label>
 
           {brandingDraft.faviconUrl ? (
@@ -623,7 +826,7 @@ export default function AdminSettingsPanel() {
               ? "Salvando..."
               : uploadingLogo || uploadingFavicon
                 ? "Enviando arquivo..."
-                : "Salvar logo e favicon"}
+                : "Salvar identidade visual"}
           </button>
         </div>
       </div>
