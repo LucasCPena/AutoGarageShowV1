@@ -11,7 +11,8 @@ const SECTION_ALIASES: Record<string, string[]> = {
   listings: ['listings', 'listing', 'classificado', 'classificados', 'anuncio', 'anuncios'],
   news: ['news', 'new', 'noticia', 'noticias'],
   plans: ['plans', 'plan', 'plano', 'planos'],
-  sidebar: ['sidebar', 'side-bar', 'lateral', 'banner-lateral', 'banners-laterais']
+  sidebar: ['sidebar', 'side-bar', 'lateral', 'banner-lateral', 'banners-laterais'],
+  'mercado-de-pulgas': ['mercado-de-pulgas', 'mercado de pulgas', 'mercado', 'pulgas', 'flea-market']
 };
 
 function normalizeBannerSection(input: unknown) {
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
 
     if (!normalizedSection) {
       return NextResponse.json(
-        { error: 'Secao invalida. Informe uma secao como home, events, listings, news ou plans.' },
+        { error: 'Secao invalida. Informe uma secao valida como home, events, listings, news, plans, sidebar ou mercado-de-pulgas.' },
         { status: 400 }
       );
     }

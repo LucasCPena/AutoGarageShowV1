@@ -4,7 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 
 import Notice from "@/components/Notice";
 
-type BannerSection = "home" | "events" | "listings" | "news" | "plans" | "sidebar";
+type BannerSection =
+  | "home"
+  | "events"
+  | "listings"
+  | "news"
+  | "plans"
+  | "sidebar"
+  | "mercado-de-pulgas"
+  | "custom";
 
 const SECTION_OPTIONS: Array<{ value: BannerSection; label: string }> = [
   { value: "home", label: "Home (topo principal)" },
@@ -12,7 +20,9 @@ const SECTION_OPTIONS: Array<{ value: BannerSection; label: string }> = [
   { value: "listings", label: "Classificados" },
   { value: "news", label: "Noticias" },
   { value: "plans", label: "Planos" },
-  { value: "sidebar", label: "Banner lateral" }
+  { value: "sidebar", label: "Banner lateral" },
+  { value: "mercado-de-pulgas", label: "Mercado de Pulgas" },
+  { value: "custom", label: "Outra secao" }
 ];
 
 type Banner = {
@@ -51,6 +61,7 @@ function sectionLabel(section: string) {
   if (normalized === "news") return "Noticias";
   if (normalized === "plans") return "Planos";
   if (normalized === "sidebar") return "Banner lateral";
+  if (normalized === "mercado-de-pulgas") return "Mercado de Pulgas";
   return normalized
     .split(/[-_\s]+/)
     .filter(Boolean)
@@ -79,6 +90,7 @@ export default function AdminBannersPanel({
     image: "",
     link: "",
     section: fixedSection ?? ("events" as BannerSection),
+    customSection: "",
     position: 1,
     startDate: "",
     endDate: "",
@@ -137,7 +149,7 @@ export default function AdminBannersPanel({
 
   useEffect(() => {
     if (!fixedSection) return;
-    setForm((current) => ({ ...current, section: fixedSection }));
+    setForm((current) => ({ ...current, section: fixedSection, customSection: "" }));
   }, [fixedSection]);
 
   async function handleImageUpload(file: File) {
@@ -189,9 +201,19 @@ export default function AdminBannersPanel({
         throw new Error("Informe a URL da imagem ou faca upload de um arquivo.");
       }
 
+      const resolvedSection = fixedSection
+        ? fixedSection
+        : form.section === "custom"
+          ? form.customSection.trim()
+          : form.section;
+
+      if (!resolvedSection) {
+        throw new Error("Informe a secao onde o banner deve ser exibido.");
+      }
+
       const payload = {
         ...form,
-        section: fixedSection ?? form.section,
+        section: resolvedSection,
         image: form.image.trim(),
         position: backgroundMode ? 1 : Number(form.position) || 1,
         startDate: backgroundMode ? new Date().toISOString() : form.startDate || new Date().toISOString(),
@@ -224,6 +246,7 @@ export default function AdminBannersPanel({
         image: "",
         link: "",
         section: fixedSection ?? current.section,
+        customSection: "",
         position: 1,
         startDate: "",
         endDate: "",
@@ -398,6 +421,21 @@ export default function AdminBannersPanel({
                 </select>
               </label>
             )}
+
+            {!fixedSection && form.section === "custom" ? (
+              <label className="grid gap-1 md:col-span-2">
+                <span className="text-sm font-semibold text-slate-900">Slug da secao</span>
+                <input
+                  className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+                  value={form.customSection}
+                  onChange={(e) => setForm((f) => ({ ...f, customSection: e.target.value }))}
+                  placeholder="Ex.: mercado-de-pulgas"
+                />
+                <span className="text-xs text-slate-500">
+                  Use o mesmo slug da pagina que vai chamar o banner.
+                </span>
+              </label>
+            ) : null}
 
             <label className="grid gap-1">
               <span className="text-sm font-semibold text-slate-900">Posicao</span>

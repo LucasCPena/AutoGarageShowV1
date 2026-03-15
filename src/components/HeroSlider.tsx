@@ -142,7 +142,7 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
     if (section !== "events") return [];
 
     return events
-      .filter((event) => !event.status || event.status === "approved")
+      .filter((event) => (!event.status || event.status === "approved") && isEventFeaturedActive(event, now))
       .map((event) => {
         const nextOccurrence = getNextOccurrenceFromToday(event, windowStart);
         if (!nextOccurrence) return null;
@@ -155,7 +155,7 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
           image,
           link: `/eventos/${event.slug}`,
           startAt: nextOccurrence,
-          featuredRank: isEventFeaturedActive(event, now) ? 1 : 0
+          featuredRank: 1
         } as Slide;
       })
       .filter((slide): slide is Slide => Boolean(slide))
@@ -186,6 +186,10 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
   }, [current, slides.length]);
 
   const activeSlide = slides[current] ?? slides[0];
+  const overlayClassName =
+    section === "home"
+      ? "absolute inset-0 bg-gradient-to-r from-slate-900/50 to-slate-900/12"
+      : "absolute inset-0 bg-gradient-to-r from-slate-900/24 to-slate-900/4";
 
   if (!activeSlide) return null;
 
@@ -201,7 +205,7 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
           sizes="(max-width: 640px) 100vw, 1200px"
           priority={section === "home"}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-900/70 to-slate-900/20" />
+        <div className={overlayClassName} />
         <div className="absolute bottom-4 left-4 right-4 text-white">
           <h3 className="text-2xl font-bold">{activeSlide.title}</h3>
         </div>
