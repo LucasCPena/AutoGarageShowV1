@@ -3,7 +3,7 @@
 import { getUserFromToken, requireAuth } from '@/lib/auth-middleware';
 import { db, isMysqlRequiredError, type Listing } from '@/lib/database';
 import { onlyDigits, validateBrazilianDocument } from '@/lib/document';
-import { resolveListingLimit } from '@/lib/listingRules';
+import { getListingDocumentForStorage, resolveListingLimit } from '@/lib/listingRules';
 
 export async function GET(request: NextRequest) {
   try {
@@ -200,6 +200,11 @@ export async function POST(request: NextRequest) {
       featuredUntil = parsed.toISOString();
     }
 
+    const documentToStore = getListingDocumentForStorage(rawDocument, {
+      isAdmin: user.role === 'admin',
+      userId: user.id
+    });
+
     const listing = await db.listings.create({
       ...listingData,
       title,
@@ -208,10 +213,7 @@ export async function POST(request: NextRequest) {
       featured,
       featuredUntil: featured ? featuredUntil : undefined,
       createdBy: user.id,
-      document:
-        normalizedDocument ||
-        rawDocument ||
-        (user.role === 'admin' ? `admin-${user.id}` : ''),
+      document: documentToStore,
       images: listingData.images || [],
       specifications: {
         singleOwner: listingData.specifications?.singleOwner || false,

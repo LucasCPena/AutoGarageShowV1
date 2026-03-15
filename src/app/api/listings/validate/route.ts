@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-middleware";
 import { db, isMysqlRequiredError } from "@/lib/database";
 import {
+  getListingDocumentForStorage,
   getListingRules,
   resolveListingLimit,
   validateListingAdvertiserDocument
@@ -22,7 +23,10 @@ export async function POST(request: NextRequest) {
         valid: true,
         canProceed: true,
         adminBypass: true,
-        document: validation.digits || `admin-${user.id}`,
+        document: getListingDocumentForStorage(rawDocument, {
+          isAdmin: true,
+          userId: user.id
+        }),
         documentType: validation.documentType ?? "cpf",
         activeCount: 0,
         limit: null,

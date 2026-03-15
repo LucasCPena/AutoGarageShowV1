@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { requireAuth } from "@/lib/auth-middleware";
 import { db } from "@/lib/database";
+import { getListingDocumentForStorage } from "@/lib/listingRules";
 
 function slugify(input: string) {
   return input
@@ -64,7 +65,10 @@ export async function POST(
       featured: false,
       featuredUntil: undefined,
       createdBy: user.id,
-      document: source.document,
+      document: getListingDocumentForStorage(source.document, {
+        isAdmin: user.role === "admin",
+        userId: user.id
+      }),
       city: source.city,
       state: source.state
     });

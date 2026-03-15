@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { requireAuth } from "@/lib/auth-middleware";
 import { db, type Listing } from "@/lib/database";
+import { validateBrazilianDocument } from "@/lib/document";
+import { getListingDocumentForStorage } from "@/lib/listingRules";
 
 export async function GET(
   request: NextRequest,
@@ -51,6 +53,22 @@ export async function PUT(
 
     const updateData = await request.json();
     const nextData: Record<string, unknown> = { ...updateData };
+    const rawDocument =
+      typeof updateData.document === "string" ? updateData.document.trim() : null;
+
+    if (rawDocument !== null) {
+      if (user.role !== "admin" && !validateBrazilianDocument(rawDocument)) {
+        return NextResponse.json(
+          { error: "Documento invalido. Informe um CPF ou CNPJ valido." },
+          { status: 400 }
+        );
+      }
+
+      nextData.document = getListingDocumentForStorage(rawDocument, {
+        isAdmin: user.role === "admin",
+        userId: user.id
+      });
+    }
 
     if (user.role === "admin") {
       const allowedStatus: Listing["status"][] = [
