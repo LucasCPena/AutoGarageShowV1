@@ -16,6 +16,9 @@ export const revalidate = 0;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
+  verification: {
+    google: "y9BwzKKOqFuLgZMihxCLd2XEK6OjHnXTwIhn7e-VUO8"
+  },
   title: {
     default: "Auto Garage Show",
     template: "%s | Auto Garage Show"
