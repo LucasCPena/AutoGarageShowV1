@@ -265,7 +265,7 @@ function mapComment(row: Row): Comment {
 function mapBanner(row: Row): Banner {
   return {
     id: row.id,
-    title: row.title,
+    title: row.title ?? "",
     image: toPublicAssetUrl(row.image, { uploadType: "banner" }) || row.image,
     link: row.link ?? undefined,
     section: row.section,

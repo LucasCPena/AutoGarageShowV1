@@ -11,6 +11,7 @@ import PageIntro from "@/components/PageIntro";
 import SidebarBannerStack from "@/components/SidebarBannerStack";
 import { db, type Event } from "@/lib/database";
 import { formatDateLong, formatTime } from "@/lib/date";
+import { isPublicEventStatus } from "@/lib/event-status";
 import {
   findNextOccurrenceInWindow,
   formatRecurrence,
@@ -100,8 +101,8 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
   }
 
   const now = Date.now();
-  const approvedEvents = allEvents.filter((event) => event.status === "approved");
-  const eventCards = buildEventCards(approvedEvents, now);
+  const publicEvents = allEvents.filter((event) => isPublicEventStatus(event.status));
+  const eventCards = buildEventCards(publicEvents, now);
 
   const totalPages = Math.max(1, Math.ceil(eventCards.length / EVENTS_PER_PAGE));
   const currentPage = Math.min(parsePage(searchParams?.page), totalPages);
@@ -125,14 +126,14 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
       </PageIntro>
 
       <Container className="py-10">
-        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="page-with-sidebar">
           <div>
             <section className="mb-8">
               <HeroSlider section="events" />
             </section>
 
             <section>
-              <Calendar events={approvedEvents} />
+              <Calendar events={publicEvents} />
             </section>
 
             <EventsModerationSection />
@@ -209,7 +210,7 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
 
               {eventCards.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-600">
-                  Nenhum evento aprovado cadastrado.
+                  Nenhum evento publico cadastrado.
                 </div>
               ) : null}
             </div>

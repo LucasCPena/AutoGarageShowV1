@@ -71,14 +71,12 @@ export default function MultiMonthCalendar({ events, months = 3 }: Props) {
   }, [currentMonth, months]);
 
   const eventsByDay = useMemo(() => {
-    const minTime = Date.now();
-
     const map = new Map<string, Event[]>();
     events.forEach((event) => {
       const occurrences = generateEventOccurrences(event.startAt, event.recurrence, event.endAt);
       occurrences.forEach((occ) => {
         const occDate = new Date(occ);
-        if (!Number.isFinite(occDate.getTime()) || occDate.getTime() < minTime) return;
+        if (!Number.isFinite(occDate.getTime())) return;
         const key = toDateKey(occDate);
         if (!map.has(key)) map.set(key, []);
         map.get(key)!.push(event);

@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const priceMax = searchParams.get('priceMax');
     const mileageMax = searchParams.get('mileageMax');
     const blackPlate = searchParams.get('blackPlate');
-    const user = getUserFromToken(request);
+    const user = await getUserFromToken(request);
     const isAdmin = user?.role === 'admin';
 
     let listings = await db.listings.getAll();
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = requireAuth(request);
+    const user = await requireAuth(request);
     const listingData = await request.json();
 
     const requiredFields = ['make', 'model', 'modelYear', 'manufactureYear', 'mileage', 'price', 'contact'];

@@ -6,7 +6,7 @@ import { normalizeAssetReference } from "@/lib/site-url";
 
 type Banner = {
   id: string;
-  title: string;
+  title?: string;
   image: string;
   link?: string;
   section: string;
@@ -90,12 +90,14 @@ export default function SidebarBannerStack({
     return shuffle(activeBanners).slice(0, maxVisible);
   }, [activeBanners, maxVisible, rotationKey]);
 
-  if (visibleBanners.length === 0) {
-    return null;
-  }
+  const hasBanners = visibleBanners.length > 0;
 
   return (
-    <aside className="grid gap-3">
+    <aside
+      data-sidebar-banners={hasBanners ? "true" : "false"}
+      className={hasBanners ? "grid gap-3" : "hidden"}
+      aria-hidden={!hasBanners}
+    >
       <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
         {title}
       </div>
@@ -103,15 +105,18 @@ export default function SidebarBannerStack({
       {visibleBanners.map((banner) => {
         const image = normalizeAssetReference(banner.image);
         if (!image) return null;
+        const hasTitle = Boolean(banner.title?.trim());
 
         const content = (
           <>
             <img
               src={image}
-              alt={banner.title}
+              alt={banner.title?.trim() || "Banner publicitario"}
               className="h-44 w-full object-cover"
             />
-            <div className="p-3 text-sm font-semibold text-slate-900">{banner.title}</div>
+            {hasTitle ? (
+              <div className="p-3 text-sm font-semibold text-slate-900">{banner.title}</div>
+            ) : null}
           </>
         );
 

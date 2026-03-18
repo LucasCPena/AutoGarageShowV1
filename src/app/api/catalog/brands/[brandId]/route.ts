@@ -7,7 +7,7 @@ export async function PUT(
   { params }: { params: { brandId: string } }
 ) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const body = await request.json();
     const existing = (await db.vehicleCatalog.getBrands()).find((b) => b.id === params.brandId);
 
@@ -48,7 +48,7 @@ export async function DELETE(
   { params }: { params: { brandId: string } }
 ) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const brands = await db.vehicleCatalog.getBrands();
     const exists = brands.some((b) => b.id === params.brandId);
     if (!exists) {

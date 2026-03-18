@@ -76,7 +76,7 @@ export default function ClassifiedsPage() {
       />
 
       <Container className="py-10">
-        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="page-with-sidebar">
           <div>
             <section className="mb-8">
               <HeroSlider section="listings" />

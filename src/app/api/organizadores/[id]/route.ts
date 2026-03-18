@@ -85,7 +85,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const existing = await db.organizers.findById(params.id);
     if (!existing) {
       return NextResponse.json({ error: "Organizador nao encontrado" }, { status: 404 });
@@ -171,7 +171,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const existing = await db.organizers.findById(params.id);
     if (!existing) {
       return NextResponse.json({ error: "Organizador nao encontrado" }, { status: 404 });

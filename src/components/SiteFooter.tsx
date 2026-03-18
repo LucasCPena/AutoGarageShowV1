@@ -48,9 +48,9 @@ export default async function SiteFooter() {
   return (
     <footer className="border-t border-slate-200 bg-white">
       <Container className="py-10">
-        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div>
-            <div className="flex flex-col gap-2 text-sm font-semibold">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+          <div className="max-w-2xl">
+            <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold">
               <Link href="/auto-garage-show" className="text-slate-900 hover:text-brand-700">
                 Auto Garage Show
               </Link>
@@ -66,7 +66,7 @@ export default async function SiteFooter() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 text-sm">
+          <div className="flex flex-wrap items-center gap-3 text-sm lg:justify-end">
             {socialLinks.map((link) => (
               <a
                 key={link.platform}
@@ -84,7 +84,9 @@ export default async function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-8 text-xs text-slate-500">Auto Garage Show {year}</div>
+        <div className="mt-8 border-t border-slate-200 pt-4 text-xs text-slate-500">
+          Auto Garage Show {year}
+        </div>
       </Container>
     </footer>
   );

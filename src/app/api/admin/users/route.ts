@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth-middleware";
 import { db, isMysqlRequiredError } from "@/lib/database";
 
+export const dynamic = "force-dynamic";
+
 function sanitizeUser(user: Awaited<ReturnType<typeof db.users.findById>>) {
   if (!user) return null;
   const { password: _password, ...safeUser } = user;
@@ -11,7 +13,7 @@ function sanitizeUser(user: Awaited<ReturnType<typeof db.users.findById>>) {
 
 export async function GET(request: NextRequest) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const users = await db.users.getAll();
     const sanitizedUsers = users
       .map((user) => sanitizeUser(user))

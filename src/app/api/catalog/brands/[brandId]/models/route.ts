@@ -36,7 +36,7 @@ export async function POST(
   { params }: { params: { brandId: string } }
 ) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const body = await request.json();
 
     const singleModel =
@@ -86,7 +86,7 @@ export async function DELETE(
   { params }: { params: { brandId: string } }
 ) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const body = await request.json();
     const model = body.model?.toString().trim();
     if (!model) {

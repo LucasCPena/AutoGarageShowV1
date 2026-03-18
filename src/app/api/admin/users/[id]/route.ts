@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserFromToken, requireAdmin } from "@/lib/auth-middleware";
 import { db, isMysqlRequiredError } from "@/lib/database";
 
+export const dynamic = "force-dynamic";
+
 function sanitizeUser(user: Awaited<ReturnType<typeof db.users.findById>>) {
   if (!user) return null;
   const { password: _password, ...safeUser } = user;
@@ -14,8 +16,8 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    requireAdmin(request);
-    const currentUser = getUserFromToken(request);
+    await requireAdmin(request);
+    const currentUser = await getUserFromToken(request);
     const body = await request.json();
     const nextRole = body?.role === "admin" ? "admin" : body?.role === "user" ? "user" : null;
 

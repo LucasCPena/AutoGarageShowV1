@@ -2,6 +2,7 @@
 
 import { getUserFromToken, requireAuth } from '@/lib/auth-middleware';
 import { db } from '@/lib/database';
+import { isPublicEventStatus } from '@/lib/event-status';
 import { normalizeRecurrence } from '@/lib/eventRecurrence';
 import { syncOrganizerFromEvent } from '@/lib/organizers-sync';
 import { normalizeAssetReference } from '@/lib/site-url';
@@ -52,7 +53,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = getUserFromToken(request);
+    const user = await getUserFromToken(request);
     const event = await db.events.findById(params.id);
 
     if (!event) {
@@ -63,7 +64,7 @@ export async function GET(
     }
 
     if (
-      event.status !== 'approved' &&
+      !isPublicEventStatus(event.status) &&
       user?.role !== 'admin' &&
       user?.id !== event.createdBy
     ) {
@@ -90,7 +91,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = requireAuth(request);
+    const user = await requireAuth(request);
     const updateData = await request.json();
     const existing = await db.events.findById(params.id);
 
@@ -397,7 +398,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = requireAuth(request);
+    const user = await requireAuth(request);
     const event = await db.events.findById(params.id);
 
     if (!event) {

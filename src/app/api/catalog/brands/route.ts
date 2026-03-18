@@ -38,7 +38,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const body = await request.json();
     const name = body.name?.toString().trim();
     const providedId = body.id?.toString().trim();

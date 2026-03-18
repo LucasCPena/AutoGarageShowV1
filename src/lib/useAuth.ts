@@ -19,6 +19,17 @@ type AuthState = {
   token: string | null;
 };
 
+function isSameUser(a: User | null, b: User | null) {
+  if (!a || !b) return a === b;
+  return (
+    a.id === b.id &&
+    a.name === b.name &&
+    a.email === b.email &&
+    a.role === b.role &&
+    a.createdAt === b.createdAt
+  );
+}
+
 function normalizeUser(input: unknown): User | null {
   if (!input || typeof input !== "object") return null;
   const obj = input as Record<string, unknown>;
@@ -73,34 +84,85 @@ function writeToStorage(user: User | null, token: string | null) {
   }
 }
 
+async function validateSession(token: string) {
+  const response = await fetch("/api/auth/me", {
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    throw new Error("Sessao invalida");
+  }
+
+  const data = await response.json();
+  return normalizeUser(data.user);
+}
+
 export function useAuth() {
   const [state, setState] = useState<AuthState>(() => {
     const { user, token } = readFromStorage();
     return {
-      user,
+      user: token ? null : user,
       token,
-      isLoading: true
+      isLoading: Boolean(token)
     };
   });
 
   useEffect(() => {
-    const syncFromStorage = () => {
+    let activeSync = 0;
+
+    const syncFromStorage = async () => {
+      const syncId = ++activeSync;
       const { user, token } = readFromStorage();
-      setState({ user, token, isLoading: false });
+
+      if (!token) {
+        setState({ user: null, token: null, isLoading: false });
+        return;
+      }
+
+      setState({ user: null, token, isLoading: true });
+
+      try {
+        const freshUser = await validateSession(token);
+        if (syncId !== activeSync) return;
+
+        if (!freshUser) {
+          setState({ user: null, token: null, isLoading: false });
+          writeToStorage(null, null);
+          return;
+        }
+
+        setState({ user: freshUser, token, isLoading: false });
+
+        if (!isSameUser(user, freshUser)) {
+          writeToStorage(freshUser, token);
+        }
+      } catch {
+        if (syncId !== activeSync) return;
+        setState({ user: null, token: null, isLoading: false });
+        writeToStorage(null, null);
+      }
     };
 
-    syncFromStorage();
+    void syncFromStorage();
 
     function onStorage(e: StorageEvent) {
       if (e.key && e.key !== STORAGE_KEY) return;
-      syncFromStorage();
+      void syncFromStorage();
+    }
+
+    function onAuthUpdate() {
+      void syncFromStorage();
     }
 
     window.addEventListener("storage", onStorage);
-    window.addEventListener(AUTH_EVENT, syncFromStorage);
+    window.addEventListener(AUTH_EVENT, onAuthUpdate);
     return () => {
+      activeSync += 1;
       window.removeEventListener("storage", onStorage);
-      window.removeEventListener(AUTH_EVENT, syncFromStorage);
+      window.removeEventListener(AUTH_EVENT, onAuthUpdate);
     };
   }, []);
 

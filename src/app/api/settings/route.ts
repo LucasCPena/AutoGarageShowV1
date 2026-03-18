@@ -4,6 +4,8 @@ import { requireAdmin } from "@/lib/auth-middleware";
 import { db, isMysqlRequiredError } from "@/lib/database";
 import { normalizeListingPlans } from "@/lib/listingPlans";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const settings = await db.settings.get();
@@ -25,7 +27,7 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const updates = await request.json();
     const normalizedUpdates =
       updates && typeof updates === "object"

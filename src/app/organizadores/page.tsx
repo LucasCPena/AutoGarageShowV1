@@ -38,6 +38,11 @@ export default async function OrganizersPage() {
     console.error("Erro ao carregar organizadores:", error);
   }
 
+  const bannerOrganizer = organizers.find((organizer) =>
+    Boolean(normalizeAssetReference(organizer.bannerTop))
+  );
+  const organizerBanner = normalizeAssetReference(bannerOrganizer?.bannerTop);
+
   return (
     <>
       <PageIntro
@@ -46,14 +51,14 @@ export default async function OrganizersPage() {
       />
 
       <Container className="py-10">
-        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="page-with-sidebar">
           <div>
-            {organizers[0]?.bannerTop ? (
-              <section className="mb-8 overflow-hidden rounded-2xl border border-slate-200">
+            {organizerBanner ? (
+              <section className="mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white">
                 <img
-                  src={normalizeAssetReference(organizers[0].bannerTop) || ""}
+                  src={organizerBanner}
                   alt="Banner dos organizadores"
-                  className="h-44 w-full object-cover sm:h-56"
+                  className="h-48 w-full object-cover sm:h-64"
                 />
               </section>
             ) : null}

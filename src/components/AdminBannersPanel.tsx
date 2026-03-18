@@ -27,7 +27,7 @@ const SECTION_OPTIONS: Array<{ value: BannerSection; label: string }> = [
 
 type Banner = {
   id: string;
-  title: string;
+  title?: string;
   image: string;
   link?: string;
   section: string;
@@ -213,6 +213,7 @@ export default function AdminBannersPanel({
 
       const payload = {
         ...form,
+        title: form.title.trim(),
         section: resolvedSection,
         image: form.image.trim(),
         position: backgroundMode ? 1 : Number(form.position) || 1,
@@ -333,12 +334,12 @@ export default function AdminBannersPanel({
 
       <form onSubmit={handleCreate} className="mt-6 grid gap-4 md:grid-cols-2">
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Titulo</span>
+          <span className="text-sm font-semibold text-slate-900">Texto do banner (opcional)</span>
           <input
-            required
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             value={form.title}
             onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+            placeholder="Deixe em branco para ocultar o texto"
           />
         </label>
 
@@ -506,7 +507,9 @@ export default function AdminBannersPanel({
               className="rounded-xl border border-slate-200 bg-slate-50 p-4 flex flex-wrap items-center gap-3 justify-between"
             >
               <div className="min-w-[200px]">
-                <div className="text-sm font-semibold text-slate-900">{banner.title}</div>
+                <div className="text-sm font-semibold text-slate-900">
+                  {banner.title?.trim() || "Sem texto no banner"}
+                </div>
                 <div className="text-xs text-slate-600">
                   {backgroundMode
                     ? `Fundo da home - ${isActiveNow(banner) ? "Ativo agora" : statusLabel(banner.status)}`

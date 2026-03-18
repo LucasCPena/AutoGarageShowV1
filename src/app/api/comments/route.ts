@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const pending = searchParams.get("pending");
 
     if (pending === "true") {
-      requireAdmin(request);
+      await requireAdmin(request);
 
       if (listingId) {
         const comments = await db.comments.getPending();
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ comments });
     }
 
-    requireAdmin(request);
+    await requireAdmin(request);
     const comments = await db.comments.getAll();
     return NextResponse.json({ comments });
   } catch (error) {

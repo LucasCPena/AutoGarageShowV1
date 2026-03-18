@@ -13,7 +13,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const { action }: { action: AdminAction } = await request.json();
 
     if (!['approve', 'complete', 'delete'].includes(action)) {

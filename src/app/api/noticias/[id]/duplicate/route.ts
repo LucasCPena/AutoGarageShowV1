@@ -28,7 +28,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const source = await db.news.findById(params.id);
 
     if (!source) {

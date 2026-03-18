@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { db, isMysqlRequiredError } from '@/lib/database';
+import { isPublicEventStatus } from '@/lib/event-status';
 import { generateEventOccurrences } from '@/lib/eventRecurrence';
 
 export const dynamic = 'force-dynamic';
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
     const month = searchParams.get('month');
 
     let events = await db.events.getAll();
-    events = events.filter((event) => event.status === 'approved');
+    events = events.filter((event) => isPublicEventStatus(event.status));
 
     const targetYear = year ? parseInt(year, 10) : null;
     const targetMonth = month ? parseInt(month, 10) - 1 : null;

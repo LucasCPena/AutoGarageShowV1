@@ -34,7 +34,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = requireAuth(request);
+    const user = await requireAuth(request);
     const existing = await db.listings.findById(params.id);
 
     if (!existing) {
@@ -157,7 +157,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = requireAuth(request);
+    const user = await requireAuth(request);
     const listing = await db.listings.findById(params.id);
 
     if (!listing) {

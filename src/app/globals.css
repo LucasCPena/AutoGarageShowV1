@@ -13,3 +13,19 @@ body {
 a {
   @apply text-brand-700 hover:text-brand-800;
 }
+
+.page-with-sidebar {
+  display: grid;
+  gap: 2rem;
+}
+
+@media (min-width: 1280px) {
+  .page-with-sidebar {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .page-with-sidebar:has([data-sidebar-banners="true"]) {
+    grid-template-columns: minmax(0, 1fr) 300px;
+  }
+}

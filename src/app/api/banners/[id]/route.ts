@@ -25,7 +25,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const updates = await request.json();
 
     const normalizedUpdates: Record<string, unknown> = {
@@ -33,12 +33,20 @@ export async function PUT(
       updatedAt: new Date().toISOString()
     };
 
+    if (typeof updates?.title === 'string') {
+      normalizedUpdates.title = updates.title.trim();
+    }
+
     if (typeof updates?.image === 'string' && updates.image.trim()) {
       const normalizedImage = toPublicAssetUrl(updates.image, { uploadType: 'banner' });
       if (!normalizedImage) {
         return NextResponse.json({ error: 'Imagem invalida para banner.' }, { status: 400 });
       }
       normalizedUpdates.image = normalizedImage;
+    }
+
+    if (typeof updates?.link === 'string') {
+      normalizedUpdates.link = updates.link.trim() || undefined;
     }
 
     const banner = await db.banners.update(params.id, normalizedUpdates);
@@ -60,7 +68,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     await db.banners.delete(params.id);
     return NextResponse.json({ message: 'Banner excluido com sucesso' });
   } catch (error) {

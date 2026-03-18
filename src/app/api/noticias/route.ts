@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get("category");
     const limit = searchParams.get("limit");
     const scope = searchParams.get("scope");
-    const user = getUserFromToken(request);
+    const user = await getUserFromToken(request);
 
     let news = await db.news.getAll();
 
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = requireAdmin(request);
+    const user = await requireAdmin(request);
     const body = await request.json();
 
     const title = body?.title?.toString().trim();

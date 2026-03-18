@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, isMysqlRequiredError } from '@/lib/database';
+import { createAuthToken } from '@/lib/auth-token';
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
       {
         user: userWithoutPassword,
         message: 'Login realizado com sucesso',
-        token: btoa(JSON.stringify(userWithoutPassword))
+        token: createAuthToken(userWithoutPassword)
       },
       { status: 200 }
     );

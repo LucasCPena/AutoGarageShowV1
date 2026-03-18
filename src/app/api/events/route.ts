@@ -2,6 +2,7 @@
 
 import { getUserFromToken } from '@/lib/auth-middleware';
 import { db, isMysqlRequiredError } from '@/lib/database';
+import { isPublicEventStatus } from '@/lib/event-status';
 import { normalizeRecurrence } from '@/lib/eventRecurrence';
 import { syncOrganizerFromEvent } from '@/lib/organizers-sync';
 import { normalizeAssetReference } from '@/lib/site-url';
@@ -33,17 +34,17 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
-    const user = getUserFromToken(request);
+    const user = await getUserFromToken(request);
 
     let events = await db.events.getAll();
 
-    // Admin enxerga tudo e pode filtrar por status; publico ve apenas aprovados.
+    // Admin enxerga tudo e pode filtrar por status; publico ve eventos ativos e historicos.
     if (user?.role === 'admin') {
       if (status) {
         events = events.filter((event) => event.status === status);
       }
     } else {
-      events = events.filter((event) => event.status === 'approved');
+      events = events.filter((event) => isPublicEventStatus(event.status));
     }
 
     events.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -73,7 +74,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = getUserFromToken(request);
+    const user = await getUserFromToken(request);
     const eventData = await request.json();
     let settings = null;
     try {

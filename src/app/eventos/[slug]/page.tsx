@@ -8,6 +8,7 @@ import PageIntro from "@/components/PageIntro";
 import ZoomableImage from "@/components/ZoomableImage";
 import { formatDateLong, formatTime } from "@/lib/date";
 import { db } from "@/lib/database";
+import { isPublicEventStatus } from "@/lib/event-status";
 import { eventImageAlt } from "@/lib/image-alt";
 import { eventJsonLd } from "@/lib/schema";
 import { normalizeAssetReference } from "@/lib/site-url";
@@ -26,10 +27,10 @@ function toMetaDescription(text: string) {
   return clean.length > 160 ? `${clean.slice(0, 157)}...` : clean;
 }
 
-async function findApprovedEvent(slug: string) {
+async function findVisibleEvent(slug: string) {
   try {
     const event = await db.events.findBySlug(slug);
-    if (!event || event.status !== "approved") return null;
+    if (!event || !isPublicEventStatus(event.status)) return null;
     return event;
   } catch (error) {
     console.error("Erro ao buscar evento por slug:", error);
@@ -38,7 +39,7 @@ async function findApprovedEvent(slug: string) {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const event = await findApprovedEvent(params.slug);
+  const event = await findVisibleEvent(params.slug);
 
   if (!event) {
     return {
@@ -61,7 +62,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function EventDetailPage({ params }: Props) {
-  const event = await findApprovedEvent(params.slug);
+  const event = await findVisibleEvent(params.slug);
 
   if (!event) {
     return notFound();

@@ -38,7 +38,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = getUserFromToken(request);
+    const user = await getUserFromToken(request);
     const news = await db.news.findById(params.id);
 
     if (!news) {
@@ -61,7 +61,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const existing = await db.news.findById(params.id);
 
     if (!existing) {
@@ -130,7 +130,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const existing = await db.news.findById(params.id);
     if (!existing) {
       return NextResponse.json({ error: "Noticia nao encontrada" }, { status: 404 });

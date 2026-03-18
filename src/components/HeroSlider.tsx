@@ -23,7 +23,7 @@ type EventItem = {
 
 type BannerItem = {
   id: string;
-  title: string;
+  title?: string;
   image: string;
   link?: string;
   section: string;
@@ -35,7 +35,7 @@ type BannerItem = {
 
 type Slide = {
   id: string;
-  title: string;
+  title?: string;
   image: string;
   link?: string;
   startAt?: string;
@@ -186,6 +186,7 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
   }, [current, slides.length]);
 
   const activeSlide = slides[current] ?? slides[0];
+  const hasTitle = Boolean(activeSlide?.title?.trim());
   const overlayClassName =
     section === "home"
       ? "absolute inset-0 bg-gradient-to-r from-slate-900/50 to-slate-900/12"
@@ -206,9 +207,11 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
           priority={section === "home"}
         />
         <div className={overlayClassName} />
-        <div className="absolute bottom-4 left-4 right-4 text-white">
-          <h3 className="text-2xl font-bold">{activeSlide.title}</h3>
-        </div>
+        {hasTitle ? (
+          <div className="absolute bottom-4 left-4 right-4 text-white">
+            <h3 className="text-2xl font-bold">{activeSlide.title}</h3>
+          </div>
+        ) : null}
       </div>
 
       <div className="absolute inset-x-0 bottom-2 flex justify-center gap-2">

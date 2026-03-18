@@ -41,7 +41,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const { status } = await request.json();
 
     if (!["approved", "rejected"].includes(status)) {

@@ -8,7 +8,7 @@ const isUnauthorized = (message: string) => /autorizad/i.test(message);
 
 export async function GET(request: NextRequest) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const listings = await db.listings.getAll();
 
     // Filter pending listings awaiting approval.

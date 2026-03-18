@@ -78,10 +78,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const bannerData = await request.json();
 
-    const requiredFields = ['title', 'image', 'section', 'position'];
+    const requiredFields = ['image', 'section', 'position'];
     for (const field of requiredFields) {
       if (!bannerData[field]) {
         return NextResponse.json(
@@ -93,6 +93,10 @@ export async function POST(request: NextRequest) {
 
     const normalizedSection = normalizeBannerSection(bannerData.section);
     const normalizedImage = toPublicAssetUrl(bannerData.image, { uploadType: 'banner' });
+    const normalizedTitle =
+      typeof bannerData.title === 'string'
+        ? bannerData.title.trim()
+        : '';
 
     if (!normalizedSection) {
       return NextResponse.json(
@@ -110,6 +114,7 @@ export async function POST(request: NextRequest) {
 
     const banner = await db.banners.create({
       ...bannerData,
+      title: normalizedTitle,
       image: normalizedImage,
       section: normalizedSection,
       status: 'active',

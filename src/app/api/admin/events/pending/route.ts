@@ -8,7 +8,7 @@ const isUnauthorized = (message: string) => /autorizad/i.test(message);
 
 export async function GET(request: NextRequest) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     const events = await db.events.getAll();
     const pending = events.filter((event) => event.status === 'pending');
 
