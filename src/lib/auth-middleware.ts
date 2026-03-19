@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 
-import { parseAuthToken } from "@/lib/auth-token";
+import { AUTH_COOKIE_NAME, parseAuthToken } from "@/lib/auth-token";
 import { db } from "@/lib/database";
 
 export interface User {
@@ -14,15 +14,14 @@ export interface User {
 
 function extractToken(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return null;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    return authHeader.substring(7).trim() || null;
   }
 
-  return authHeader.substring(7).trim() || null;
+  return request.cookies.get(AUTH_COOKIE_NAME)?.value || null;
 }
 
-export async function getUserFromToken(request: NextRequest): Promise<User | null> {
-  const token = extractToken(request);
+export async function getUserFromAuthToken(token: string | null): Promise<User | null> {
   if (!token) return null;
 
   const payload = parseAuthToken(token);
@@ -42,6 +41,11 @@ export async function getUserFromToken(request: NextRequest): Promise<User | nul
     createdAt: user.createdAt,
     updatedAt: user.updatedAt
   };
+}
+
+export async function getUserFromToken(request: NextRequest): Promise<User | null> {
+  const token = extractToken(request);
+  return getUserFromAuthToken(token);
 }
 
 export async function requireAuth(request: NextRequest): Promise<User> {

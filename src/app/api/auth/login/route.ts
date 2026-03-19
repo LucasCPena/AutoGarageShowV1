@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, isMysqlRequiredError } from '@/lib/database';
-import { createAuthToken } from '@/lib/auth-token';
+import { AUTH_COOKIE_MAX_AGE, AUTH_COOKIE_NAME, createAuthToken } from '@/lib/auth-token';
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,14 +31,27 @@ export async function POST(request: NextRequest) {
 
     const { password: _, ...userWithoutPassword } = user;
 
-    return NextResponse.json(
+    const token = createAuthToken(userWithoutPassword);
+    const response = NextResponse.json(
       {
         user: userWithoutPassword,
         message: 'Login realizado com sucesso',
-        token: createAuthToken(userWithoutPassword)
+        token
       },
       { status: 200 }
     );
+
+    response.cookies.set({
+      name: AUTH_COOKIE_NAME,
+      value: token,
+      httpOnly: true,
+      maxAge: AUTH_COOKIE_MAX_AGE,
+      path: "/",
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production"
+    });
+
+    return response;
   } catch (error) {
     console.error('Erro ao fazer login:', error);
     if (isMysqlRequiredError(error)) {

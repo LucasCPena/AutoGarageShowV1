@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 
 import Notice from "@/components/Notice";
@@ -21,7 +20,6 @@ export default function AuthModal({
   redirectTo = "/"
 }: Props) {
   const { login, register } = useAuth();
-  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [mode, setMode] = useState<"login" | "register">(defaultMode);
   const [email, setEmail] = useState("");
@@ -59,11 +57,10 @@ export default function AuthModal({
     setPassword("");
     setName("");
     setCpf("");
-    if (redirectTo) {
-      router.push(redirectTo);
-      return;
+    if (typeof window !== "undefined") {
+      const fallbackUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      window.location.assign(redirectTo || fallbackUrl);
     }
-    router.refresh();
   }
 
   function onSubmit(e: React.FormEvent) {

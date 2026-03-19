@@ -89,7 +89,8 @@ async function validateSession(token: string) {
     headers: {
       Authorization: `Bearer ${token}`
     },
-    cache: "no-store"
+    cache: "no-store",
+    credentials: "same-origin"
   });
 
   if (!response.ok) {
@@ -174,6 +175,7 @@ export function useAuth() {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: "same-origin",
           body: JSON.stringify({ email, password }),
         });
 
@@ -201,6 +203,7 @@ export function useAuth() {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: "same-origin",
           body: JSON.stringify({ name, email, password, document }),
         });
 
@@ -219,9 +222,24 @@ export function useAuth() {
     [login]
   );
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async (redirectTo?: string) => {
     setState({ user: null, token: null, isLoading: false });
     writeToStorage(null, null);
+
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        cache: "no-store",
+        credentials: "same-origin"
+      });
+    } catch (error) {
+      console.error("Erro ao encerrar sessao:", error);
+    }
+
+    if (typeof window !== "undefined") {
+      const fallbackUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      window.location.assign(redirectTo || fallbackUrl);
+    }
   }, []);
 
   const updateUser = useCallback(

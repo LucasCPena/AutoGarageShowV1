@@ -4,6 +4,8 @@ import type { User } from "@/lib/database";
 
 const TOKEN_VERSION = 1;
 const DEFAULT_SECRET = "auto-garage-show-dev-secret";
+export const AUTH_COOKIE_NAME = "ags_auth";
+export const AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
 
 export type AuthTokenPayload = {
   v: number;

@@ -162,7 +162,7 @@ export default function SiteHeader() {
                 <span className="font-semibold text-white">{user.name}</span>
               </span>
               <button
-                onClick={logout}
+                onClick={() => void logout()}
                 className="rounded-md border border-slate-600 px-3 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-900"
               >
                 Sair
@@ -213,7 +213,7 @@ export default function SiteHeader() {
                     Ola, <span className="font-semibold text-slate-900">{user.name}</span>
                   </div>
                   <button
-                    onClick={logout}
+                    onClick={() => void logout()}
                     className="rounded-md border border-slate-300 px-3 py-2 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50"
                   >
                     Sair
