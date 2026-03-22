@@ -2,34 +2,22 @@
 
 import { useEffect, useState } from "react";
 
-import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 import AuthModal from "@/components/AuthModal";
+import { PUBLIC_LISTING_ACCESS_ROUTE } from "@/lib/public-listing-access";
 import { normalizeSiteBranding } from "@/lib/siteBranding";
 import { toAbsoluteUrl } from "@/lib/site-url";
 
 const DEFAULT_LOGO_URL = "/uploads/site/logo-site.png";
-const PRELAUNCH_PARAM = "prelaunch";
 
-const PRELAUNCH_QR_CODES = [
-  {
-    key: "veiculo-usado",
-    eyebrow: "Veiculo usado",
-    title: "Cadastre seu veiculo usado",
-    description:
-      "Abra o cadastro antecipado para validar seus dados e deixar o veiculo pronto para publicacao no lancamento.",
-    targetPath: `/classificados/anunciar?${PRELAUNCH_PARAM}=veiculo-usado`
-  },
-  {
-    key: "anuncio",
-    eyebrow: "Anuncio",
-    title: "Cadastre seu anuncio",
-    description:
-      "Inicie o fluxo de anuncio antecipadamente e chegue ao lancamento com tudo encaminhado para publicar.",
-    targetPath: `/classificados/anunciar?${PRELAUNCH_PARAM}=anuncio`
-  }
-] as const;
+const PRELAUNCH_QR_CODE = {
+  eyebrow: "Anuncio de carro",
+  title: "Cadastre seu anuncio",
+  description:
+    "Escaneie o QR Code para ir direto ao cadastro do carro. Esse acesso libera somente essa area durante o pre-lancamento.",
+  targetPath: PUBLIC_LISTING_ACCESS_ROUTE
+} as const;
 
 function getQrCodeImageSrc(targetPath: string) {
   const absoluteTarget = toAbsoluteUrl(targetPath);
@@ -40,18 +28,9 @@ function getQrCodeImageSrc(targetPath: string) {
 
 export default function SitePrelaunchScreen() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [logoUrl, setLogoUrl] = useState(DEFAULT_LOGO_URL);
   const [logoLoadFailed, setLogoLoadFailed] = useState(false);
-  const activePrelaunchFlow = searchParams.get(PRELAUNCH_PARAM);
-  const activeQrCode =
-    PRELAUNCH_QR_CODES.find((item) => item.key === activePrelaunchFlow) ?? null;
-  const redirectSearch = searchParams.toString();
-  const redirectTo = redirectSearch
-    ? `${pathname || "/"}?${redirectSearch}`
-    : pathname || "/";
 
   useEffect(() => {
     let active = true;
@@ -96,17 +75,11 @@ export default function SitePrelaunchScreen() {
     setLogoLoadFailed(false);
   }, [logoUrl]);
 
-  useEffect(() => {
-    if (!activeQrCode) return;
-    setAuthMode("register");
-    setAuthModalOpen(true);
-  }, [activeQrCode]);
-
   return (
     <>
       <div className="flex min-h-screen items-center justify-center bg-black px-6 py-10 text-white">
-        <div className="w-full max-w-4xl text-center">
-          <div className="mx-auto flex max-w-4xl flex-col items-center rounded-[32px] border border-white/10 bg-white/[0.03] px-6 py-10 shadow-[0_0_0_1px_rgba(255,255,255,0.03)] backdrop-blur-sm sm:px-10 sm:py-14">
+        <div className="w-full max-w-3xl text-center">
+          <div className="mx-auto flex max-w-3xl flex-col items-center rounded-[32px] border border-white/10 bg-white/[0.03] px-6 py-10 shadow-[0_0_0_1px_rgba(255,255,255,0.03)] backdrop-blur-sm sm:px-10 sm:py-14">
             {logoLoadFailed ? (
               <div className="inline-flex h-24 w-24 items-center justify-center rounded-3xl border border-white/10 bg-white/5 text-3xl font-bold text-white sm:h-28 sm:w-28">
                 AGS
@@ -132,77 +105,50 @@ export default function SitePrelaunchScreen() {
               </p>
             </div>
 
-            <div className="mt-8 w-full max-w-3xl">
+            <div className="mt-8 w-full max-w-xl">
               <p className="mx-auto max-w-2xl text-sm leading-6 text-white/65 sm:text-base">
-                Durante o pre-lancamento, as pessoas que receberem os cartoes ja
-                podem adiantar o cadastro pelo celular para publicar com mais
-                rapidez no dia da estreia.
+                Durante o pre-lancamento, o QR Code abaixo leva direto ao
+                cadastro de carro, sem abrir o restante do portal.
               </p>
 
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                {PRELAUNCH_QR_CODES.map((item) => {
-                  const isActive = activeQrCode?.key === item.key;
+              <div className="mt-6 rounded-[28px] border border-white/10 bg-white/[0.04] px-5 py-5 text-left sm:px-6">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/45">
+                    {PRELAUNCH_QR_CODE.eyebrow}
+                  </p>
+                  <h2 className="mt-2 text-lg font-semibold text-white">
+                    {PRELAUNCH_QR_CODE.title}
+                  </h2>
+                </div>
 
-                  return (
-                    <div
-                      key={item.key}
-                      className={`rounded-[28px] border px-5 py-5 text-left transition sm:px-6 ${
-                        isActive
-                          ? "border-white/30 bg-white/[0.08] shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
-                          : "border-white/10 bg-white/[0.04]"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/45">
-                            {item.eyebrow}
-                          </p>
-                          <h2 className="mt-2 text-lg font-semibold text-white">
-                            {item.title}
-                          </h2>
-                        </div>
+                <p className="mt-3 text-sm leading-6 text-white/68">
+                  {PRELAUNCH_QR_CODE.description}
+                </p>
 
-                        {isActive ? (
-                          <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/80">
-                            Selecionado
-                          </span>
-                        ) : null}
-                      </div>
-
-                      <p className="mt-3 text-sm leading-6 text-white/68">
-                        {item.description}
-                      </p>
-
-                      <div className="mt-5 rounded-[24px] bg-white px-4 py-5 text-center text-slate-900">
-                        <img
-                          src={getQrCodeImageSrc(item.targetPath)}
-                          alt={`QR Code para ${item.title.toLowerCase()}`}
-                          className="mx-auto h-40 w-40 rounded-2xl object-contain sm:h-44 sm:w-44"
-                          loading="lazy"
-                        />
-                        <p className="mt-4 text-sm font-semibold text-slate-900">
-                          Escaneie para abrir o cadastro antecipado.
-                        </p>
-                        <Link
-                          href={item.targetPath}
-                          className="mt-4 inline-flex min-w-40 items-center justify-center rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
-                        >
-                          Abrir cadastro
-                        </Link>
-                      </div>
-                    </div>
-                  );
-                })}
+                <div className="mt-5 rounded-[24px] bg-white px-4 py-5 text-center text-slate-900">
+                  <img
+                    src={getQrCodeImageSrc(PRELAUNCH_QR_CODE.targetPath)}
+                    alt="QR Code para cadastro de anuncio de carro"
+                    className="mx-auto h-40 w-40 rounded-2xl object-contain sm:h-44 sm:w-44"
+                    loading="lazy"
+                  />
+                  <p className="mt-4 text-sm font-semibold text-slate-900">
+                    Escaneie para abrir o cadastro direto do carro.
+                  </p>
+                  <a
+                    href={PRELAUNCH_QR_CODE.targetPath}
+                    className="mt-4 inline-flex min-w-40 items-center justify-center rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                  >
+                    Abrir cadastro
+                  </a>
+                </div>
               </div>
             </div>
 
             <div className="mt-10 flex flex-col items-center gap-4">
               <button
                 type="button"
-                onClick={() => {
-                  setAuthMode("login");
-                  setAuthModalOpen(true);
-                }}
+                onClick={() => setAuthModalOpen(true)}
                 className="inline-flex min-w-40 items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-white/90"
               >
                 Entrar
@@ -218,8 +164,8 @@ export default function SitePrelaunchScreen() {
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
-        defaultMode={authMode}
-        redirectTo={redirectTo}
+        defaultMode="login"
+        redirectTo={pathname || "/"}
       />
     </>
   );

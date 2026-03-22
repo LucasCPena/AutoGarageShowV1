@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import type { ReactNode } from "react";
+import { cookies } from "next/headers";
 
 import "./globals.css";
 
@@ -8,6 +9,7 @@ import ChunkRecovery from "@/components/ChunkRecovery";
 import SiteAccessGate from "@/components/SiteAccessGate";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
+import { hasPublicListingPageAccess } from "@/lib/public-listing-access";
 import { siteUrl } from "@/lib/site-url";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -38,14 +40,23 @@ export default function RootLayout({
 }: Readonly<{
   children: ReactNode;
 }>) {
+  const cookieStore = cookies();
+  const hasLimitedListingAccess = hasPublicListingPageAccess(cookieStore);
+
   return (
     <html lang="pt-BR">
       <body className={inter.className}>
         <ChunkRecovery />
         <SiteAccessGate>
-          <SiteHeader />
-          <main className="min-h-[calc(100vh-4rem)]">{children}</main>
-          <SiteFooter />
+          {hasLimitedListingAccess ? (
+            <main className="min-h-screen">{children}</main>
+          ) : (
+            <>
+              <SiteHeader />
+              <main className="min-h-[calc(100vh-4rem)]">{children}</main>
+              <SiteFooter />
+            </>
+          )}
         </SiteAccessGate>
       </body>
     </html>

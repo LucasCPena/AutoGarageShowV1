@@ -67,7 +67,11 @@ function parseFormattedInteger(value: string) {
   return digits ? Number(digits) : Number.NaN;
 }
 
-export default function ListingSubmissionForm() {
+type Props = {
+  publicAccess?: boolean;
+};
+
+export default function ListingSubmissionForm({ publicAccess = false }: Props) {
   const { settings, isReady } = useSiteSettings();
   const { user, token } = useAuth();
 
@@ -503,7 +507,7 @@ export default function ListingSubmissionForm() {
         </Notice>
       ) : (
         <Notice title="Regras" variant="info">
-          Cadastro gratuito. Limites por documento: {settings.listingLimits.cpf} anuncio por CPF e {settings.listingLimits.cnpj} anuncios por CNPJ. Apenas veiculos com {settings.vehicleMinAgeYears}+ anos (ano maximo: {maxAllowedYear}).
+          Cadastro gratuito. Limites por documento: {settings.listingLimits.cpf} anuncio por CPF e {settings.listingLimits.cnpj} anuncios por CNPJ. Apenas veiculos com {settings.vehicleMinAgeYears}+ anos (ano maximo: {maxAllowedYear}). {publicAccess ? "Este acesso do QR Code libera somente este formulario apos cadastro/login." : ""}
         </Notice>
       )}
 
