@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import AuthModal from "@/components/AuthModal";
 import { PUBLIC_LISTING_ACCESS_ROUTE } from "@/lib/public-listing-access";
 import { normalizeSiteBranding } from "@/lib/siteBranding";
-import { toAbsoluteUrl } from "@/lib/site-url";
+import { resolvePublicOrigin, siteUrl, toAbsoluteUrl } from "@/lib/site-url";
 
 const DEFAULT_LOGO_URL = "/uploads/site/logo-site.png";
 
@@ -19,8 +19,8 @@ const PRELAUNCH_QR_CODE = {
   targetPath: PUBLIC_LISTING_ACCESS_ROUTE
 } as const;
 
-function getQrCodeImageSrc(targetPath: string) {
-  const absoluteTarget = toAbsoluteUrl(targetPath);
+function getQrCodeImageSrc(targetPath: string, origin: string) {
+  const absoluteTarget = toAbsoluteUrl(targetPath, origin);
   return `https://api.qrserver.com/v1/create-qr-code/?size=220x220&format=svg&margin=0&data=${encodeURIComponent(
     absoluteTarget
   )}`;
@@ -31,6 +31,7 @@ export default function SitePrelaunchScreen() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [logoUrl, setLogoUrl] = useState(DEFAULT_LOGO_URL);
   const [logoLoadFailed, setLogoLoadFailed] = useState(false);
+  const [qrOrigin, setQrOrigin] = useState(siteUrl);
 
   useEffect(() => {
     let active = true;
@@ -74,6 +75,11 @@ export default function SitePrelaunchScreen() {
   useEffect(() => {
     setLogoLoadFailed(false);
   }, [logoUrl]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setQrOrigin(resolvePublicOrigin(window.location.origin));
+  }, []);
 
   return (
     <>
@@ -127,7 +133,7 @@ export default function SitePrelaunchScreen() {
 
                 <div className="mt-5 rounded-[24px] bg-white px-4 py-5 text-center text-slate-900">
                   <img
-                    src={getQrCodeImageSrc(PRELAUNCH_QR_CODE.targetPath)}
+                    src={getQrCodeImageSrc(PRELAUNCH_QR_CODE.targetPath, qrOrigin)}
                     alt="QR Code para cadastro de anuncio de carro"
                     className="mx-auto h-40 w-40 rounded-2xl object-contain sm:h-44 sm:w-44"
                     loading="lazy"

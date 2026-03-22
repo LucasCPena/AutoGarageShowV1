@@ -6,9 +6,10 @@ import {
   PUBLIC_LISTING_FORM_PATH,
   PUBLIC_LISTING_PAGE_ACCESS_COOKIE
 } from "@/lib/public-listing-access";
+import { resolvePublicOrigin } from "@/lib/site-url";
 
 export async function GET(request: NextRequest) {
-  const redirectUrl = new URL(PUBLIC_LISTING_FORM_PATH, request.url);
+  const redirectUrl = new URL(PUBLIC_LISTING_FORM_PATH, resolvePublicOrigin(request.url));
   const response = NextResponse.redirect(redirectUrl);
   const secure = process.env.NODE_ENV === "production";
 

@@ -1,5 +1,6 @@
 const DEFAULT_SITE_URL = "https://www.autogarageshow.com.br";
 const LOCAL_HOSTS = new Set(["0.0.0.0", "127.0.0.1", "localhost", "::1", "[::1]"]);
+const INVALID_PUBLIC_HOSTS = new Set(["null", "undefined"]);
 const URL_WITH_SCHEME = /^[a-z][a-z0-9+.-]*:\/\//i;
 const HOST_PATH = /^[a-z0-9.-]+(?::\d+)?\/.+$/i;
 const KNOWN_UPLOAD_TYPES = new Set(["listing", "event", "banner", "news", "site", "misc"]);
@@ -12,6 +13,11 @@ type PublicAssetOptions = {
   uploadType?: AssetUploadType;
 };
 
+function isUnsafePublicHost(hostname: string | undefined) {
+  const normalized = String(hostname || "").trim().toLowerCase();
+  return !normalized || LOCAL_HOSTS.has(normalized) || INVALID_PUBLIC_HOSTS.has(normalized);
+}
+
 function normalizeSiteUrl(url: string | undefined) {
   if (!url) return DEFAULT_SITE_URL;
 
@@ -22,7 +28,7 @@ function normalizeSiteUrl(url: string | undefined) {
 
   try {
     const parsed = new URL(candidate);
-    if (LOCAL_HOSTS.has(parsed.hostname.toLowerCase())) {
+    if (isUnsafePublicHost(parsed.hostname)) {
       return DEFAULT_SITE_URL;
     }
     return parsed.origin;
@@ -41,7 +47,7 @@ function normalizeOptionalOrigin(url: string | undefined) {
 
   try {
     const parsed = new URL(candidate);
-    if (LOCAL_HOSTS.has(parsed.hostname.toLowerCase())) {
+    if (isUnsafePublicHost(parsed.hostname)) {
       return undefined;
     }
     return parsed.origin;
@@ -58,7 +64,7 @@ function normalizeHostPath(value: string) {
   const pathname = `/${rest.join("/")}`;
   if (!pathname || pathname === "/") return undefined;
 
-  if (LOCAL_HOSTS.has(hostname)) {
+  if (isUnsafePublicHost(hostname)) {
     return pathname;
   }
 
@@ -67,6 +73,25 @@ function normalizeHostPath(value: string) {
 
 export const siteUrl = normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL);
 const uploadsBaseUrl = normalizeOptionalOrigin(process.env.UPLOADS_BASE_URL);
+
+export function resolvePublicOrigin(value: string | undefined) {
+  if (!value) return siteUrl;
+
+  const trimmed = value.trim();
+  if (!trimmed) return siteUrl;
+
+  const candidate = URL_WITH_SCHEME.test(trimmed) ? trimmed : `https://${trimmed}`;
+
+  try {
+    const parsed = new URL(candidate);
+    if (isUnsafePublicHost(parsed.hostname)) {
+      return siteUrl;
+    }
+    return parsed.origin;
+  } catch {
+    return siteUrl;
+  }
+}
 
 function applyUploadsBase(pathname: string) {
   if (!uploadsBaseUrl) return pathname;
@@ -90,7 +115,7 @@ export function normalizeAssetReference(value: unknown) {
   if (/^https?:\/\//i.test(trimmed)) {
     try {
       const parsed = new URL(trimmed);
-      if (LOCAL_HOSTS.has(parsed.hostname.toLowerCase())) {
+      if (isUnsafePublicHost(parsed.hostname)) {
         return `${parsed.pathname}${parsed.search}${parsed.hash}` || undefined;
       }
       return parsed.toString();
@@ -123,11 +148,11 @@ export function normalizeAssetReference(value: unknown) {
   return withoutDotSlash;
 }
 
-export function toAbsoluteUrl(path: string) {
+export function toAbsoluteUrl(path: string, baseOrigin?: string) {
   const normalized = normalizeAssetReference(path) ?? path;
   if (/^https?:\/\//i.test(normalized)) return normalized;
   const normalizedPath = normalized.startsWith("/") ? normalized : `/${normalized}`;
-  return `${siteUrl}${normalizedPath}`;
+  return `${resolvePublicOrigin(baseOrigin)}${normalizedPath}`;
 }
 
 function joinUploadsPath(pathname: string) {
