@@ -95,7 +95,7 @@ export default function ListingCrudActions({
       if (onDeleted) {
         onDeleted();
       } else {
-        router.push("/classificados");
+        router.push("/veiculos");
         router.refresh();
       }
     } catch (error) {

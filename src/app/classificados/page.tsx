@@ -71,8 +71,8 @@ export default function ClassifiedsPage() {
   return (
     <>
       <PageIntro
-        title="Classificados"
-        subtitle="Encontre anuncios de veiculos antigos aprovados pela plataforma."
+        title="Veiculos"
+        subtitle="Encontre carros e motos aprovados pela plataforma."
       />
 
       <Container className="py-10">

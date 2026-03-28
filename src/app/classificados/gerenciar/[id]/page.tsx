@@ -56,6 +56,7 @@ export default function ListingManagePage({ params }: Props) {
   const [uploadingImages, setUploadingImages] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [listingOwnerId, setListingOwnerId] = useState<string | null>(null);
   const [formState, setFormState] = useState<FormState>({
     title: "",
     make: "",
@@ -118,6 +119,7 @@ export default function ListingManagePage({ params }: Props) {
           featuredUntil: toLocalDateTime(listing.featuredUntil),
           images: (listing.images || []).join("\n")
         });
+        setListingOwnerId(listing.createdBy);
         setLoading(false);
       })
       .catch((fetchError) => {
@@ -135,9 +137,12 @@ export default function ListingManagePage({ params }: Props) {
     };
   }, [authLoading, params.id, token]);
 
+  const canManageListing = Boolean(
+    user && (user.role === "admin" || user.id === listingOwnerId)
+  );
   const canRenderForm = useMemo(
-    () => !loading && !error && user?.role === "admin",
-    [error, loading, user?.role]
+    () => !loading && !error && canManageListing,
+    [canManageListing, error, loading]
   );
 
   function updateField(
@@ -264,15 +269,21 @@ export default function ListingManagePage({ params }: Props) {
           email: formState.contactEmail.trim(),
           phone: formState.contactPhone.trim()
         },
-        status: formState.status,
-        featured: formState.featured,
-        featuredUntil: formState.featured
-          ? (formState.featuredUntil
-              ? new Date(formState.featuredUntil).toISOString()
-              : null)
-          : null,
         images: parseImages(formState.images)
       };
+
+      const adminPayload =
+        user?.role === "admin"
+          ? {
+              status: formState.status,
+              featured: formState.featured,
+              featuredUntil: formState.featured
+                ? (formState.featuredUntil
+                    ? new Date(formState.featuredUntil).toISOString()
+                    : null)
+                : null
+            }
+          : {};
 
       const response = await fetch(`/api/listings/${params.id}`, {
         method: "PUT",
@@ -280,7 +291,10 @@ export default function ListingManagePage({ params }: Props) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          ...payload,
+          ...adminPayload
+        })
       });
       const data = await response.json();
       if (!response.ok) {
@@ -299,27 +313,27 @@ export default function ListingManagePage({ params }: Props) {
   return (
     <>
       <PageIntro
-        title="Editar classificado"
+        title="Editar veiculo"
         subtitle="Edite os dados do post diretamente nesta tela."
       >
         <Link
-          href="/classificados"
+          href="/veiculos"
           className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
         >
-          Voltar para classificados
+          Voltar para veiculos
         </Link>
       </PageIntro>
 
       <Container className="py-10">
         {loading ? (
           <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
-            Carregando classificado...
+            Carregando veiculo...
           </div>
         ) : null}
 
-        {user && user.role !== "admin" ? (
+        {user && !canManageListing ? (
           <Notice title="Acesso restrito" variant="warning">
-            Apenas administradores podem usar esta tela.
+            Apenas o anunciante responsavel ou um administrador podem usar esta tela.
           </Notice>
         ) : null}
 
@@ -481,46 +495,50 @@ export default function ListingManagePage({ params }: Props) {
                 />
               </label>
 
-              <label className="grid gap-1">
-                <span className="text-xs font-semibold text-slate-600">Status</span>
-                <select
-                  className="h-10 rounded-md border border-slate-300 px-3 text-sm"
-                  value={formState.status}
-                  onChange={updateField("status")}
-                >
-                  <option value="pending">Pendente</option>
-                  <option value="approved">Aprovado</option>
-                  <option value="active">Ativo</option>
-                  <option value="inactive">Inativo</option>
-                  <option value="sold">Vendido</option>
-                  <option value="rejected">Rejeitado</option>
-                </select>
-              </label>
+              {user?.role === "admin" ? (
+                <>
+                  <label className="grid gap-1">
+                    <span className="text-xs font-semibold text-slate-600">Status</span>
+                    <select
+                      className="h-10 rounded-md border border-slate-300 px-3 text-sm"
+                      value={formState.status}
+                      onChange={updateField("status")}
+                    >
+                      <option value="pending">Pendente</option>
+                      <option value="approved">Aprovado</option>
+                      <option value="active">Ativo</option>
+                      <option value="inactive">Inativo</option>
+                      <option value="sold">Vendido</option>
+                      <option value="rejected">Rejeitado</option>
+                    </select>
+                  </label>
 
-              <label className="flex items-center gap-2 text-sm text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={formState.featured}
-                  onChange={(e) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      featured: e.target.checked
-                    }))
-                  }
-                />
-                Destacar classificado
-              </label>
+                  <label className="flex items-center gap-2 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={formState.featured}
+                      onChange={(e) =>
+                        setFormState((prev) => ({
+                          ...prev,
+                          featured: e.target.checked
+                        }))
+                      }
+                    />
+                    Destacar veiculo
+                  </label>
 
-              <label className="grid gap-1">
-                <span className="text-xs font-semibold text-slate-600">Destaque ate</span>
-                <input
-                  type="datetime-local"
-                  className="h-10 rounded-md border border-slate-300 px-3 text-sm"
-                  value={formState.featuredUntil}
-                  onChange={updateField("featuredUntil")}
-                  disabled={!formState.featured}
-                />
-              </label>
+                  <label className="grid gap-1">
+                    <span className="text-xs font-semibold text-slate-600">Destaque ate</span>
+                    <input
+                      type="datetime-local"
+                      className="h-10 rounded-md border border-slate-300 px-3 text-sm"
+                      value={formState.featuredUntil}
+                      onChange={updateField("featuredUntil")}
+                      disabled={!formState.featured}
+                    />
+                  </label>
+                </>
+              ) : null}
 
               <label className="grid gap-1 md:col-span-2">
                 <span className="text-xs font-semibold text-slate-600">Imagens (1 por linha)</span>

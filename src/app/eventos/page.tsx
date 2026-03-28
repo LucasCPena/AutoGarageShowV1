@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-const EVENTS_PER_PAGE = 6;
+const EVENTS_PER_PAGE = 30;
 
 type EventsPageProps = {
   searchParams?: {

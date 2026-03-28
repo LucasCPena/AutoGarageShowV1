@@ -1,9 +1,9 @@
 import { createHmac, timingSafeEqual } from "crypto";
 
 import type { User } from "@/lib/database";
+import { loadRuntimeEnvFiles } from "@/lib/runtime-env";
 
 const TOKEN_VERSION = 1;
-const DEFAULT_SECRET = "auto-garage-show-dev-secret";
 export const AUTH_COOKIE_NAME = "ags_auth";
 export const AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
 
@@ -12,15 +12,22 @@ export type AuthTokenPayload = {
   sub: string;
   email: string;
   iat: number;
+  exp: number;
 };
 
 function getAuthTokenSecret() {
-  return (
-    process.env.AUTH_TOKEN_SECRET ||
-    process.env.MYSQL_PASSWORD ||
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    DEFAULT_SECRET
-  );
+  loadRuntimeEnvFiles();
+
+  const secret =
+    process.env.AUTH_TOKEN_SECRET?.trim() ||
+    process.env.NEXTAUTH_SECRET?.trim() ||
+    process.env.APP_FIELD_ENCRYPTION_KEY?.trim();
+
+  if (!secret) {
+    throw new Error("AUTH_TOKEN_SECRET nao configurado.");
+  }
+
+  return secret;
 }
 
 function toBase64Url(value: string) {
@@ -44,16 +51,19 @@ function isPayload(value: unknown): value is AuthTokenPayload {
     payload.v === TOKEN_VERSION &&
     typeof payload.sub === "string" &&
     typeof payload.email === "string" &&
-    typeof payload.iat === "number"
+    typeof payload.iat === "number" &&
+    typeof payload.exp === "number"
   );
 }
 
 export function createAuthToken(user: Pick<User, "id" | "email">) {
+  const issuedAt = Date.now();
   const payload: AuthTokenPayload = {
     v: TOKEN_VERSION,
     sub: user.id,
     email: user.email,
-    iat: Date.now()
+    iat: issuedAt,
+    exp: issuedAt + AUTH_COOKIE_MAX_AGE * 1000
   };
 
   const encodedPayload = toBase64Url(JSON.stringify(payload));
@@ -83,7 +93,9 @@ export function parseAuthToken(token: string) {
 
   try {
     const payload = JSON.parse(fromBase64Url(encodedPayload));
-    return isPayload(payload) ? payload : null;
+    if (!isPayload(payload)) return null;
+    if (payload.exp <= Date.now()) return null;
+    return payload;
   } catch {
     return null;
   }

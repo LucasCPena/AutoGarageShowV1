@@ -1,10 +1,13 @@
 import mysql from "mysql2/promise";
 
 import type {
+  AuditEvent,
+  AdvertiserMessage,
   Banner,
   Comment,
   Event,
   Listing,
+  MetricEvent,
   News,
   Organizer,
   PastEvent,
@@ -13,8 +16,19 @@ import type {
   VehicleBrand
 } from "./database.types";
 import { deepMerge } from "./deep-merge";
+import {
+  decryptSensitiveString,
+  encryptSensitiveString,
+  fingerprintSensitiveValue
+} from "./secure-fields";
 import { toPublicAssetUrl, toPublicAssetUrls } from "./site-url";
 import { loadRuntimeEnvFiles } from "./runtime-env";
+import {
+  sanitizeMetricLabel,
+  sanitizeMetricMetadata,
+  sanitizeMetricPath
+} from "./privacy";
+import { normalizeUserRecord } from "./userProfiles";
 
 type Row = Record<string, any>;
 
@@ -81,7 +95,18 @@ async function queryOne<T = Row>(sql: string, params: any[] = []): Promise<T | n
 }
 
 const tableColumnsCache = new Map<string, Set<string> | null>();
+let usersTableEnsured = false;
 let organizersTableEnsured = false;
+let listingsTableEnsured = false;
+let messagesTableEnsured = false;
+let metricsTableEnsured = false;
+let auditTableEnsured = false;
+
+const DEFAULT_LISTING_CONTACT = {
+  name: "",
+  email: "",
+  phone: ""
+};
 
 async function getTableColumnsSafe(table: string): Promise<Set<string> | null> {
   if (tableColumnsCache.has(table)) {
@@ -98,10 +123,59 @@ async function getTableColumnsSafe(table: string): Promise<Set<string> | null> {
     tableColumnsCache.set(table, columns);
     return columns;
   } catch (error) {
-    console.warn(`[db] Falha ao mapear colunas da tabela ${table}:`, error);
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`[db] Falha ao mapear colunas da tabela ${table}: ${message}`);
     tableColumnsCache.set(table, null);
     return null;
   }
+}
+
+function clearTableColumnsCache(table: string) {
+  tableColumnsCache.delete(table);
+}
+
+async function ensureUsersTable() {
+  if (usersTableEnsured) return;
+
+  const columns = await getTableColumnsSafe("users");
+  if (columns && !columns.has("document_type")) {
+    await query("ALTER TABLE users ADD COLUMN document_type VARCHAR(8) NULL");
+    clearTableColumnsCache("users");
+  }
+  if (columns && !columns.has("account_type")) {
+    await query("ALTER TABLE users ADD COLUMN account_type VARCHAR(20) NULL");
+    clearTableColumnsCache("users");
+  }
+  if (columns && !columns.has("company_name")) {
+    await query("ALTER TABLE users ADD COLUMN company_name VARCHAR(160) NULL");
+    clearTableColumnsCache("users");
+  }
+  if (columns && !columns.has("logo_url")) {
+    await query("ALTER TABLE users ADD COLUMN logo_url VARCHAR(255) NULL");
+    clearTableColumnsCache("users");
+  }
+  if (columns && !columns.has("approval_status")) {
+    await query("ALTER TABLE users ADD COLUMN approval_status VARCHAR(20) NULL");
+    clearTableColumnsCache("users");
+  }
+  if (columns && !columns.has("verification_status")) {
+    await query("ALTER TABLE users ADD COLUMN verification_status VARCHAR(20) NULL");
+    clearTableColumnsCache("users");
+  }
+  if (columns && !columns.has("listing_limit_override")) {
+    await query("ALTER TABLE users ADD COLUMN listing_limit_override INT NULL");
+    clearTableColumnsCache("users");
+  }
+  if (columns && !columns.has("marketplace_profile")) {
+    await query("ALTER TABLE users ADD COLUMN marketplace_profile VARCHAR(40) NULL");
+    clearTableColumnsCache("users");
+  }
+  if (columns && !columns.has("document_hash")) {
+    await query("ALTER TABLE users ADD COLUMN document_hash VARCHAR(64) NULL");
+    clearTableColumnsCache("users");
+  }
+
+  usersTableEnsured = true;
 }
 
 async function ensureOrganizersTable() {
@@ -133,6 +207,86 @@ async function ensureOrganizersTable() {
   organizersTableEnsured = true;
 }
 
+async function ensureListingsTable() {
+  if (listingsTableEnsured) return;
+
+  const columns = await getTableColumnsSafe("listings");
+  if (columns && !columns.has("vehicle_type")) {
+    await query("ALTER TABLE listings ADD COLUMN vehicle_type VARCHAR(20) NULL");
+    clearTableColumnsCache("listings");
+  }
+  if (columns && !columns.has("document_hash")) {
+    await query("ALTER TABLE listings ADD COLUMN document_hash VARCHAR(64) NULL");
+    clearTableColumnsCache("listings");
+  }
+
+  listingsTableEnsured = true;
+}
+
+async function ensureMessagesTable() {
+  if (messagesTableEnsured) return;
+
+  await query(
+    `CREATE TABLE IF NOT EXISTS advertiser_messages (
+      id VARCHAR(36) PRIMARY KEY,
+      sender_user_id VARCHAR(36),
+      sender_name VARCHAR(160) NOT NULL,
+      sender_email VARCHAR(160) NOT NULL,
+      sender_phone VARCHAR(30),
+      recipient_user_id VARCHAR(36) NOT NULL,
+      listing_id VARCHAR(36),
+      subject VARCHAR(200),
+      message TEXT NOT NULL,
+      status VARCHAR(20) NOT NULL,
+      created_at VARCHAR(32) NOT NULL,
+      updated_at VARCHAR(32) NOT NULL
+    )`
+  );
+
+  messagesTableEnsured = true;
+}
+
+async function ensureMetricsTable() {
+  if (metricsTableEnsured) return;
+
+  await query(
+    `CREATE TABLE IF NOT EXISTS metric_events (
+      id VARCHAR(36) PRIMARY KEY,
+      event_type VARCHAR(40) NOT NULL,
+      entity_type VARCHAR(20) NOT NULL,
+      entity_id VARCHAR(80),
+      owner_user_id VARCHAR(36),
+      user_id VARCHAR(36),
+      path VARCHAR(255) NOT NULL,
+      label VARCHAR(255),
+      metadata JSON,
+      created_at VARCHAR(32) NOT NULL
+    )`
+  );
+
+  metricsTableEnsured = true;
+}
+
+async function ensureAuditTable() {
+  if (auditTableEnsured) return;
+
+  await query(
+    `CREATE TABLE IF NOT EXISTS audit_events (
+      id VARCHAR(36) PRIMARY KEY,
+      actor_user_id VARCHAR(36),
+      action VARCHAR(80) NOT NULL,
+      entity_type VARCHAR(30) NOT NULL,
+      entity_id VARCHAR(80),
+      status VARCHAR(20) NOT NULL,
+      path VARCHAR(255),
+      metadata JSON,
+      created_at VARCHAR(32) NOT NULL
+    )`
+  );
+
+  auditTableEnsured = true;
+}
+
 function parseJson<T>(value: unknown, fallback: T): T {
   if (value == null) return fallback;
   if (typeof value === "object") return value as T;
@@ -150,18 +304,91 @@ function nowIso() {
   return new Date().toISOString();
 }
 
-function mapUser(row: Row): User {
+function buildStoredUser(user: User) {
+  const normalized = normalizeUserRecord(user);
   return {
+    ...normalized,
+    document: encryptSensitiveString(normalized.document) ?? null,
+    phone: encryptSensitiveString(normalized.phone) ?? null,
+    documentHash: fingerprintSensitiveValue(normalized.document, "user-document")
+  };
+}
+
+function buildStoredEvent(event: Event) {
+  return {
+    ...event,
+    contactDocument: encryptSensitiveString(event.contactDocument) ?? null,
+    contactPhone: encryptSensitiveString(event.contactPhone) ?? null,
+    contactPhoneSecondary: encryptSensitiveString(event.contactPhoneSecondary) ?? null,
+    contactEmail: encryptSensitiveString(event.contactEmail) ?? null
+  };
+}
+
+function buildStoredListing(listing: Listing) {
+  return {
+    ...listing,
+    contact: {
+      ...DEFAULT_LISTING_CONTACT,
+      ...(listing.contact ?? {}),
+      name: encryptSensitiveString(listing.contact?.name) ?? "",
+      email: encryptSensitiveString(listing.contact?.email) ?? "",
+      phone: encryptSensitiveString(listing.contact?.phone) ?? ""
+    },
+    document: encryptSensitiveString(listing.document) ?? listing.document,
+    documentHash: fingerprintSensitiveValue(listing.document, "listing-document")
+  };
+}
+
+function buildStoredMessage(message: AdvertiserMessage) {
+  return {
+    ...message,
+    senderName: encryptSensitiveString(message.senderName) ?? "",
+    senderEmail: encryptSensitiveString(message.senderEmail) ?? "",
+    senderPhone: encryptSensitiveString(message.senderPhone) ?? null,
+    message: encryptSensitiveString(message.message) ?? ""
+  };
+}
+
+function buildStoredMetricEvent(event: MetricEvent) {
+  return {
+    ...event,
+    path: sanitizeMetricPath(event.path),
+    label: sanitizeMetricLabel(event.label, event.eventType) ?? null,
+    metadata: sanitizeMetricMetadata(event.metadata)
+  };
+}
+
+function buildStoredAuditEvent(event: AuditEvent) {
+  return {
+    ...event,
+    path: event.path ? sanitizeMetricPath(event.path) : null,
+    metadata: sanitizeMetricMetadata(event.metadata)
+  };
+}
+
+function mapUser(row: Row): User {
+  return normalizeUserRecord({
     id: row.id,
     name: row.name,
     email: row.email,
     password: row.password,
     role: row.role,
-    document: row.document ?? undefined,
-    phone: row.phone ?? undefined,
+    document: decryptSensitiveString(row.document ?? undefined),
+    documentType: row.document_type ?? undefined,
+    phone: decryptSensitiveString(row.phone ?? undefined),
+    accountType: row.account_type ?? undefined,
+    companyName: row.company_name ?? undefined,
+    logoUrl: toPublicAssetUrl(row.logo_url, { uploadType: "site" }) || row.logo_url,
+    approvalStatus: row.approval_status ?? undefined,
+    verificationStatus: row.verification_status ?? undefined,
+    listingLimitOverride:
+      row.listing_limit_override === null || row.listing_limit_override === undefined
+        ? null
+        : Number(row.listing_limit_override),
+    marketplaceProfile: row.marketplace_profile ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at
-  };
+  });
 }
 
 function mapEvent(row: Row): Event {
@@ -174,10 +401,10 @@ function mapEvent(row: Row): Event {
     state: row.state,
     location: row.location,
     contactName: row.contact_name,
-    contactDocument: row.contact_document ?? undefined,
-    contactPhone: row.contact_phone ?? undefined,
-    contactPhoneSecondary: row.contact_phone_secondary ?? undefined,
-    contactEmail: row.contact_email ?? undefined,
+    contactDocument: decryptSensitiveString(row.contact_document ?? undefined),
+    contactPhone: decryptSensitiveString(row.contact_phone ?? undefined),
+    contactPhoneSecondary: decryptSensitiveString(row.contact_phone_secondary ?? undefined),
+    contactEmail: decryptSensitiveString(row.contact_email ?? undefined),
     startAt: row.start_at,
     endAt: row.end_at ?? undefined,
     status: row.status,
@@ -214,10 +441,12 @@ function mapPastEvent(row: Row): PastEvent {
 }
 
 function mapListing(row: Row): Listing {
+  const contact = parseJson(row.contact, DEFAULT_LISTING_CONTACT);
   return {
     id: row.id,
     slug: row.slug,
     title: row.title,
+    vehicleType: row.vehicle_type ?? "car",
     description: row.description,
     make: row.make,
     model: row.model,
@@ -227,7 +456,11 @@ function mapListing(row: Row): Listing {
     mileage: Number(row.mileage),
     price: Number(row.price),
     images: toPublicAssetUrls(parseJson(row.images, []), { uploadType: "listing" }),
-    contact: parseJson(row.contact, { name: "", email: "", phone: "" }),
+    contact: {
+      name: decryptSensitiveString(contact?.name) ?? "",
+      email: decryptSensitiveString(contact?.email) ?? "",
+      phone: decryptSensitiveString(contact?.phone) ?? ""
+    },
     specifications: parseJson(row.specifications, {
       singleOwner: false,
       blackPlate: false,
@@ -240,11 +473,57 @@ function mapListing(row: Row): Listing {
     featured: Boolean(row.featured),
     featuredUntil: row.featured_until ?? undefined,
     createdBy: row.created_by,
-    document: row.document,
+    document: decryptSensitiveString(row.document) ?? "",
     city: row.city,
     state: row.state,
     createdAt: row.created_at,
     updatedAt: row.updated_at
+  };
+}
+
+function mapAdvertiserMessage(row: Row): AdvertiserMessage {
+  return {
+    id: row.id,
+    senderUserId: row.sender_user_id ?? undefined,
+    senderName: decryptSensitiveString(row.sender_name) ?? "",
+    senderEmail: decryptSensitiveString(row.sender_email) ?? "",
+    senderPhone: decryptSensitiveString(row.sender_phone ?? undefined),
+    recipientUserId: row.recipient_user_id,
+    listingId: row.listing_id ?? undefined,
+    subject: row.subject ?? undefined,
+    message: row.message,
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
+function mapMetricEvent(row: Row): MetricEvent {
+  return {
+    id: row.id,
+    eventType: row.event_type,
+    entityType: row.entity_type,
+    entityId: row.entity_id ?? undefined,
+    ownerUserId: row.owner_user_id ?? undefined,
+    userId: row.user_id ?? undefined,
+    path: sanitizeMetricPath(row.path),
+    label: sanitizeMetricLabel(row.label ?? undefined, row.event_type) ?? undefined,
+    metadata: sanitizeMetricMetadata(parseJson(row.metadata, {})),
+    createdAt: row.created_at
+  };
+}
+
+function mapAuditEvent(row: Row): AuditEvent {
+  return {
+    id: row.id,
+    actorUserId: row.actor_user_id ?? undefined,
+    action: row.action,
+    entityType: row.entity_type,
+    entityId: row.entity_id ?? undefined,
+    status: row.status,
+    path: row.path ? sanitizeMetricPath(row.path) : undefined,
+    metadata: sanitizeMetricMetadata(parseJson(row.metadata, {})),
+    createdAt: row.created_at
   };
 }
 
@@ -317,29 +596,46 @@ function mapBrand(row: Row): VehicleBrand {
 
 export const dbMysql = {
   users: {
-    getAll: async () => (await query("SELECT * FROM users")).map(mapUser),
+    getAll: async () => {
+      await ensureUsersTable();
+      return (await query("SELECT * FROM users")).map(mapUser);
+    },
     findById: async (id: string) => {
+      await ensureUsersTable();
       const row = await queryOne("SELECT * FROM users WHERE id = ?", [id]);
       return row ? mapUser(row) : null;
     },
     findByEmail: async (email: string) => {
+      await ensureUsersTable();
       const row = await queryOne("SELECT * FROM users WHERE email = ?", [email]);
       return row ? mapUser(row) : null;
     },
     findByDocument: async (document: string) => {
-      const row = await queryOne("SELECT * FROM users WHERE document = ?", [document]);
+      await ensureUsersTable();
+      const documentHash = fingerprintSensitiveValue(document, "user-document");
+      const row = documentHash
+        ? await queryOne("SELECT * FROM users WHERE document_hash = ? OR document = ?", [
+            documentHash,
+            document
+          ])
+        : await queryOne("SELECT * FROM users WHERE document = ?", [document]);
       return row ? mapUser(row) : null;
     },
     create: async (user: Omit<User, "id" | "createdAt" | "updatedAt">) => {
+      await ensureUsersTable();
       const now = nowIso();
-      const newUser: User = {
+      const newUser = buildStoredUser({
         ...user,
         id: crypto.randomUUID(),
         createdAt: now,
         updatedAt: now
-      };
+      } as User);
       await query(
-        "INSERT INTO users (id, name, email, password, role, document, phone, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        `INSERT INTO users (
+          id, name, email, password, role, document, document_type, phone,
+          account_type, company_name, logo_url, approval_status, verification_status,
+          listing_limit_override, marketplace_profile, document_hash, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           newUser.id,
           newUser.name,
@@ -347,35 +643,82 @@ export const dbMysql = {
           newUser.password,
           newUser.role,
           newUser.document ?? null,
+          newUser.documentType ?? null,
           newUser.phone ?? null,
+          newUser.accountType ?? null,
+          newUser.companyName ?? null,
+          newUser.logoUrl ?? null,
+          newUser.approvalStatus ?? "approved",
+          newUser.verificationStatus ?? "unverified",
+          newUser.listingLimitOverride ?? null,
+          newUser.marketplaceProfile ?? null,
+          newUser.documentHash ?? null,
           newUser.createdAt,
           newUser.updatedAt
         ]
       );
-      return newUser;
+      return mapUser({
+        ...newUser,
+        document_type: newUser.documentType,
+        account_type: newUser.accountType,
+        company_name: newUser.companyName,
+        logo_url: newUser.logoUrl,
+        approval_status: newUser.approvalStatus,
+        verification_status: newUser.verificationStatus,
+        listing_limit_override: newUser.listingLimitOverride,
+        marketplace_profile: newUser.marketplaceProfile,
+        created_at: newUser.createdAt,
+        updated_at: newUser.updatedAt
+      });
     },
     update: async (id: string, updates: Partial<User>) => {
+      await ensureUsersTable();
       const current = await dbMysql.users.findById(id);
       if (!current) return null;
-      const next: User = {
+      const next = buildStoredUser({
         ...current,
         ...updates,
         updatedAt: nowIso()
-      };
+      } as User);
       await query(
-        "UPDATE users SET name=?, email=?, password=?, role=?, document=?, phone=?, updated_at=? WHERE id=?",
+        `UPDATE users SET
+          name=?, email=?, password=?, role=?, document=?, document_type=?, phone=?,
+          account_type=?, company_name=?, logo_url=?, approval_status=?, verification_status=?,
+          listing_limit_override=?, marketplace_profile=?, document_hash=?, updated_at=?
+         WHERE id=?`,
         [
           next.name,
           next.email,
           next.password,
           next.role,
           next.document ?? null,
+          next.documentType ?? null,
           next.phone ?? null,
+          next.accountType ?? null,
+          next.companyName ?? null,
+          next.logoUrl ?? null,
+          next.approvalStatus ?? "approved",
+          next.verificationStatus ?? "unverified",
+          next.listingLimitOverride ?? null,
+          next.marketplaceProfile ?? null,
+          next.documentHash ?? null,
           next.updatedAt,
           id
         ]
       );
-      return next;
+      return mapUser({
+        ...next,
+        document_type: next.documentType,
+        account_type: next.accountType,
+        company_name: next.companyName,
+        logo_url: next.logoUrl,
+        approval_status: next.approvalStatus,
+        verification_status: next.verificationStatus,
+        listing_limit_override: next.listingLimitOverride,
+        marketplace_profile: next.marketplaceProfile,
+        created_at: next.createdAt,
+        updated_at: next.updatedAt
+      });
     }
   },
   events: {
@@ -390,12 +733,12 @@ export const dbMysql = {
     },
     create: async (event: Omit<Event, "id" | "createdAt" | "updatedAt">) => {
       const now = nowIso();
-      const newEvent: Event = {
+      const newEvent = buildStoredEvent({
         ...event,
         id: crypto.randomUUID(),
         createdAt: now,
         updatedAt: now
-      };
+      });
 
       const columns = await getTableColumnsSafe("events");
 
@@ -442,7 +785,23 @@ export const dbMysql = {
         const placeholders = insertColumns.map(() => "?").join(", ");
         const sql = `INSERT INTO events (${insertColumns.map((column) => `\`${column}\``).join(", ")}) VALUES (${placeholders})`;
         await query(sql, values as any[]);
-        return newEvent;
+        return mapEvent({
+          ...newEvent,
+          contact_name: newEvent.contactName,
+          contact_document: newEvent.contactDocument,
+          contact_phone: newEvent.contactPhone,
+          contact_phone_secondary: newEvent.contactPhoneSecondary,
+          contact_email: newEvent.contactEmail,
+          start_at: newEvent.startAt,
+          end_at: newEvent.endAt,
+          website_url: newEvent.websiteUrl,
+          live_url: newEvent.liveUrl,
+          organizer_logo: newEvent.organizerLogo,
+          cover_image: newEvent.coverImage,
+          created_by: newEvent.createdBy,
+          created_at: newEvent.createdAt,
+          updated_at: newEvent.updatedAt
+        });
       }
 
       await query(
@@ -476,16 +835,32 @@ export const dbMysql = {
           newEvent.updatedAt
         ]
       );
-      return newEvent;
+      return mapEvent({
+        ...newEvent,
+        contact_name: newEvent.contactName,
+        contact_document: newEvent.contactDocument,
+        contact_phone: newEvent.contactPhone,
+        contact_phone_secondary: newEvent.contactPhoneSecondary,
+        contact_email: newEvent.contactEmail,
+        start_at: newEvent.startAt,
+        end_at: newEvent.endAt,
+        website_url: newEvent.websiteUrl,
+        live_url: newEvent.liveUrl,
+        organizer_logo: newEvent.organizerLogo,
+        cover_image: newEvent.coverImage,
+        created_by: newEvent.createdBy,
+        created_at: newEvent.createdAt,
+        updated_at: newEvent.updatedAt
+      });
     },
     update: async (id: string, updates: Partial<Event>) => {
       const current = await dbMysql.events.findById(id);
       if (!current) return null;
-      const next: Event = {
+      const next = buildStoredEvent({
         ...current,
         ...updates,
         updatedAt: nowIso()
-      };
+      });
       const columns = await getTableColumnsSafe("events");
 
       if (columns) {
@@ -528,7 +903,23 @@ export const dbMysql = {
           await query(sql, values as any[]);
         }
 
-        return next;
+        return mapEvent({
+          ...next,
+          contact_name: next.contactName,
+          contact_document: next.contactDocument,
+          contact_phone: next.contactPhone,
+          contact_phone_secondary: next.contactPhoneSecondary,
+          contact_email: next.contactEmail,
+          start_at: next.startAt,
+          end_at: next.endAt,
+          website_url: next.websiteUrl,
+          live_url: next.liveUrl,
+          organizer_logo: next.organizerLogo,
+          cover_image: next.coverImage,
+          created_by: next.createdBy,
+          created_at: next.createdAt,
+          updated_at: next.updatedAt
+        });
       }
 
       await query(
@@ -560,7 +951,23 @@ export const dbMysql = {
           id
         ]
       );
-      return next;
+      return mapEvent({
+        ...next,
+        contact_name: next.contactName,
+        contact_document: next.contactDocument,
+        contact_phone: next.contactPhone,
+        contact_phone_secondary: next.contactPhoneSecondary,
+        contact_email: next.contactEmail,
+        start_at: next.startAt,
+        end_at: next.endAt,
+        website_url: next.websiteUrl,
+        live_url: next.liveUrl,
+        organizer_logo: next.organizerLogo,
+        cover_image: next.coverImage,
+        created_by: next.createdBy,
+        created_at: next.createdAt,
+        updated_at: next.updatedAt
+      });
     },
     delete: async (id: string) => {
       await query("DELETE FROM events WHERE id = ?", [id]);
@@ -642,46 +1049,66 @@ export const dbMysql = {
     }
   },
   listings: {
-    getAll: async () => (await query("SELECT * FROM listings")).map(mapListing),
+    getAll: async () => {
+      await ensureListingsTable();
+      return (await query("SELECT * FROM listings")).map(mapListing);
+    },
     findById: async (id: string) => {
+      await ensureListingsTable();
       const row = await queryOne("SELECT * FROM listings WHERE id = ?", [id]);
       return row ? mapListing(row) : null;
     },
     findBySlug: async (slug: string) => {
+      await ensureListingsTable();
       const row = await queryOne("SELECT * FROM listings WHERE slug = ?", [slug]);
       return row ? mapListing(row) : null;
     },
     findByUser: async (userId: string) => {
+      await ensureListingsTable();
       const rows = await query("SELECT * FROM listings WHERE created_by = ?", [userId]);
       return rows.map(mapListing);
     },
     findByDocument: async (document: string) => {
-      const rows = await query("SELECT * FROM listings WHERE document = ?", [document]);
+      await ensureListingsTable();
+      const documentHash = fingerprintSensitiveValue(document, "listing-document");
+      const rows = documentHash
+        ? await query("SELECT * FROM listings WHERE document_hash = ? OR document = ?", [
+            documentHash,
+            document
+          ])
+        : await query("SELECT * FROM listings WHERE document = ?", [document]);
       return rows.map(mapListing);
     },
     getActiveCount: async (document: string) => {
+      await ensureListingsTable();
+      const documentHash = fingerprintSensitiveValue(document, "listing-document");
       const row = await queryOne<{ total: number }>(
-        "SELECT COUNT(*) as total FROM listings WHERE document = ? AND status = 'active'",
-        [document]
+        documentHash
+          ? "SELECT COUNT(*) as total FROM listings WHERE (document_hash = ? OR document = ?) AND status = 'active'"
+          : "SELECT COUNT(*) as total FROM listings WHERE document = ? AND status = 'active'",
+        documentHash ? [documentHash, document] : [document]
       );
       return Number(row?.total || 0);
     },
     create: async (listing: Omit<Listing, "id" | "createdAt" | "updatedAt">) => {
+      await ensureListingsTable();
       const now = nowIso();
-      const newListing: Listing = {
+      const newListing = buildStoredListing({
         ...listing,
+        vehicleType: listing.vehicleType ?? "car",
         year: listing.year ?? listing.modelYear,
         id: crypto.randomUUID(),
         createdAt: now,
         updatedAt: now
-      };
+      });
       await query(
-        `INSERT INTO listings (id, slug, title, description, make, model, model_year, manufacture_year, year, mileage, price, images, contact, specifications, status, featured, featured_until, created_by, document, city, state, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO listings (id, slug, title, vehicle_type, description, make, model, model_year, manufacture_year, year, mileage, price, images, contact, specifications, status, featured, featured_until, created_by, document, document_hash, city, state, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           newListing.id,
           newListing.slug,
           newListing.title,
+          newListing.vehicleType ?? "car",
           newListing.description,
           newListing.make,
           newListing.model,
@@ -707,28 +1134,37 @@ export const dbMysql = {
           newListing.featuredUntil ?? null,
           newListing.createdBy,
           newListing.document,
+          newListing.documentHash ?? null,
           newListing.city,
           newListing.state,
           newListing.createdAt,
           newListing.updatedAt
         ]
       );
-      return newListing;
+      return mapListing({
+        ...newListing,
+        created_by: newListing.createdBy,
+        created_at: newListing.createdAt,
+        updated_at: newListing.updatedAt
+      });
     },
     update: async (id: string, updates: Partial<Listing>) => {
+      await ensureListingsTable();
       const current = await dbMysql.listings.findById(id);
       if (!current) return null;
-      const next: Listing = {
+      const next = buildStoredListing({
         ...current,
         ...updates,
+        vehicleType: updates.vehicleType ?? current.vehicleType ?? "car",
         year: updates.year ?? updates.modelYear ?? current.year ?? current.modelYear,
         updatedAt: nowIso()
-      };
+      });
       await query(
-        `UPDATE listings SET slug=?, title=?, description=?, make=?, model=?, model_year=?, manufacture_year=?, year=?, mileage=?, price=?, images=?, contact=?, specifications=?, status=?, featured=?, featured_until=?, created_by=?, document=?, city=?, state=?, updated_at=? WHERE id=?`,
+        `UPDATE listings SET slug=?, title=?, vehicle_type=?, description=?, make=?, model=?, model_year=?, manufacture_year=?, year=?, mileage=?, price=?, images=?, contact=?, specifications=?, status=?, featured=?, featured_until=?, created_by=?, document=?, document_hash=?, city=?, state=?, updated_at=? WHERE id=?`,
         [
           next.slug,
           next.title,
+          next.vehicleType ?? "car",
           next.description,
           next.make,
           next.model,
@@ -752,13 +1188,19 @@ export const dbMysql = {
           next.featuredUntil ?? null,
           next.createdBy,
           next.document,
+          next.documentHash ?? null,
           next.city,
           next.state,
           next.updatedAt,
           id
         ]
       );
-      return next;
+      return mapListing({
+        ...next,
+        created_by: next.createdBy,
+        created_at: next.createdAt,
+        updated_at: next.updatedAt
+      });
     },
     delete: async (id: string) => {
       await query("DELETE FROM listings WHERE id = ?", [id]);
@@ -1045,6 +1487,179 @@ export const dbMysql = {
     delete: async (id: string) => {
       await query("DELETE FROM news WHERE id = ?", [id]);
       return true;
+    }
+  },
+  messages: {
+    getAll: async () => {
+      await ensureMessagesTable();
+      return (await query("SELECT * FROM advertiser_messages")).map(mapAdvertiserMessage);
+    },
+    findByRecipientUser: async (userId: string) => {
+      await ensureMessagesTable();
+      const rows = await query(
+        "SELECT * FROM advertiser_messages WHERE recipient_user_id = ? ORDER BY created_at DESC",
+        [userId]
+      );
+      return rows.map(mapAdvertiserMessage);
+    },
+    create: async (message: Omit<AdvertiserMessage, "id" | "createdAt" | "updatedAt">) => {
+      await ensureMessagesTable();
+      const now = nowIso();
+      const newMessage = buildStoredMessage({
+        ...message,
+        id: crypto.randomUUID(),
+        createdAt: now,
+        updatedAt: now
+      });
+      await query(
+        `INSERT INTO advertiser_messages (
+          id, sender_user_id, sender_name, sender_email, sender_phone,
+          recipient_user_id, listing_id, subject, message, status, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          newMessage.id,
+          newMessage.senderUserId ?? null,
+          newMessage.senderName,
+          newMessage.senderEmail,
+          newMessage.senderPhone ?? null,
+          newMessage.recipientUserId,
+          newMessage.listingId ?? null,
+          newMessage.subject ?? null,
+          newMessage.message,
+          newMessage.status,
+          newMessage.createdAt,
+          newMessage.updatedAt
+        ]
+      );
+      return mapAdvertiserMessage({
+        ...newMessage,
+        sender_user_id: newMessage.senderUserId,
+        sender_name: newMessage.senderName,
+        sender_email: newMessage.senderEmail,
+        sender_phone: newMessage.senderPhone,
+        recipient_user_id: newMessage.recipientUserId,
+        listing_id: newMessage.listingId,
+        created_at: newMessage.createdAt,
+        updated_at: newMessage.updatedAt
+      });
+    },
+    update: async (id: string, updates: Partial<AdvertiserMessage>) => {
+      await ensureMessagesTable();
+      const row = await queryOne("SELECT * FROM advertiser_messages WHERE id = ?", [id]);
+      if (!row) return null;
+      const current = mapAdvertiserMessage(row);
+      const next = buildStoredMessage({
+        ...current,
+        ...updates,
+        updatedAt: nowIso()
+      });
+      await query(
+        `UPDATE advertiser_messages SET
+          sender_user_id=?, sender_name=?, sender_email=?, sender_phone=?,
+          recipient_user_id=?, listing_id=?, subject=?, message=?, status=?, updated_at=?
+         WHERE id=?`,
+        [
+          next.senderUserId ?? null,
+          next.senderName,
+          next.senderEmail,
+          next.senderPhone ?? null,
+          next.recipientUserId,
+          next.listingId ?? null,
+          next.subject ?? null,
+          next.message,
+          next.status,
+          next.updatedAt,
+          id
+        ]
+      );
+      return mapAdvertiserMessage({
+        ...next,
+        sender_user_id: next.senderUserId,
+        sender_name: next.senderName,
+        sender_email: next.senderEmail,
+        sender_phone: next.senderPhone,
+        recipient_user_id: next.recipientUserId,
+        listing_id: next.listingId,
+        created_at: next.createdAt,
+        updated_at: next.updatedAt
+      });
+    }
+  },
+  metrics: {
+    getAll: async () => {
+      await ensureMetricsTable();
+      return (await query("SELECT * FROM metric_events ORDER BY created_at DESC")).map(mapMetricEvent);
+    },
+    create: async (event: Omit<MetricEvent, "id" | "createdAt">) => {
+      await ensureMetricsTable();
+      const newEvent = buildStoredMetricEvent({
+        ...event,
+        id: crypto.randomUUID(),
+        createdAt: nowIso()
+      });
+      await query(
+        `INSERT INTO metric_events (
+          id, event_type, entity_type, entity_id, owner_user_id, user_id, path, label, metadata, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          newEvent.id,
+          newEvent.eventType,
+          newEvent.entityType,
+          newEvent.entityId ?? null,
+          newEvent.ownerUserId ?? null,
+          newEvent.userId ?? null,
+          newEvent.path,
+          newEvent.label ?? null,
+          JSON.stringify(newEvent.metadata ?? {}),
+          newEvent.createdAt
+        ]
+      );
+      return mapMetricEvent({
+        ...newEvent,
+        event_type: newEvent.eventType,
+        entity_type: newEvent.entityType,
+        entity_id: newEvent.entityId,
+        owner_user_id: newEvent.ownerUserId,
+        user_id: newEvent.userId,
+        created_at: newEvent.createdAt
+      });
+    }
+  },
+  audit: {
+    getAll: async () => {
+      await ensureAuditTable();
+      return (await query("SELECT * FROM audit_events ORDER BY created_at DESC")).map(mapAuditEvent);
+    },
+    create: async (event: Omit<AuditEvent, "id" | "createdAt">) => {
+      await ensureAuditTable();
+      const newEvent = buildStoredAuditEvent({
+        ...event,
+        id: crypto.randomUUID(),
+        createdAt: nowIso()
+      });
+      await query(
+        `INSERT INTO audit_events (
+          id, actor_user_id, action, entity_type, entity_id, status, path, metadata, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          newEvent.id,
+          newEvent.actorUserId ?? null,
+          newEvent.action,
+          newEvent.entityType,
+          newEvent.entityId ?? null,
+          newEvent.status,
+          newEvent.path ?? null,
+          JSON.stringify(newEvent.metadata ?? {}),
+          newEvent.createdAt
+        ]
+      );
+      return mapAuditEvent({
+        ...newEvent,
+        actor_user_id: newEvent.actorUserId,
+        entity_type: newEvent.entityType,
+        entity_id: newEvent.entityId,
+        created_at: newEvent.createdAt
+      });
     }
   },
   settings: {

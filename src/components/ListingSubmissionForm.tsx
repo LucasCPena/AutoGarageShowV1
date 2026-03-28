@@ -4,12 +4,18 @@ import type { ChangeEvent, FormEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import Notice from "@/components/Notice";
+import type { ListingVehicleType } from "@/lib/database";
 import { onlyDigits, validateCNPJ, validateCPF } from "@/lib/document";
 import { listingImageAlt } from "@/lib/image-alt";
 import { getVehicleMaxAllowedYear } from "@/lib/siteSettings";
 import { useAuth } from "@/lib/useAuth";
 import { useSiteSettings } from "@/lib/useSiteSettings";
-import { getModelsForMake, vehicleMakes } from "@/lib/vehicleCatalog";
+import {
+  getModelsForMake,
+  getMotorcycleModelsForMake,
+  motorcycleMakes,
+  vehicleMakes
+} from "@/lib/vehicleCatalog";
 import type { VehicleBrand } from "@/lib/database";
 
 
@@ -26,7 +32,11 @@ type AdvertiserValidation = {
   limit: number | null;
   remaining: number | null;
   adminBypass?: boolean;
+  reusedVerification?: boolean;
 };
+
+const MAX_PHOTOS = 10;
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
 function formatDocumentInput(value: string, type: "cpf" | "cnpj") {
   const digits = onlyDigits(value).slice(0, type === "cpf" ? 11 : 14);
@@ -67,6 +77,18 @@ function parseFormattedInteger(value: string) {
   return digits ? Number(digits) : Number.NaN;
 }
 
+function buildFallbackBrands(vehicleType: ListingVehicleType): VehicleBrand[] {
+  const source = vehicleType === "motorcycle" ? motorcycleMakes : vehicleMakes;
+  return source.map((name) => ({
+    id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    name,
+    models:
+      vehicleType === "motorcycle"
+        ? getMotorcycleModelsForMake(name)
+        : getModelsForMake(name)
+  }));
+}
+
 type Props = {
   publicAccess?: boolean;
 };
@@ -80,6 +102,7 @@ export default function ListingSubmissionForm({ publicAccess = false }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const [vehicleType, setVehicleType] = useState<ListingVehicleType>("car");
   const [brands, setBrands] = useState<VehicleBrand[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
 
@@ -104,11 +127,16 @@ export default function ListingSubmissionForm({ publicAccess = false }: Props) {
   const [contactPhone, setContactPhone] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [description, setDescription] = useState("");
+  const [blackPlate, setBlackPlate] = useState(false);
 
   const [photos, setPhotos] = useState<ListingPhotoItem[]>([]);
   const [coverPhotoId, setCoverPhotoId] = useState<string | null>(null);
   const feedbackRef = useRef<HTMLDivElement | null>(null);
-  
+
+  const isCompanyUser =
+    user?.accountType === "company" || user?.accountType === "agency";
+  const lockCompanyDocument =
+    isCompanyUser && user?.documentType === "cnpj" && Boolean(user?.document);
 
   const maxAllowedYear = useMemo(
     () => getVehicleMaxAllowedYear(settings),
@@ -129,22 +157,61 @@ export default function ListingSubmissionForm({ publicAccess = false }: Props) {
     feedbackRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [error, successMessage]);
 
-  function onPhotoFilesChange(event: ChangeEvent<HTMLInputElement>) {
-    const files = event.target.files ? Array.from(event.target.files) : [];
+  useEffect(() => {
+    if (!user) return;
+
+    if (user.document) {
+      const nextDocumentType =
+        user.documentType === "cnpj" || isCompanyUser ? "cnpj" : "cpf";
+      setDocumentType(nextDocumentType);
+      setDocumentValue(formatDocumentInput(user.document, nextDocumentType));
+    } else if (isCompanyUser) {
+      setDocumentType("cnpj");
+    }
+
+    setContactName((current) => current || user.companyName || user.name || "");
+    setContactEmail((current) => current || user.email || "");
+  }, [isCompanyUser, user]);
+
+  function appendPhotoFiles(files: File[]) {
+    const invalidType = files.find((file) => !file.type.startsWith("image/"));
+    if (invalidType) {
+      setError("Envie apenas imagens JPG, PNG ou WEBP.");
+      return;
+    }
+
+    const oversized = files.find((file) => file.size > MAX_IMAGE_SIZE);
+    if (oversized) {
+      setError("Cada imagem deve ter no maximo 5MB.");
+      return;
+    }
+
     setError(null);
-
     setPhotos((current) => {
-      current.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+      const remainingSlots = Math.max(MAX_PHOTOS - current.length, 0);
+      const selected = files.slice(0, remainingSlots);
+      const next = [
+        ...current,
+        ...selected.map((file, index) => ({
+          id: `${Date.now()}-${current.length + index}-${file.name}`,
+          file,
+          previewUrl: URL.createObjectURL(file)
+        }))
+      ];
 
-      const next = files.slice(0, 10).map((file, index) => ({
-        id: `${Date.now()}-${index}-${file.name}`,
-        file,
-        previewUrl: URL.createObjectURL(file)
-      }));
+      if (selected.length < files.length) {
+        setError(`Limite de ${MAX_PHOTOS} fotos por anuncio.`);
+      }
 
-      setCoverPhotoId(next[0]?.id ?? null);
+      setCoverPhotoId((selectedCover) => selectedCover || next[0]?.id || null);
       return next;
     });
+  }
+
+  function onPhotoFilesChange(event: ChangeEvent<HTMLInputElement>) {
+    const files = event.target.files ? Array.from(event.target.files) : [];
+    event.target.value = "";
+    appendPhotoFiles(files);
   }
 
   function movePhoto(photoId: string, direction: -1 | 1) {
@@ -175,35 +242,51 @@ export default function ListingSubmissionForm({ publicAccess = false }: Props) {
     });
   }
 
-  
-
-
   useEffect(() => {
+    let active = true;
+    const fallback = buildFallbackBrands(vehicleType);
+
     const loadBrands = async () => {
+      setCatalogLoading(true);
+
+      if (vehicleType === "motorcycle") {
+        setBrands(fallback);
+        setMake((current) => current || fallback[0]?.id || "");
+        setCatalogLoading(false);
+        return;
+      }
+
       try {
         const response = await fetch("/api/catalog/brands");
         const data = await response.json();
         if (Array.isArray(data.brands) && data.brands.length > 0) {
+          if (!active) return;
           setBrands(data.brands);
           setMake((current) => current || data.brands[0]?.id || "");
           return;
         }
         throw new Error("Catalogo vazio");
       } catch {
-        const fallback = vehicleMakes.map((name) => ({
-          id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-          name,
-          models: getModelsForMake(name)
-        }));
+        if (!active) return;
         setBrands(fallback);
         setMake((current) => current || fallback[0]?.id || "");
       } finally {
-        setCatalogLoading(false);
+        if (active) {
+          setCatalogLoading(false);
+        }
       }
     };
 
-    loadBrands();
-  }, []);
+    setMake("");
+    setModel("");
+    setCustomMake("");
+    setCustomModel("");
+    void loadBrands();
+
+    return () => {
+      active = false;
+    };
+  }, [vehicleType]);
 
   const selectedBrand = useMemo(
     () => brands.find((brand) => brand.id === make),
@@ -309,7 +392,8 @@ export default function ListingSubmissionForm({ publicAccess = false }: Props) {
         activeCount: data.activeCount ?? 0,
         limit: data.limit ?? null,
         remaining: data.remaining ?? null,
-        adminBypass: Boolean(data.adminBypass)
+        adminBypass: Boolean(data.adminBypass),
+        reusedVerification: Boolean(data.reusedVerification)
       });
     } catch (validationError) {
       setAdvertiserValidation(null);
@@ -329,7 +413,7 @@ export default function ListingSubmissionForm({ publicAccess = false }: Props) {
     e.preventDefault();
 
     if (!token) {
-      setError("Faca login para publicar o classificado.");
+      setError("Faca login para publicar o veiculo.");
       setSubmitted(false);
       return;
     }
@@ -402,8 +486,8 @@ export default function ListingSubmissionForm({ publicAccess = false }: Props) {
       return;
     }
 
-    if (photos.length > 10) {
-      setError("Voce pode enviar no maximo 10 fotos por anuncio.");
+    if (photos.length > MAX_PHOTOS) {
+      setError(`Voce pode enviar no maximo ${MAX_PHOTOS} fotos por anuncio.`);
       setSubmitted(false);
       return;
     }
@@ -434,6 +518,7 @@ export default function ListingSubmissionForm({ publicAccess = false }: Props) {
         : [];
 
       const payload = {
+        vehicleType,
         make: normalizedMake,
         model: normalizedModel,
         modelYear: yearModel,
@@ -453,7 +538,7 @@ export default function ListingSubmissionForm({ publicAccess = false }: Props) {
         images: orderedImages,
         specifications: {
           singleOwner: false,
-          blackPlate: false,
+          blackPlate,
           showPlate: true,
           auctionVehicle: false,
           ipvaPaid: false,
@@ -473,15 +558,15 @@ export default function ListingSubmissionForm({ publicAccess = false }: Props) {
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao publicar classificado.");
+        throw new Error(data.error || "Erro ao publicar veiculo.");
       }
 
       setSubmitted(true);
       const successText =
         data.message ||
           (user?.role === "admin"
-            ? "Classificado publicado com sucesso."
-            : "Classificado enviado com sucesso.");
+            ? "Veiculo publicado com sucesso."
+            : "Veiculo enviado com sucesso.");
       setSuccessMessage(successText);
       photos.forEach((item) => URL.revokeObjectURL(item.previewUrl));
       setPhotos([]);
@@ -491,7 +576,7 @@ export default function ListingSubmissionForm({ publicAccess = false }: Props) {
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "Erro ao publicar classificado."
+          : "Erro ao publicar veiculo."
       );
       setSubmitted(false);
     } finally {
@@ -502,8 +587,8 @@ export default function ListingSubmissionForm({ publicAccess = false }: Props) {
   return (
     <form onSubmit={onSubmit} className="grid gap-6">
       {submitted ? (
-        <Notice title="Classificado enviado" variant="success">
-          {successMessage || "Classificado processado com sucesso."}
+        <Notice title="Veiculo enviado" variant="success">
+          {successMessage || "Veiculo processado com sucesso."}
         </Notice>
       ) : (
         <Notice title="Regras" variant="info">
@@ -525,10 +610,27 @@ export default function ListingSubmissionForm({ publicAccess = false }: Props) {
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="grid gap-1">
+          <span className="text-sm font-semibold text-slate-900">Tipo de veiculo</span>
+          <select
+            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+            value={vehicleType}
+            onChange={(event) => {
+              setVehicleType(event.target.value as ListingVehicleType);
+              setAdvertiserValidation(null);
+              setError(null);
+            }}
+          >
+            <option value="car">Carro</option>
+            <option value="motorcycle">Moto</option>
+          </select>
+        </label>
+
+        <label className="grid gap-1">
           <span className="text-sm font-semibold text-slate-900">Tipo de documento</span>
           <select
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             value={documentType}
+            disabled={lockCompanyDocument}
             onChange={(event) => {
               const nextType = event.target.value as "cpf" | "cnpj";
               setDocumentType(nextType);
@@ -537,12 +639,12 @@ export default function ListingSubmissionForm({ publicAccess = false }: Props) {
               setError(null);
             }}
           >
-            <option value="cpf">CPF</option>
+            {!isCompanyUser ? <option value="cpf">CPF</option> : null}
             <option value="cnpj">CNPJ</option>
           </select>
         </label>
 
-        <label className="grid gap-1">
+        <label className="grid gap-1 md:col-span-2">
           <span className="text-sm font-semibold text-slate-900">
             Documento {user?.role === "admin" ? "(opcional para admin)" : ""}
           </span>
@@ -552,12 +654,18 @@ export default function ListingSubmissionForm({ publicAccess = false }: Props) {
             inputMode="numeric"
             placeholder={documentType === "cpf" ? "CPF" : "CNPJ"}
             value={documentValue}
+            readOnly={lockCompanyDocument}
             onChange={(event) => {
               setDocumentValue(formatDocumentInput(event.target.value, documentType));
               setAdvertiserValidation(null);
               setError(null);
             }}
           />
+          {lockCompanyDocument ? (
+            <span className="text-xs text-slate-500">
+              Contas empresariais usam o CNPJ do cadastro.
+            </span>
+          ) : null}
         </label>
         {requiresAdvertiserValidation ? (
           <div className="md:col-span-2 rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -576,7 +684,13 @@ export default function ListingSubmissionForm({ publicAccess = false }: Props) {
                     ? ` • restantes: ${advertiserValidation.remaining}`
                     : ""}
                 </div>
-                <div className="flex flex-wrap gap-3">
+                {advertiserValidation.reusedVerification ? (
+                  <div className="text-sm text-emerald-700">
+                    A verificacao do cadastro foi reaproveitada automaticamente.
+                  </div>
+                ) : null}
+                {!lockCompanyDocument ? (
+                  <div className="flex flex-wrap gap-3">
                   <button
                     type="button"
                     onClick={() => {
@@ -587,7 +701,8 @@ export default function ListingSubmissionForm({ publicAccess = false }: Props) {
                   >
                     Alterar documento
                   </button>
-                </div>
+                  </div>
+                ) : null}
               </div>
             ) : (
               <div className="grid gap-3">
@@ -595,7 +710,8 @@ export default function ListingSubmissionForm({ publicAccess = false }: Props) {
                   Etapa 1: validar o anunciante
                 </div>
                 <p className="text-sm text-slate-600">
-                  Antes de liberar os dados do veiculo e o envio das fotos, valide o CPF ou CNPJ do anunciante.
+                  Antes de liberar os dados do veiculo e o envio das fotos, valide o{" "}
+                  {documentType === "cnpj" ? "CNPJ" : "CPF"} do anunciante.
                 </p>
                 <button
                   type="button"
@@ -844,6 +960,18 @@ export default function ListingSubmissionForm({ publicAccess = false }: Props) {
           />
         </label>
 
+        <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            checked={blackPlate}
+            onChange={(event) => {
+              setBlackPlate(event.target.checked);
+              setError(null);
+            }}
+          />
+          Marcar este anuncio como placa preta
+        </label>
+
         <label className="grid gap-1 md:col-span-2">
           <span className="text-sm font-semibold text-slate-900">Descricao</span>
           <textarea
@@ -857,19 +985,33 @@ export default function ListingSubmissionForm({ publicAccess = false }: Props) {
             }}
           />
         </label>
+        <div className="grid gap-3 md:col-span-2">
+          <div className="grid gap-1">
+            <span className="text-sm font-semibold text-slate-900">Fotos</span>
+            <input
+              className="h-11 rounded-md border border-slate-300 px-3 py-2 text-sm"
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={onPhotoFilesChange}
+            />
+          </div>
 
+          <div className="grid gap-1">
+            <span className="text-sm font-semibold text-slate-900">Enviar pela camera</span>
+            <input
+              className="h-11 rounded-md border border-slate-300 px-3 py-2 text-sm"
+              type="file"
+              multiple
+              accept="image/*"
+              capture="environment"
+              onChange={onPhotoFilesChange}
+            />
+          </div>
 
-        
-        <label className="grid gap-1 md:col-span-2">
-          <span className="text-sm font-semibold text-slate-900">Fotos</span>
-          <input
-            className="h-11 rounded-md border border-slate-300 px-3 py-2 text-sm"
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={onPhotoFilesChange}
-          />
-          <span className="text-xs text-slate-500">Selecione ate 10 imagens. A foto marcada como destaque vira a capa do anuncio.</span>
+          <span className="text-xs text-slate-500">
+            Selecione ate {MAX_PHOTOS} imagens. Em celulares, voce tambem pode abrir a camera do dispositivo. A foto marcada como destaque vira a capa do anuncio.
+          </span>
 
           {photos.length > 0 ? (
             <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -921,7 +1063,7 @@ export default function ListingSubmissionForm({ publicAccess = false }: Props) {
               })}
             </div>
           ) : null}
-        </label>
+        </div>
           </>
         ) : null}
       </div>

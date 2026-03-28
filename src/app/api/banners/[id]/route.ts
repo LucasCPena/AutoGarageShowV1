@@ -3,6 +3,10 @@ import { db } from '@/lib/database';
 import { requireAdmin } from '@/lib/auth-middleware';
 import { toPublicAssetUrl } from '@/lib/site-url';
 
+function normalizeBannerLink(input: unknown) {
+  return typeof input === "string" ? input.trim() || undefined : undefined;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -45,8 +49,8 @@ export async function PUT(
       normalizedUpdates.image = normalizedImage;
     }
 
-    if (typeof updates?.link === 'string') {
-      normalizedUpdates.link = updates.link.trim() || undefined;
+    if (typeof updates?.link === 'string' || typeof updates?.targetUrl === 'string') {
+      normalizedUpdates.link = normalizeBannerLink(updates.link ?? updates.targetUrl);
     }
 
     const banner = await db.banners.update(params.id, normalizedUpdates);

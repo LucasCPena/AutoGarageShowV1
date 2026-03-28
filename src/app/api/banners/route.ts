@@ -34,6 +34,10 @@ function normalizeBannerSection(input: unknown) {
     .replace(/(^-|-$)/g, '');
 }
 
+function normalizeBannerLink(input: unknown) {
+  return typeof input === "string" ? input.trim() || undefined : undefined;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -97,6 +101,7 @@ export async function POST(request: NextRequest) {
       typeof bannerData.title === 'string'
         ? bannerData.title.trim()
         : '';
+    const normalizedLink = normalizeBannerLink(bannerData.link ?? bannerData.targetUrl);
 
     if (!normalizedSection) {
       return NextResponse.json(
@@ -116,6 +121,7 @@ export async function POST(request: NextRequest) {
       ...bannerData,
       title: normalizedTitle,
       image: normalizedImage,
+      link: normalizedLink,
       section: normalizedSection,
       status: 'active',
       startDate: bannerData.startDate || new Date().toISOString()

@@ -2,18 +2,32 @@
 import path from "path";
 
 import type {
+  AuditEvent,
+  AdvertiserMessage,
   Banner,
   Comment,
   Event,
-  Organizer,
+  Listing,
+  MetricEvent,
   News,
+  Organizer,
   PastEvent,
   Settings,
   User,
   VehicleBrand,
-  Listing
 } from "./database.types";
 import { deepMerge } from "./deep-merge";
+import {
+  decryptSensitiveString,
+  encryptSensitiveString,
+  fingerprintSensitiveValue
+} from "./secure-fields";
+import {
+  sanitizeMetricLabel,
+  sanitizeMetricMetadata,
+  sanitizeMetricPath
+} from "./privacy";
+import { normalizeUserRecord } from "./userProfiles";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 async function readData<T>(filename: string): Promise<T[]> {
@@ -46,64 +60,245 @@ async function writeSingleData<T>(filename: string, data: T): Promise<void> {
   await fs.writeFile(filePath, JSON.stringify(data, null, 2));
 }
 
+type StoredUser = User & { documentHash?: string | null };
+type StoredListing = Listing & { documentHash?: string | null };
+
+const DEFAULT_LISTING_CONTACT = {
+  name: "",
+  email: "",
+  phone: ""
+};
+
+function areSameJson(left: unknown, right: unknown) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function toStoredUser(user: User): StoredUser {
+  const normalized = normalizeUserRecord(user);
+  return {
+    ...normalized,
+    document: encryptSensitiveString(normalized.document) ?? undefined,
+    phone: encryptSensitiveString(normalized.phone) ?? undefined,
+    documentHash: fingerprintSensitiveValue(normalized.document, "user-document")
+  };
+}
+
+function fromStoredUser(user: StoredUser): User {
+  return normalizeUserRecord({
+    ...user,
+    document: decryptSensitiveString(user.document),
+    phone: decryptSensitiveString(user.phone)
+  });
+}
+
+function toStoredEvent(event: Event): Event {
+  return {
+    ...event,
+    contactDocument: encryptSensitiveString(event.contactDocument) ?? undefined,
+    contactPhone: encryptSensitiveString(event.contactPhone) ?? undefined,
+    contactPhoneSecondary: encryptSensitiveString(event.contactPhoneSecondary) ?? undefined,
+    contactEmail: encryptSensitiveString(event.contactEmail) ?? undefined
+  };
+}
+
+function fromStoredEvent(event: Event): Event {
+  return {
+    ...event,
+    contactDocument: decryptSensitiveString(event.contactDocument),
+    contactPhone: decryptSensitiveString(event.contactPhone),
+    contactPhoneSecondary: decryptSensitiveString(event.contactPhoneSecondary),
+    contactEmail: decryptSensitiveString(event.contactEmail)
+  };
+}
+
+function toStoredListing(listing: Listing): StoredListing {
+  return {
+    ...listing,
+    document: encryptSensitiveString(listing.document) ?? listing.document,
+    documentHash: fingerprintSensitiveValue(listing.document, "listing-document"),
+    contact: {
+      name: encryptSensitiveString(listing.contact?.name) ?? "",
+      email: encryptSensitiveString(listing.contact?.email) ?? "",
+      phone: encryptSensitiveString(listing.contact?.phone) ?? ""
+    }
+  };
+}
+
+function fromStoredListing(listing: StoredListing): Listing {
+  return {
+    ...listing,
+    document: decryptSensitiveString(listing.document) ?? "",
+    contact: {
+      name: decryptSensitiveString(listing.contact?.name) ?? "",
+      email: decryptSensitiveString(listing.contact?.email) ?? "",
+      phone: decryptSensitiveString(listing.contact?.phone) ?? ""
+    }
+  };
+}
+
+function toStoredMessage(message: AdvertiserMessage): AdvertiserMessage {
+  return {
+    ...message,
+    senderName: encryptSensitiveString(message.senderName) ?? "",
+    senderEmail: encryptSensitiveString(message.senderEmail) ?? "",
+    senderPhone: encryptSensitiveString(message.senderPhone) ?? undefined,
+    message: encryptSensitiveString(message.message) ?? ""
+  };
+}
+
+function fromStoredMessage(message: AdvertiserMessage): AdvertiserMessage {
+  return {
+    ...message,
+    senderName: decryptSensitiveString(message.senderName) ?? "",
+    senderEmail: decryptSensitiveString(message.senderEmail) ?? "",
+    senderPhone: decryptSensitiveString(message.senderPhone) ?? undefined,
+    message: decryptSensitiveString(message.message) ?? ""
+  };
+}
+
+function toStoredMetric(event: MetricEvent): MetricEvent {
+  return {
+    ...event,
+    path: sanitizeMetricPath(event.path),
+    label: sanitizeMetricLabel(event.label, event.eventType),
+    metadata: sanitizeMetricMetadata(event.metadata)
+  };
+}
+
+function toStoredAudit(event: AuditEvent): AuditEvent {
+  return {
+    ...event,
+    path: event.path ? sanitizeMetricPath(event.path) : undefined,
+    metadata: sanitizeMetricMetadata(event.metadata)
+  };
+}
+
+async function loadProtectedCollection<TStored, TRuntime>(
+  filename: string,
+  fromStored: (value: TStored) => TRuntime,
+  toStored: (value: TRuntime) => TStored
+) {
+  const raw = await readData<TStored>(filename);
+  const storedItems: TStored[] = [];
+  const items: TRuntime[] = [];
+  let changed = false;
+
+  for (const rawItem of raw) {
+    const runtimeItem = fromStored(rawItem);
+    const storedItem = toStored(runtimeItem);
+    items.push(runtimeItem);
+    storedItems.push(storedItem);
+    if (!areSameJson(rawItem, storedItem)) {
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    await writeData(filename, storedItems);
+  }
+
+  return { items, storedItems };
+}
+
 export const dbFile = {
   users: {
-    getAll: () => readData<User>('users.json'),
-    findById: (id: string) => readData<User>('users.json').then(users => users.find(u => u.id === id)),
-    findByEmail: (email: string) => readData<User>('users.json').then(users => users.find(u => u.email === email)),
-    findByDocument: (document: string) => readData<User>('users.json').then(users => users.find(u => u.document === document)),
+    getAll: async () => (await loadProtectedCollection<StoredUser, User>("users.json", fromStoredUser, toStoredUser)).items,
+    findById: async (id: string) =>
+      (await loadProtectedCollection<StoredUser, User>("users.json", fromStoredUser, toStoredUser)).items.find(
+        (user) => user.id === id
+      ),
+    findByEmail: async (email: string) =>
+      (await loadProtectedCollection<StoredUser, User>("users.json", fromStoredUser, toStoredUser)).items.find(
+        (user) => user.email === email
+      ),
+    findByDocument: async (document: string) =>
+      (await loadProtectedCollection<StoredUser, User>("users.json", fromStoredUser, toStoredUser)).items.find(
+        (user) => user.document === document
+      ),
     create: async (user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => {
-      const users = await readData<User>('users.json');
-      const newUser: User = {
+      const newUser = normalizeUserRecord({
         ...user,
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
-      };
-      users.push(newUser);
-      await writeData('users.json', users);
+      } as User);
+      const { storedItems } = await loadProtectedCollection<StoredUser, User>(
+        "users.json",
+        fromStoredUser,
+        toStoredUser
+      );
+      storedItems.push(toStoredUser(newUser));
+      await writeData('users.json', storedItems);
       return newUser;
     },
     update: async (id: string, updates: Partial<User>) => {
-      const users = await readData<User>('users.json');
-      const index = users.findIndex(u => u.id === id);
+      const { items, storedItems } = await loadProtectedCollection<StoredUser, User>(
+        "users.json",
+        fromStoredUser,
+        toStoredUser
+      );
+      const index = items.findIndex(u => u.id === id);
       if (index === -1) return null;
-      users[index] = { ...users[index], ...updates, updatedAt: new Date().toISOString() };
-      await writeData('users.json', users);
-      return users[index];
+      const next = normalizeUserRecord({
+        ...items[index],
+        ...updates,
+        updatedAt: new Date().toISOString()
+      } as User);
+      storedItems[index] = toStoredUser(next);
+      await writeData('users.json', storedItems);
+      return next;
     }
   },
   events: {
-    getAll: () => readData<Event>('events.json'),
-    findById: (id: string) => readData<Event>('events.json').then(events => events.find(e => e.id === id)),
-    findBySlug: (slug: string) => readData<Event>('events.json').then(events => events.find(e => e.slug === slug)),
+    getAll: async () => (await loadProtectedCollection<Event, Event>("events.json", fromStoredEvent, toStoredEvent)).items,
+    findById: async (id: string) =>
+      (await loadProtectedCollection<Event, Event>("events.json", fromStoredEvent, toStoredEvent)).items.find(
+        (event) => event.id === id
+      ),
+    findBySlug: async (slug: string) =>
+      (await loadProtectedCollection<Event, Event>("events.json", fromStoredEvent, toStoredEvent)).items.find(
+        (event) => event.slug === slug
+      ),
     create: async (event: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>) => {
-      const events = await readData<Event>('events.json');
       const newEvent: Event = {
         ...event,
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
-      events.push(newEvent);
-      await writeData('events.json', events);
+      const { storedItems } = await loadProtectedCollection<Event, Event>(
+        "events.json",
+        fromStoredEvent,
+        toStoredEvent
+      );
+      storedItems.push(toStoredEvent(newEvent));
+      await writeData('events.json', storedItems);
       return newEvent;
     },
     update: async (id: string, updates: Partial<Event>) => {
-      const events = await readData<Event>('events.json');
-      const index = events.findIndex(e => e.id === id);
+      const { items, storedItems } = await loadProtectedCollection<Event, Event>(
+        "events.json",
+        fromStoredEvent,
+        toStoredEvent
+      );
+      const index = items.findIndex(e => e.id === id);
       if (index === -1) return null;
-      events[index] = { 
-        ...events[index], 
+      const nextEvent: Event = {
+        ...items[index],
         ...updates, 
         updatedAt: new Date().toISOString() 
       };
-      await writeData('events.json', events);
-      return events[index];
+      storedItems[index] = toStoredEvent(nextEvent);
+      await writeData('events.json', storedItems);
+      return nextEvent;
     },
     delete: async (id: string) => {
-      const events = await readData<Event>('events.json');
-      const filtered = events.filter(e => e.id !== id);
+      const { items, storedItems } = await loadProtectedCollection<Event, Event>(
+        "events.json",
+        fromStoredEvent,
+        toStoredEvent
+      );
+      const filtered = storedItems.filter((_, index) => items[index]?.id !== id);
       await writeData('events.json', filtered);
       return true;
     }
@@ -139,56 +334,113 @@ export const dbFile = {
     }
   },
   listings: {
-    getAll: () => readData<Listing>('listings.json'),
-    findById: (id: string) => readData<Listing>('listings.json').then(listings => listings.find(l => l.id === id)),
-    findBySlug: (slug: string) => readData<Listing>('listings.json').then(listings => listings.find(l => l.slug === slug)),
-    findByUser: (userId: string) => readData<Listing>('listings.json').then(listings => listings.filter(l => l.createdBy === userId)),
-    findByDocument: (document: string) => readData<Listing>('listings.json').then(listings => listings.filter(l => l.document === document)),
-    getActiveCount: (document: string) => readData<Listing>('listings.json').then(listings => 
-      listings.filter(l => l.document === document && l.status === 'active').length
-    ),
+    getAll: async () =>
+      (await loadProtectedCollection<StoredListing, Listing>(
+        "listings.json",
+        fromStoredListing,
+        toStoredListing
+      )).items,
+    findById: async (id: string) =>
+      (await loadProtectedCollection<StoredListing, Listing>(
+        "listings.json",
+        fromStoredListing,
+        toStoredListing
+      )).items.find((listing) => listing.id === id),
+    findBySlug: async (slug: string) =>
+      (await loadProtectedCollection<StoredListing, Listing>(
+        "listings.json",
+        fromStoredListing,
+        toStoredListing
+      )).items.find((listing) => listing.slug === slug),
+    findByUser: async (userId: string) =>
+      (await loadProtectedCollection<StoredListing, Listing>(
+        "listings.json",
+        fromStoredListing,
+        toStoredListing
+      )).items.filter((listing) => listing.createdBy === userId),
+    findByDocument: async (document: string) =>
+      (await loadProtectedCollection<StoredListing, Listing>(
+        "listings.json",
+        fromStoredListing,
+        toStoredListing
+      )).items.filter((listing) => listing.document === document),
+    getActiveCount: async (document: string) =>
+      (await loadProtectedCollection<StoredListing, Listing>(
+        "listings.json",
+        fromStoredListing,
+        toStoredListing
+      )).items.filter((listing) => listing.document === document && listing.status === 'active').length,
     create: async (listing: Omit<Listing, 'id' | 'createdAt' | 'updatedAt'>) => {
-      const listings = await readData<Listing>('listings.json');
       const newListing: Listing = {
         ...listing,
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
-      listings.push(newListing);
-      await writeData('listings.json', listings);
+      const { storedItems } = await loadProtectedCollection<StoredListing, Listing>(
+        "listings.json",
+        fromStoredListing,
+        toStoredListing
+      );
+      storedItems.push(toStoredListing({
+        ...newListing,
+        contact: {
+          ...DEFAULT_LISTING_CONTACT,
+          ...(newListing.contact || {})
+        }
+      }));
+      await writeData('listings.json', storedItems);
       return newListing;
     },
     update: async (id: string, updates: Partial<Listing>) => {
-      const listings = await readData<Listing>('listings.json');
-      const index = listings.findIndex(l => l.id === id);
+      const { items, storedItems } = await loadProtectedCollection<StoredListing, Listing>(
+        "listings.json",
+        fromStoredListing,
+        toStoredListing
+      );
+      const index = items.findIndex(l => l.id === id);
       if (index === -1) return null;
-      listings[index] = { 
-        ...listings[index], 
+      const nextListing: Listing = {
+        ...items[index],
         ...updates, 
         updatedAt: new Date().toISOString() 
       };
-      await writeData('listings.json', listings);
-      return listings[index];
+      storedItems[index] = toStoredListing({
+        ...nextListing,
+        contact: {
+          ...DEFAULT_LISTING_CONTACT,
+          ...(nextListing.contact || {})
+        }
+      });
+      await writeData('listings.json', storedItems);
+      return nextListing;
     },
     delete: async (id: string) => {
-      const listings = await readData<Listing>('listings.json');
-      const filtered = listings.filter(l => l.id !== id);
+      const { items, storedItems } = await loadProtectedCollection<StoredListing, Listing>(
+        "listings.json",
+        fromStoredListing,
+        toStoredListing
+      );
+      const filtered = storedItems.filter((_, index) => items[index]?.id !== id);
       await writeData('listings.json', filtered);
       return true;
     },
     updateFeaturedStatus: async () => {
-      const listings = await readData<Listing>('listings.json');
+      const { items } = await loadProtectedCollection<StoredListing, Listing>(
+        "listings.json",
+        fromStoredListing,
+        toStoredListing
+      );
       const now = new Date();
       
-      listings.forEach(listing => {
+      for (const listing of items) {
         if (listing.featured && listing.featuredUntil && new Date(listing.featuredUntil) < now) {
-          listing.featured = false;
-          listing.featuredUntil = undefined;
+          await dbFile.listings.update(listing.id, {
+            featured: false,
+            featuredUntil: undefined
+          });
         }
-      });
-      
-      await writeData('listings.json', listings);
+      }
     }
   },
   comments: {
@@ -395,6 +647,100 @@ export const dbFile = {
       const next = data.brands.filter((b) => b.id !== brandId);
       await writeSingleData('vehicleCatalog.json', { brands: next });
       return next;
+    }
+  },
+  messages: {
+    getAll: async () =>
+      (await loadProtectedCollection<AdvertiserMessage, AdvertiserMessage>(
+        "messages.json",
+        fromStoredMessage,
+        toStoredMessage
+      )).items,
+    findByRecipientUser: async (userId: string) =>
+      (await loadProtectedCollection<AdvertiserMessage, AdvertiserMessage>(
+        "messages.json",
+        fromStoredMessage,
+        toStoredMessage
+      )).items
+        .filter((message) => message.recipientUserId === userId)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    create: async (message: Omit<AdvertiserMessage, 'id' | 'createdAt' | 'updatedAt'>) => {
+      const newMessage: AdvertiserMessage = {
+        ...message,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      const { storedItems } = await loadProtectedCollection<AdvertiserMessage, AdvertiserMessage>(
+        "messages.json",
+        fromStoredMessage,
+        toStoredMessage
+      );
+      storedItems.push(toStoredMessage(newMessage));
+      await writeData('messages.json', storedItems);
+      return newMessage;
+    },
+    update: async (id: string, updates: Partial<AdvertiserMessage>) => {
+      const { items, storedItems } = await loadProtectedCollection<
+        AdvertiserMessage,
+        AdvertiserMessage
+      >("messages.json", fromStoredMessage, toStoredMessage);
+      const index = items.findIndex((message) => message.id === id);
+      if (index === -1) return null;
+      const nextMessage: AdvertiserMessage = {
+        ...items[index],
+        ...updates,
+        updatedAt: new Date().toISOString()
+      };
+      storedItems[index] = toStoredMessage(nextMessage);
+      await writeData('messages.json', storedItems);
+      return nextMessage;
+    }
+  },
+  metrics: {
+    getAll: async () =>
+      (await loadProtectedCollection<MetricEvent, MetricEvent>(
+        "metrics.json",
+        (event) => event,
+        toStoredMetric
+      )).items,
+    create: async (event: Omit<MetricEvent, 'id' | 'createdAt'>) => {
+      const newEvent: MetricEvent = {
+        ...event,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString()
+      };
+      const { storedItems } = await loadProtectedCollection<MetricEvent, MetricEvent>(
+        "metrics.json",
+        (item) => item,
+        toStoredMetric
+      );
+      storedItems.push(toStoredMetric(newEvent));
+      await writeData('metrics.json', storedItems);
+      return toStoredMetric(newEvent);
+    }
+  },
+  audit: {
+    getAll: async () =>
+      (await loadProtectedCollection<AuditEvent, AuditEvent>(
+        "audit.json",
+        (event) => event,
+        toStoredAudit
+      )).items,
+    create: async (event: Omit<AuditEvent, "id" | "createdAt">) => {
+      const newEvent: AuditEvent = {
+        ...event,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString()
+      };
+      const { storedItems } = await loadProtectedCollection<AuditEvent, AuditEvent>(
+        "audit.json",
+        (item) => item,
+        toStoredAudit
+      );
+      storedItems.push(toStoredAudit(newEvent));
+      await writeData("audit.json", storedItems);
+      return toStoredAudit(newEvent);
     }
   }
 };

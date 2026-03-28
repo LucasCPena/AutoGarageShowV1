@@ -5,6 +5,8 @@ import { db, isMysqlRequiredError } from '@/lib/database';
 import { isPublicEventStatus } from '@/lib/event-status';
 import { normalizeRecurrence } from '@/lib/eventRecurrence';
 import { syncOrganizerFromEvent } from '@/lib/organizers-sync';
+import { sanitizeEventForViewer } from '@/lib/privacy';
+import { logServerError } from '@/lib/server-log';
 import { normalizeAssetReference } from '@/lib/site-url';
 import { normalizeYouTubeUrl } from '@/lib/youtube';
 
@@ -50,7 +52,7 @@ export async function GET(request: NextRequest) {
     events.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return NextResponse.json(
-      { events },
+      { events: events.map((event) => sanitizeEventForViewer(event, user)) },
       {
         headers: {
           'Cache-Control': 'no-store'
@@ -58,7 +60,7 @@ export async function GET(request: NextRequest) {
       }
     );
   } catch (error) {
-    console.error('Erro ao buscar eventos:', error);
+    logServerError('Erro ao buscar eventos', error);
     if (isMysqlRequiredError(error)) {
       return NextResponse.json(
         { error: 'Banco de dados indisponivel no momento.' },
@@ -81,7 +83,7 @@ export async function POST(request: NextRequest) {
       settings = await db.settings.get();
     } catch (settingsError) {
       // Nao bloquear o cadastro de evento se a tabela de settings estiver indisponivel.
-      console.error('Falha ao carregar configuracoes para evento:', settingsError);
+      logServerError('Falha ao carregar configuracoes para evento', settingsError);
     }
 
     const requiredFields = ['title', 'description', 'city', 'state', 'location', 'startAt', 'contactName'];
@@ -208,10 +210,18 @@ export async function POST(request: NextRequest) {
         : undefined
     });
     await syncOrganizerFromEvent(event);
+    await db.audit.create({
+      actorUserId: user?.id,
+      action: "event.create",
+      entityType: "event",
+      entityId: event.id,
+      status: "success",
+      path: "/api/events"
+    });
 
     return NextResponse.json(
       {
-        event,
+        event: sanitizeEventForViewer(event, user),
         message: shouldAutoApprove
           ? 'Evento criado e aprovado automaticamente (admin ou aprovacao desativada).'
           : 'Evento criado e enviado para aprovacao.'
@@ -219,7 +229,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('Erro ao criar evento:', error);
+    logServerError('Erro ao criar evento', error);
     if (isMysqlRequiredError(error)) {
       return NextResponse.json(
         { error: 'Banco de dados indisponivel no momento.' },

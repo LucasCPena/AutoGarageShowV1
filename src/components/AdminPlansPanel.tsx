@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 
 import Notice from "@/components/Notice";
+import { normalizeCouponCampaigns } from "@/lib/couponCampaigns";
+import type { CouponCampaign } from "@/lib/database";
 import {
   cloneDefaultListingPlans,
   isListingPlanReadyForPublic,
@@ -23,10 +25,29 @@ function createPlan() {
     priceLabel: "",
     durationDays: 0,
     ctaLabel: "Saiba mais",
-    ctaHref: "/classificados/anunciar",
+    ctaHref: "/veiculos/anunciar",
     featured: false,
     active: true
   } satisfies ListingPlan;
+}
+
+function createCampaign() {
+  const now = new Date().toISOString();
+  return {
+    id: crypto.randomUUID(),
+    title: "",
+    description: "",
+    code: "",
+    targetPlanIds: [],
+    discountType: "free",
+    discountValue: 0,
+    badgeText: "",
+    active: true,
+    startAt: now,
+    endAt: "",
+    createdAt: now,
+    updatedAt: now
+  } satisfies CouponCampaign;
 }
 
 function validatePlans(plans: ListingPlan[]) {
@@ -46,6 +67,7 @@ function validatePlans(plans: ListingPlan[]) {
 
 export default function AdminPlansPanel({ token }: Props) {
   const [plans, setPlans] = useState<ListingPlan[]>([]);
+  const [campaigns, setCampaigns] = useState<CouponCampaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -70,10 +92,12 @@ export default function AdminPlansPanel({ token }: Props) {
         } else {
           setPlans(cloneDefaultListingPlans());
         }
+        setCampaigns(normalizeCouponCampaigns(data?.settings?.couponCampaigns));
       } catch (loadError) {
         if (!active) return;
         setError(loadError instanceof Error ? loadError.message : "Nao foi possivel carregar os planos.");
         setPlans(cloneDefaultListingPlans());
+        setCampaigns([]);
       } finally {
         if (active) {
           setLoading(false);
@@ -108,6 +132,30 @@ export default function AdminPlansPanel({ token }: Props) {
     setError(null);
   }
 
+  function updateCampaign(id: string, updates: Partial<CouponCampaign>) {
+    setCampaigns((current) =>
+      current.map((campaign) =>
+        campaign.id === id
+          ? { ...campaign, ...updates, updatedAt: new Date().toISOString() }
+          : campaign
+      )
+    );
+    setMessage(null);
+    setError(null);
+  }
+
+  function addCampaign() {
+    setCampaigns((current) => [...current, createCampaign()]);
+    setMessage(null);
+    setError(null);
+  }
+
+  function removeCampaign(id: string) {
+    setCampaigns((current) => current.filter((campaign) => campaign.id !== id));
+    setMessage(null);
+    setError(null);
+  }
+
   async function savePlans() {
     setSaving(true);
     setMessage(null);
@@ -128,7 +176,8 @@ export default function AdminPlansPanel({ token }: Props) {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
         body: JSON.stringify({
-          listingPlans: normalized
+          listingPlans: normalized,
+          couponCampaigns: normalizeCouponCampaigns(campaigns)
         })
       });
       const data = await response.json();
@@ -142,6 +191,7 @@ export default function AdminPlansPanel({ token }: Props) {
           ? normalizeListingPlans(data.settings.listingPlans)
           : normalized
       );
+      setCampaigns(normalizeCouponCampaigns(data?.settings?.couponCampaigns));
       setMessage("Planos salvos com sucesso.");
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Nao foi possivel salvar os planos.");
@@ -159,13 +209,22 @@ export default function AdminPlansPanel({ token }: Props) {
             Cadastre os planos exibidos na aba publica de planos.
           </div>
         </div>
-        <button
-          type="button"
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-          onClick={addPlan}
-        >
-          Novo plano
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            onClick={addPlan}
+          >
+            Novo plano
+          </button>
+          <button
+            type="button"
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            onClick={addCampaign}
+          >
+            Nova campanha
+          </button>
+        </div>
       </div>
 
       {message ? (
@@ -280,7 +339,7 @@ export default function AdminPlansPanel({ token }: Props) {
                       className="h-11 rounded-md border border-slate-300 px-3 text-sm"
                       value={plan.ctaHref}
                       onChange={(event) => updatePlan(plan.id, { ctaHref: event.target.value })}
-                      placeholder="/classificados/anunciar"
+                      placeholder="/veiculos/anunciar"
                     />
                   </label>
 
@@ -307,6 +366,162 @@ export default function AdminPlansPanel({ token }: Props) {
           )}
         </div>
       )}
+
+      {!loading ? (
+        <div className="mt-8 border-t border-slate-200 pt-6">
+          <div className="text-sm font-semibold text-slate-900">Campanhas promocionais</div>
+          <div className="mt-1 text-sm text-slate-600">
+            Configure cupons e periodos promocionais por plano.
+          </div>
+
+          <div className="mt-4 grid gap-4">
+            {campaigns.length === 0 ? (
+              <Notice title="Sem campanhas" variant="info">
+                Nenhuma campanha cadastrada. Clique em Nova campanha para criar uma promocao.
+              </Notice>
+            ) : (
+              campaigns.map((campaign, index) => (
+                <section key={campaign.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div className="text-sm font-semibold text-slate-900">
+                      Campanha {index + 1}
+                    </div>
+                    <button
+                      type="button"
+                      className="rounded-md border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50"
+                      onClick={() => removeCampaign(campaign.id)}
+                    >
+                      Excluir
+                    </button>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className="grid gap-1">
+                      <span className="text-xs font-semibold text-slate-600">Titulo</span>
+                      <input
+                        className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+                        value={campaign.title}
+                        onChange={(event) => updateCampaign(campaign.id, { title: event.target.value })}
+                        placeholder="Ex.: Gratis ate dezembro"
+                      />
+                    </label>
+
+                    <label className="grid gap-1">
+                      <span className="text-xs font-semibold text-slate-600">Selo</span>
+                      <input
+                        className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+                        value={campaign.badgeText || ""}
+                        onChange={(event) => updateCampaign(campaign.id, { badgeText: event.target.value })}
+                        placeholder="Ex.: Grátis por tempo limitado"
+                      />
+                    </label>
+
+                    <label className="grid gap-1 md:col-span-2">
+                      <span className="text-xs font-semibold text-slate-600">Descricao</span>
+                      <textarea
+                        className="min-h-24 rounded-md border border-slate-300 px-3 py-2 text-sm"
+                        value={campaign.description || ""}
+                        onChange={(event) => updateCampaign(campaign.id, { description: event.target.value })}
+                        placeholder="Explique a regra da campanha."
+                      />
+                    </label>
+
+                    <label className="grid gap-1">
+                      <span className="text-xs font-semibold text-slate-600">Tipo de desconto</span>
+                      <select
+                        className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+                        value={campaign.discountType}
+                        onChange={(event) =>
+                          updateCampaign(campaign.id, {
+                            discountType: event.target.value as CouponCampaign["discountType"]
+                          })
+                        }
+                      >
+                        <option value="free">Gratis</option>
+                        <option value="percentage">Percentual</option>
+                        <option value="fixed">Valor fixo</option>
+                      </select>
+                    </label>
+
+                    <label className="grid gap-1">
+                      <span className="text-xs font-semibold text-slate-600">Valor do desconto</span>
+                      <input
+                        type="number"
+                        min={0}
+                        className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+                        value={campaign.discountValue || 0}
+                        onChange={(event) =>
+                          updateCampaign(campaign.id, {
+                            discountValue: Number(event.target.value || 0)
+                          })
+                        }
+                      />
+                    </label>
+
+                    <label className="grid gap-1 md:col-span-2">
+                      <span className="text-xs font-semibold text-slate-600">Planos alvo</span>
+                      <div className="grid gap-2 rounded-md border border-slate-200 bg-white p-3">
+                        {plans.map((plan) => {
+                          const checked = campaign.targetPlanIds.includes(plan.id);
+                          return (
+                            <label key={plan.id} className="flex items-center gap-3 text-sm text-slate-700">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={(event) =>
+                                  updateCampaign(campaign.id, {
+                                    targetPlanIds: event.target.checked
+                                      ? [...campaign.targetPlanIds, plan.id]
+                                      : campaign.targetPlanIds.filter((item) => item !== plan.id)
+                                  })
+                                }
+                              />
+                              {plan.name || plan.id}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </label>
+
+                    <label className="grid gap-1">
+                      <span className="text-xs font-semibold text-slate-600">Inicio</span>
+                      <input
+                        type="datetime-local"
+                        className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+                        value={campaign.startAt.slice(0, 16)}
+                        onChange={(event) => updateCampaign(campaign.id, { startAt: new Date(event.target.value).toISOString() })}
+                      />
+                    </label>
+
+                    <label className="grid gap-1">
+                      <span className="text-xs font-semibold text-slate-600">Fim</span>
+                      <input
+                        type="datetime-local"
+                        className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+                        value={campaign.endAt ? campaign.endAt.slice(0, 16) : ""}
+                        onChange={(event) =>
+                          updateCampaign(campaign.id, {
+                            endAt: event.target.value ? new Date(event.target.value).toISOString() : undefined
+                          })
+                        }
+                      />
+                    </label>
+
+                    <label className="flex items-center gap-3 rounded-md border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700 md:col-span-2">
+                      <input
+                        type="checkbox"
+                        checked={campaign.active}
+                        onChange={(event) => updateCampaign(campaign.id, { active: event.target.checked })}
+                      />
+                      Campanha ativa
+                    </label>
+                  </div>
+                </section>
+              ))
+            )}
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-6 flex flex-wrap gap-3">
         <button

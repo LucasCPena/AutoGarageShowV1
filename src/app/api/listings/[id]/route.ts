@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { requireAuth } from "@/lib/auth-middleware";
+import { getUserFromToken, requireAuth } from "@/lib/auth-middleware";
 import { db, type Listing } from "@/lib/database";
 import { validateBrazilianDocument } from "@/lib/document";
 import { getListingDocumentForStorage } from "@/lib/listingRules";
+import { sanitizeListingForViewer } from "@/lib/privacy";
+import { logServerError } from "@/lib/server-log";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const user = await getUserFromToken(request);
     const listing = await db.listings.findById(params.id);
 
     if (!listing) {
@@ -19,9 +22,17 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ listing });
+    const isPublicListing = listing.status === "approved" || listing.status === "active";
+    if (!isPublicListing && user?.role !== "admin" && user?.id !== listing.createdBy) {
+      return NextResponse.json(
+        { error: "Acesso negado" },
+        { status: 403 }
+      );
+    }
+
+    return NextResponse.json({ listing: sanitizeListingForViewer(listing, user) });
   } catch (error) {
-    console.error("Erro ao buscar classificado:", error);
+    logServerError("Erro ao buscar classificado", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
       { status: 500 }
@@ -136,12 +147,21 @@ export async function PUT(
       );
     }
 
+    await db.audit.create({
+      actorUserId: user.id,
+      action: "listing.update",
+      entityType: "listing",
+      entityId: params.id,
+      status: "success",
+      path: `/api/listings/${params.id}`
+    });
+
     return NextResponse.json({
-      listing,
+      listing: sanitizeListingForViewer(listing, user),
       message: "Classificado atualizado com sucesso"
     });
   } catch (error) {
-    console.error("Erro ao atualizar classificado:", error);
+    logServerError("Erro ao atualizar classificado", error);
     if (error instanceof Error && error.message === "Nao autorizado") {
       return NextResponse.json({ error: error.message }, { status: 401 });
     }
@@ -175,10 +195,18 @@ export async function DELETE(
     }
 
     await db.listings.delete(params.id);
+    await db.audit.create({
+      actorUserId: user.id,
+      action: "listing.delete",
+      entityType: "listing",
+      entityId: params.id,
+      status: "success",
+      path: `/api/listings/${params.id}`
+    });
 
     return NextResponse.json({ message: "Classificado excluido com sucesso" });
   } catch (error) {
-    console.error("Erro ao excluir classificado:", error);
+    logServerError("Erro ao excluir classificado", error);
     if (error instanceof Error && error.message === "Nao autorizado") {
       return NextResponse.json({ error: error.message }, { status: 401 });
     }

@@ -1,10 +1,33 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { db, isMysqlRequiredError } from '@/lib/database';
-import { getUploadsStorageDir, resolveUploadPathFromUrlPath } from '@/lib/uploads-storage';
+import { promises as fs } from "fs";
+import path from "path";
+
+import { NextRequest, NextResponse } from "next/server";
+
+import { getUserFromToken, requireAuth } from "@/lib/auth-middleware";
+import { db, isMysqlRequiredError } from "@/lib/database";
+import { logServerError } from "@/lib/server-log";
+import { getUploadsStorageDir, resolveUploadPathFromUrlPath } from "@/lib/uploads-storage";
 
 const UPLOAD_DIR = getUploadsStorageDir();
+const ALLOWED_UPLOAD_TYPES = new Set([
+  "listing",
+  "listing-video",
+  "event",
+  "banner",
+  "site",
+  "news"
+]);
+
+const MIME_BY_EXTENSION: Record<string, string[]> = {
+  jpg: ["image/jpeg"],
+  jpeg: ["image/jpeg"],
+  png: ["image/png"],
+  webp: ["image/webp"],
+  ico: ["image/x-icon", "image/vnd.microsoft.icon"],
+  mp4: ["video/mp4"],
+  webm: ["video/webm"],
+  mov: ["video/quicktime", "video/mov"]
+};
 
 function sanitizeFileBaseName(value: string) {
   const cleaned = value
@@ -44,32 +67,52 @@ async function buildUniqueFileName(directory: string, baseName: string, extensio
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getUserFromToken(request);
     const formData = await request.formData();
-    const file = formData.get('file') as File;
-    const rawType = formData.get('type');
+    const file = formData.get("file") as File;
+    const rawType = formData.get("type");
     const type =
       typeof rawType === "string" && rawType.trim()
         ? rawType.trim()
-        : "misc"; // 'listing', 'event', 'banner', 'site'
-    
+        : "misc";
+
     if (!file) {
+      return NextResponse.json({ error: "Nenhum arquivo enviado" }, { status: 400 });
+    }
+
+    if (!ALLOWED_UPLOAD_TYPES.has(type)) {
+      return NextResponse.json({ error: "Tipo de upload invalido." }, { status: 400 });
+    }
+
+    const requiresAdmin = type === "banner" || type === "site" || type === "news";
+    const requiresAuth = requiresAdmin || type === "listing" || type === "listing-video";
+
+    if (requiresAuth && !user) {
       return NextResponse.json(
-        { error: 'Nenhum arquivo enviado' },
-        { status: 400 }
+        { error: "Faca login para enviar este arquivo." },
+        { status: 401 }
       );
     }
 
-    // Validar tipo de arquivo
-    let baseAllowedTypes = ['jpg', 'jpeg', 'png', 'webp'];
+    if (requiresAdmin && user?.role !== "admin") {
+      return NextResponse.json(
+        { error: "Apenas administradores podem enviar este tipo de arquivo." },
+        { status: 403 }
+      );
+    }
+
+    let baseAllowedTypes = ["jpg", "jpeg", "png", "webp"];
     try {
       const settings = await db.settings.get();
-      if (Array.isArray(settings?.events?.allowedImageTypes) && settings.events.allowedImageTypes.length > 0) {
+      if (
+        Array.isArray(settings?.events?.allowedImageTypes) &&
+        settings.events.allowedImageTypes.length > 0
+      ) {
         baseAllowedTypes = settings.events.allowedImageTypes;
       }
     } catch (error) {
-      // Keep upload available even if settings storage is temporarily unavailable.
       if (isMysqlRequiredError(error)) {
-        console.warn('[upload] settings indisponivel; usando tipos padrao de imagem.');
+        console.warn("[upload] settings indisponivel; usando tipos padrao de imagem.");
       } else {
         throw error;
       }
@@ -81,25 +124,35 @@ export async function POST(request: NextRequest) {
       : type === "site"
         ? Array.from(new Set([...baseAllowedTypes, "ico"]))
         : baseAllowedTypes;
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    
+    const fileExtension = file.name.split(".").pop()?.toLowerCase();
+
     if (!fileExtension || !allowedTypes.includes(fileExtension)) {
       return NextResponse.json(
-        { error: `Tipo de arquivo não permitido. Tipos permitidos: ${allowedTypes.join(', ')}` },
+        {
+          error: `Tipo de arquivo nao permitido. Tipos permitidos: ${allowedTypes.join(", ")}`
+        },
         { status: 400 }
       );
     }
 
-    // Validar tamanho
+    const expectedMimeTypes = MIME_BY_EXTENSION[fileExtension] || [];
+    if (expectedMimeTypes.length > 0 && file.type && !expectedMimeTypes.includes(file.type)) {
+      return NextResponse.json(
+        { error: "O arquivo enviado nao corresponde ao tipo informado." },
+        { status: 400 }
+      );
+    }
+
     const maxSize = isListingVideoUpload ? 100 * 1024 * 1024 : 5 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
-        { error: `Arquivo muito grande. Tamanho maximo: ${isListingVideoUpload ? '100MB' : '5MB'}` },
+        {
+          error: `Arquivo muito grande. Tamanho maximo: ${isListingVideoUpload ? "100MB" : "5MB"}`
+        },
         { status: 400 }
       );
     }
 
-    // Criar diretório se não existir
     const typeDir = path.join(UPLOAD_DIR, type);
     try {
       await fs.access(typeDir);
@@ -107,22 +160,29 @@ export async function POST(request: NextRequest) {
       await fs.mkdir(typeDir, { recursive: true });
     }
 
-    // Gerar nome único
     const rawAlt = formData.get("alt");
-    const baseSource =
-      typeof rawAlt === "string" && rawAlt.trim()
-        ? rawAlt
-        : file.name;
+    const baseSource = typeof rawAlt === "string" && rawAlt.trim() ? rawAlt : file.name;
     const baseName = sanitizeFileBaseName(baseSource);
     const { fileName, filePath } = await buildUniqueFileName(typeDir, baseName, fileExtension);
 
-    // Salvar arquivo
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     await fs.writeFile(filePath, buffer);
 
-    // Retornar URL pública
     const publicUrl = `/uploads/${type}/${fileName}`;
+
+    if (user) {
+      await db.audit.create({
+        actorUserId: user.id,
+        action: "upload.create",
+        entityType: "upload",
+        status: "success",
+        path: "/api/upload",
+        metadata: {
+          uploadType: type
+        }
+      });
+    }
 
     return NextResponse.json({
       url: publicUrl,
@@ -131,43 +191,38 @@ export async function POST(request: NextRequest) {
       type: file.type
     });
   } catch (error) {
-    console.error('Erro ao fazer upload:', error);
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    );
+    logServerError("Erro ao fazer upload", error);
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
+    const user = await requireAuth(request);
     const { searchParams } = new URL(request.url);
-    const url = searchParams.get('url');
-    
+    const url = searchParams.get("url");
+
     if (!url) {
-      return NextResponse.json(
-        { error: 'URL não fornecida' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "URL nao fornecida" }, { status: 400 });
     }
 
-    // Remover prefixo /uploads/
     const filePath = resolveUploadPathFromUrlPath(url);
-    
+
     try {
       await fs.unlink(filePath);
-      return NextResponse.json({ message: 'Arquivo excluído com sucesso' });
+      await db.audit.create({
+        actorUserId: user.id,
+        action: "upload.delete",
+        entityType: "upload",
+        status: "success",
+        path: "/api/upload"
+      });
+      return NextResponse.json({ message: "Arquivo excluido com sucesso" });
     } catch {
-      return NextResponse.json(
-        { error: 'Arquivo não encontrado' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Arquivo nao encontrado" }, { status: 404 });
     }
   } catch (error) {
-    console.error('Erro ao excluir arquivo:', error);
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    );
+    logServerError("Erro ao excluir arquivo", error);
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }

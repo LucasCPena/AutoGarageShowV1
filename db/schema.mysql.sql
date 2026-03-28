@@ -5,7 +5,16 @@ CREATE TABLE IF NOT EXISTS users (
   password VARCHAR(255) NOT NULL,
   role ENUM('admin','user') NOT NULL,
   document VARCHAR(30),
+  document_type VARCHAR(8),
   phone VARCHAR(30),
+  account_type VARCHAR(20),
+  company_name VARCHAR(160),
+  logo_url VARCHAR(255),
+  approval_status VARCHAR(20),
+  verification_status VARCHAR(20),
+  listing_limit_override INT,
+  marketplace_profile VARCHAR(40),
+  document_hash VARCHAR(64),
   created_at VARCHAR(32) NOT NULL,
   updated_at VARCHAR(32) NOT NULL
 );
@@ -57,6 +66,7 @@ CREATE TABLE IF NOT EXISTS listings (
   id VARCHAR(36) PRIMARY KEY,
   slug VARCHAR(180) NOT NULL UNIQUE,
   title VARCHAR(200) NOT NULL,
+  vehicle_type VARCHAR(20),
   description TEXT NOT NULL,
   make VARCHAR(120) NOT NULL,
   model VARCHAR(120) NOT NULL,
@@ -73,6 +83,7 @@ CREATE TABLE IF NOT EXISTS listings (
   featured_until VARCHAR(32),
   created_by VARCHAR(36) NOT NULL,
   document VARCHAR(30) NOT NULL,
+  document_hash VARCHAR(64),
   city VARCHAR(120) NOT NULL,
   state VARCHAR(8) NOT NULL,
   created_at VARCHAR(32) NOT NULL,
@@ -107,7 +118,10 @@ CREATE TABLE IF NOT EXISTS banners (
 
 CREATE TABLE IF NOT EXISTS organizers (
   id VARCHAR(36) PRIMARY KEY,
+  name VARCHAR(120) NOT NULL,
   logo VARCHAR(255) NOT NULL,
+  alt_text VARCHAR(180),
+  banner_top VARCHAR(255),
   link VARCHAR(255),
   created_at VARCHAR(32) NOT NULL,
   updated_at VARCHAR(32) NOT NULL
@@ -136,4 +150,44 @@ CREATE TABLE IF NOT EXISTS news (
   status ENUM('draft','published') NOT NULL,
   created_at VARCHAR(32) NOT NULL,
   updated_at VARCHAR(32) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS advertiser_messages (
+  id VARCHAR(36) PRIMARY KEY,
+  sender_user_id VARCHAR(36),
+  sender_name VARCHAR(160) NOT NULL,
+  sender_email VARCHAR(160) NOT NULL,
+  sender_phone VARCHAR(30),
+  recipient_user_id VARCHAR(36) NOT NULL,
+  listing_id VARCHAR(36),
+  subject VARCHAR(200),
+  message TEXT NOT NULL,
+  status VARCHAR(20) NOT NULL,
+  created_at VARCHAR(32) NOT NULL,
+  updated_at VARCHAR(32) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS metric_events (
+  id VARCHAR(36) PRIMARY KEY,
+  event_type VARCHAR(40) NOT NULL,
+  entity_type VARCHAR(20) NOT NULL,
+  entity_id VARCHAR(80),
+  owner_user_id VARCHAR(36),
+  user_id VARCHAR(36),
+  path VARCHAR(255) NOT NULL,
+  label VARCHAR(255),
+  metadata JSON,
+  created_at VARCHAR(32) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS audit_events (
+  id VARCHAR(36) PRIMARY KEY,
+  actor_user_id VARCHAR(36),
+  action VARCHAR(80) NOT NULL,
+  entity_type VARCHAR(30) NOT NULL,
+  entity_id VARCHAR(80),
+  status VARCHAR(20) NOT NULL,
+  path VARCHAR(255),
+  metadata JSON,
+  created_at VARCHAR(32) NOT NULL
 );

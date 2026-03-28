@@ -8,17 +8,31 @@ export interface User {
   name: string;
   email: string;
   role: "admin" | "user";
+  document?: string;
+  documentType?: "cpf" | "cnpj";
+  accountType?: "individual" | "company" | "agency";
+  companyName?: string;
+  logoUrl?: string;
+  approvalStatus?: "approved" | "pending";
+  verificationStatus?: "unverified" | "verified";
+  listingLimitOverride?: number | null;
   createdAt: string;
   updatedAt: string;
 }
 
-function extractToken(request: NextRequest) {
+function extractTokens(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
   if (authHeader && authHeader.startsWith("Bearer ")) {
-    return authHeader.substring(7).trim() || null;
+    return {
+      bearerToken: authHeader.substring(7).trim() || null,
+      cookieToken: request.cookies.get(AUTH_COOKIE_NAME)?.value || null
+    };
   }
 
-  return request.cookies.get(AUTH_COOKIE_NAME)?.value || null;
+  return {
+    bearerToken: null,
+    cookieToken: request.cookies.get(AUTH_COOKIE_NAME)?.value || null
+  };
 }
 
 export async function getUserFromAuthToken(token: string | null): Promise<User | null> {
@@ -38,14 +52,28 @@ export async function getUserFromAuthToken(token: string | null): Promise<User |
     name: user.name,
     email: user.email,
     role: user.role,
+    document: user.document,
+    documentType: user.documentType,
+    accountType: user.accountType,
+    companyName: user.companyName,
+    logoUrl: user.logoUrl,
+    approvalStatus: user.approvalStatus,
+    verificationStatus: user.verificationStatus,
+    listingLimitOverride: user.listingLimitOverride,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt
   };
 }
 
 export async function getUserFromToken(request: NextRequest): Promise<User | null> {
-  const token = extractToken(request);
-  return getUserFromAuthToken(token);
+  const { bearerToken, cookieToken } = extractTokens(request);
+
+  if (bearerToken) {
+    const bearerUser = await getUserFromAuthToken(bearerToken);
+    if (bearerUser) return bearerUser;
+  }
+
+  return getUserFromAuthToken(cookieToken);
 }
 
 export async function requireAuth(request: NextRequest): Promise<User> {

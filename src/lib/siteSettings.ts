@@ -1,3 +1,5 @@
+import { normalizeCouponCampaigns } from "@/lib/couponCampaigns";
+
 export type SiteSettings = {
   vehicleMinAgeYears: number;
   vehicleModelYearMin: number;
@@ -8,6 +10,17 @@ export type SiteSettings = {
   listingFeaturedDurationsDays: number[];
   listingAutoExpireDays: number;
   listingExpireNoticeDays: number;
+  publicDisplay: {
+    pageSize: number;
+    homeSectionSize: number;
+  };
+  analytics: {
+    googleAnalyticsId: string;
+  };
+  qrAccess: {
+    autoApproveAccounts: boolean;
+  };
+  couponCampaigns: ReturnType<typeof normalizeCouponCampaigns>;
 };
 
 export const defaultSiteSettings: SiteSettings = {
@@ -19,7 +32,18 @@ export const defaultSiteSettings: SiteSettings = {
   },
   listingFeaturedDurationsDays: [30],
   listingAutoExpireDays: 120,
-  listingExpireNoticeDays: 7
+  listingExpireNoticeDays: 7,
+  publicDisplay: {
+    pageSize: 30,
+    homeSectionSize: 30
+  },
+  analytics: {
+    googleAnalyticsId: ""
+  },
+  qrAccess: {
+    autoApproveAccounts: false
+  },
+  couponCampaigns: []
 };
 
 function clampInt(value: number, min: number, max: number) {
@@ -46,7 +70,11 @@ export function normalizeSiteSettings(input: unknown): SiteSettings {
   const normalized: SiteSettings = {
     ...defaultSiteSettings,
     listingLimits: { ...defaultSiteSettings.listingLimits },
-    listingFeaturedDurationsDays: [...defaultSiteSettings.listingFeaturedDurationsDays]
+    listingFeaturedDurationsDays: [...defaultSiteSettings.listingFeaturedDurationsDays],
+    publicDisplay: { ...defaultSiteSettings.publicDisplay },
+    analytics: { ...defaultSiteSettings.analytics },
+    qrAccess: { ...defaultSiteSettings.qrAccess },
+    couponCampaigns: [...defaultSiteSettings.couponCampaigns]
   };
 
   if (!input || typeof input !== "object") {
@@ -118,6 +146,35 @@ export function normalizeSiteSettings(input: unknown): SiteSettings {
     normalized.listingExpireNoticeDays = clampInt(obj.listingExpireNoticeDays, 0, 365);
   }
 
+  const publicDisplay =
+    obj.publicDisplay && typeof obj.publicDisplay === "object"
+      ? (obj.publicDisplay as Record<string, unknown>)
+      : null;
+  if (typeof publicDisplay?.pageSize === "number") {
+    normalized.publicDisplay.pageSize = clampInt(publicDisplay.pageSize, 1, 100);
+  }
+  if (typeof publicDisplay?.homeSectionSize === "number") {
+    normalized.publicDisplay.homeSectionSize = clampInt(publicDisplay.homeSectionSize, 1, 100);
+  }
+
+  const analytics =
+    obj.analytics && typeof obj.analytics === "object"
+      ? (obj.analytics as Record<string, unknown>)
+      : null;
+  if (typeof analytics?.googleAnalyticsId === "string") {
+    normalized.analytics.googleAnalyticsId = analytics.googleAnalyticsId.trim();
+  }
+
+  const qrAccess =
+    obj.qrAccess && typeof obj.qrAccess === "object"
+      ? (obj.qrAccess as Record<string, unknown>)
+      : null;
+  if (typeof qrAccess?.autoApproveAccounts === "boolean") {
+    normalized.qrAccess.autoApproveAccounts = qrAccess.autoApproveAccounts;
+  }
+
+  normalized.couponCampaigns = normalizeCouponCampaigns(obj.couponCampaigns);
+
   return normalized;
 }
 
@@ -138,6 +195,16 @@ export function buildSiteSettingsUpdate(settings: SiteSettings) {
     listingFeaturedDurationsDays: [...normalized.listingFeaturedDurationsDays],
     listingAutoExpireDays: normalized.listingAutoExpireDays,
     listingExpireNoticeDays: normalized.listingExpireNoticeDays,
+    publicDisplay: {
+      ...normalized.publicDisplay
+    },
+    analytics: {
+      ...normalized.analytics
+    },
+    qrAccess: {
+      ...normalized.qrAccess
+    },
+    couponCampaigns: [...normalized.couponCampaigns],
     listings: {
       maxYearOffset: normalized.vehicleMinAgeYears,
       freeListingsPerCPF: normalized.listingLimits.cpf,

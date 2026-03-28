@@ -68,7 +68,7 @@ export default function ListingSubmissionGate({ publicAccess = false }: Props) {
           isOpen={authModalOpen}
           onClose={() => setAuthModalOpen(false)}
           defaultMode={authMode}
-          redirectTo="/classificados/anunciar"
+          redirectTo="/veiculos/anunciar"
         />
       </>
     );
@@ -116,7 +116,7 @@ export default function ListingSubmissionGate({ publicAccess = false }: Props) {
           isOpen={authModalOpen}
           onClose={() => setAuthModalOpen(false)}
           defaultMode={authMode}
-          redirectTo="/classificados/anunciar"
+          redirectTo="/veiculos/anunciar"
         />
       </>
     );

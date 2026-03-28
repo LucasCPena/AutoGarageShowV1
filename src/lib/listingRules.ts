@@ -1,3 +1,4 @@
+import type { User } from "@/lib/database";
 import { onlyDigits, validateBrazilianDocument } from "@/lib/document";
 import { getVehicleMaxAllowedYear, normalizeSiteSettings } from "@/lib/siteSettings";
 
@@ -14,6 +15,17 @@ export function getListingDocumentType(document: string): ListingDocumentType | 
 export function resolveListingLimit(settings: unknown, documentType: ListingDocumentType) {
   const normalized = normalizeSiteSettings(settings);
   return normalized.listingLimits[documentType];
+}
+
+export function resolveEffectiveListingLimit(
+  settings: unknown,
+  user: Pick<User, "listingLimitOverride"> | null | undefined,
+  documentType: ListingDocumentType
+) {
+  if (user && typeof user.listingLimitOverride === "number") {
+    return Math.max(0, Math.round(user.listingLimitOverride));
+  }
+  return resolveListingLimit(settings, documentType);
 }
 
 export function getListingRules(settings: unknown) {

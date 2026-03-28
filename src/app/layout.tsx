@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
+import Script from "next/script";
 
 import "./globals.css";
 
@@ -9,6 +10,7 @@ import ChunkRecovery from "@/components/ChunkRecovery";
 import SiteAccessGate from "@/components/SiteAccessGate";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
+import { db } from "@/lib/database";
 import { hasPublicListingPageAccess } from "@/lib/public-listing-access";
 import { siteUrl } from "@/lib/site-url";
 
@@ -35,17 +37,39 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children
 }: Readonly<{
   children: ReactNode;
 }>) {
+  let googleAnalyticsId = "";
+  try {
+    const settings = await db.settings.get();
+    googleAnalyticsId = settings?.analytics?.googleAnalyticsId?.trim() || "";
+  } catch (error) {
+    console.error("Erro ao carregar analytics do layout:", error);
+  }
+
   const cookieStore = cookies();
   const hasLimitedListingAccess = hasPublicListingPageAccess(cookieStore);
 
   return (
     <html lang="pt-BR">
       <body className={inter.className}>
+        {googleAnalyticsId ? (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${googleAnalyticsId}');`}
+            </Script>
+          </>
+        ) : null}
         <ChunkRecovery />
         <SiteAccessGate>
           {hasLimitedListingAccess ? (

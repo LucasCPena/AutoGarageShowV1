@@ -3,7 +3,10 @@
 import { getUserFromToken, requireAuth } from '@/lib/auth-middleware';
 import { db, isMysqlRequiredError, type Listing } from '@/lib/database';
 import { onlyDigits, validateBrazilianDocument } from '@/lib/document';
-import { getListingDocumentForStorage, resolveListingLimit } from '@/lib/listingRules';
+import { attachListingOwnerProfiles } from '@/lib/listingOwners';
+import { getListingDocumentForStorage, resolveEffectiveListingLimit } from '@/lib/listingRules';
+import { sanitizeListingForViewer } from '@/lib/privacy';
+import { logServerError } from '@/lib/server-log';
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,12 +21,29 @@ export async function GET(request: NextRequest) {
     const priceMax = searchParams.get('priceMax');
     const mileageMax = searchParams.get('mileageMax');
     const blackPlate = searchParams.get('blackPlate');
+    const vehicleType = searchParams.get('vehicleType');
+    const scope = searchParams.get('scope');
     const user = await getUserFromToken(request);
     const isAdmin = user?.role === 'admin';
 
+    if (scope === 'mine' && !user) {
+      return NextResponse.json(
+        { error: 'Nao autorizado' },
+        { status: 401 }
+      );
+    }
+
     let listings = await db.listings.getAll();
 
-    if (status) {
+    if (scope === 'mine' && user) {
+      listings = listings.filter((listing) => listing.createdBy === user.id);
+    }
+
+    if (scope === 'mine' && user) {
+      if (status) {
+        listings = listings.filter((listing) => listing.status === status);
+      }
+    } else if (status) {
       if (isAdmin) {
         listings = listings.filter((listing) => listing.status === status);
       } else if (status === 'approved' || status === 'active') {
@@ -77,6 +97,10 @@ export async function GET(request: NextRequest) {
       listings = listings.filter((listing) => !listing.specifications?.blackPlate);
     }
 
+    if (vehicleType === 'car' || vehicleType === 'motorcycle') {
+      listings = listings.filter((listing) => (listing.vehicleType ?? 'car') === vehicleType);
+    }
+
     // Ordenar: destacados primeiro, depois por data de criacao.
     listings.sort((a, b) => {
       if (a.featured && !b.featured) return -1;
@@ -84,8 +108,12 @@ export async function GET(request: NextRequest) {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
+    listings = await attachListingOwnerProfiles(listings);
+
     return NextResponse.json(
-      { listings },
+      {
+        listings: listings.map((listing) => sanitizeListingForViewer(listing, user))
+      },
       {
         headers: {
           "Cache-Control": "no-store"
@@ -93,7 +121,7 @@ export async function GET(request: NextRequest) {
       }
     );
   } catch (error) {
-    console.error('Erro ao buscar classificados:', error);
+    logServerError('Erro ao buscar classificados', error);
     if (isMysqlRequiredError(error)) {
       return NextResponse.json(
         { error: 'Banco de dados indisponivel no momento.' },
@@ -143,7 +171,7 @@ export async function POST(request: NextRequest) {
       const settings = await db.settings.get();
       const activeCount = await db.listings.getActiveCount(normalizedDocument);
       const isCNPJ = normalizedDocument.length === 14;
-      const maxFree = resolveListingLimit(settings, isCNPJ ? 'cnpj' : 'cpf');
+      const maxFree = resolveEffectiveListingLimit(settings, user, isCNPJ ? 'cnpj' : 'cpf');
 
       if (activeCount >= maxFree) {
         return NextResponse.json(
@@ -209,6 +237,8 @@ export async function POST(request: NextRequest) {
       ...listingData,
       title,
       slug,
+      vehicleType:
+        listingData.vehicleType === 'motorcycle' ? 'motorcycle' : 'car',
       status,
       featured,
       featuredUntil: featured ? featuredUntil : undefined,
@@ -242,7 +272,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        listing,
+        listing: sanitizeListingForViewer(listing, user),
         message:
           user.role === 'admin'
             ? 'Classificado criado e publicado automaticamente (admin).'
@@ -251,7 +281,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('Erro ao criar classificado:', error);
+    logServerError('Erro ao criar classificado', error);
     if (isMysqlRequiredError(error)) {
       return NextResponse.json(
         { error: 'Banco de dados indisponivel no momento.' },

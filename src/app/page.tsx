@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 import Container from "@/components/Container";
+import SidebarBannerStack from "@/components/SidebarBannerStack";
+import TrackMetric from "@/components/TrackMetric";
 import type { EventRecurrence } from "@/lib/database";
 import { formatDateLong, formatDateShort } from "@/lib/date";
 import { formatCurrencyBRL } from "@/lib/format";
@@ -339,6 +341,11 @@ export default function HomePage() {
   const windowStart = now;
   const limit = windowStart + 30 * 24 * 60 * 60 * 1000;
   const approvedEvents = events.filter((e) => e.status === "approved");
+  const homeSectionSize =
+    typeof siteSettings?.publicDisplay?.homeSectionSize === "number" &&
+    siteSettings.publicDisplay.homeSectionSize > 0
+      ? siteSettings.publicDisplay.homeSectionSize
+      : 30;
 
   const upcoming = (
     approvedEvents
@@ -361,7 +368,7 @@ export default function HomePage() {
       if (aFeatured !== bFeatured) return aFeatured ? -1 : 1;
       return new Date(a.nextOccurrence).getTime() - new Date(b.nextOccurrence).getTime();
     })
-    .slice(0, 6);
+    .slice(0, homeSectionSize);
   const liveEvent = upcoming.find(({ event }) => Boolean(event.liveUrl))?.event;
   const liveEmbedUrl = toYouTubeEmbedUrl(liveEvent?.liveUrl);
 
@@ -379,14 +386,14 @@ export default function HomePage() {
 
   const featured = visibleListings
     .filter((listing) => isFeaturedListingActive(listing, now))
-    .slice(0, 3);
+    .slice(0, Math.min(homeSectionSize, 12));
 
   const latestListings = visibleListings
     .slice()
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 6);
+    .slice(0, homeSectionSize);
 
-  const latestNews = [...news].sort(byIsoDateDesc).slice(0, 3);
+  const latestNews = [...news].sort(byIsoDateDesc).slice(0, homeSectionSize);
   const heroBackgroundImage = safeImageSrc(
     config.bannerImage,
     "/placeholders/hero-top-custom.svg"
@@ -429,6 +436,9 @@ export default function HomePage() {
       </section>
 
       <Container className="py-10">
+        <TrackMetric eventType="page_view" entityType="page" path="/" label="Home" />
+        <div className="page-with-sidebar">
+          <div>
         {/* Resumo Estatistico */}
         {canViewHomeStats ? (
           <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
@@ -437,7 +447,7 @@ export default function HomePage() {
               <div className="mt-2 text-2xl font-bold text-slate-900">{totalEventOccurrencesCount}</div>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div className="text-xs font-semibold text-slate-600">Anuncios ativos</div>
+              <div className="text-xs font-semibold text-slate-600">Veiculos ativos</div>
               <div className="mt-2 text-2xl font-bold text-slate-900">{activeListingsCount}</div>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -449,7 +459,7 @@ export default function HomePage() {
               <div className="mt-2 text-2xl font-bold text-slate-900">{pendingEventsCount}</div>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div className="text-xs font-semibold text-slate-600">Classificados para liberar</div>
+              <div className="text-xs font-semibold text-slate-600">Veiculos para liberar</div>
               <div className="mt-2 text-2xl font-bold text-slate-900">{pendingListingsCount}</div>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -505,13 +515,13 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* Classificados em Destaque */}
+        {/* Veiculos em Destaque */}
         {config.showFeaturedListings && featured.length > 0 && (
           <section className="mb-12">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">Anuncios em Destaque</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Veiculos em Destaque</h2>
               <Link
-                href="/classificados"
+                href="/veiculos"
                 className="text-brand-600 hover:text-brand-800 font-semibold"
               >
                 Ver Todos
@@ -521,7 +531,7 @@ export default function HomePage() {
               {featured.map((listing) => (
                 <Link
                   key={listing.id}
-                  href={`/classificados/${listing.slug}`}
+                  href={`/veiculos/${listing.slug}`}
                   className="group block rounded-2xl border border-slate-200 bg-white overflow-hidden hover:border-brand-200 transition-colors"
                 >
                   <div className="aspect-video relative">
@@ -551,13 +561,13 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* Ultimos Classificados */}
+        {/* Ultimos Veiculos */}
         {config.showLatestListings && latestListings.length > 0 && (
           <section className="mb-12">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">Ultimos Anuncios</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Ultimos Veiculos</h2>
               <Link
-                href="/classificados"
+                href="/veiculos"
                 className="text-brand-600 hover:text-brand-800 font-semibold"
               >
                 Ver Todos
@@ -567,7 +577,7 @@ export default function HomePage() {
               {latestListings.map((listing) => (
                 <Link
                   key={listing.id}
-                  href={`/classificados/${listing.slug}`}
+                  href={`/veiculos/${listing.slug}`}
                   className="group block rounded-2xl border border-slate-200 bg-white overflow-hidden hover:border-brand-200 transition-colors"
                 >
                   <div className="aspect-video relative">
@@ -658,6 +668,10 @@ export default function HomePage() {
             </div>
           </section>
         )}
+          </div>
+
+          <SidebarBannerStack />
+        </div>
       </Container>
     </>
   );

@@ -389,7 +389,7 @@ export default function AdminSettingsPanel() {
       <form onSubmit={onSubmit} className="mt-6 grid gap-5">
         {saved ? (
           <Notice title="Salvo" variant="success">
-            As configuracoes de classificados foram atualizadas no backend.
+            As configuracoes de veiculos e operacao foram atualizadas no backend.
           </Notice>
         ) : null}
 
@@ -563,6 +563,96 @@ export default function AdminSettingsPanel() {
             <span className="text-xs text-slate-500">
               Prototipo atual: sem envio automatico de e-mail.
             </span>
+          </label>
+
+          <label className="grid gap-1">
+            <span className="text-sm font-semibold text-slate-900">
+              Itens por pagina publica
+            </span>
+            <input
+              className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={100}
+              value={draft.publicDisplay.pageSize}
+              onChange={(e) => {
+                setSaved(false);
+                setDraft((current) => ({
+                  ...current,
+                  publicDisplay: {
+                    ...current.publicDisplay,
+                    pageSize: Number(e.target.value || 1)
+                  }
+                }));
+              }}
+            />
+          </label>
+
+          <label className="grid gap-1">
+            <span className="text-sm font-semibold text-slate-900">
+              Itens por secao da home
+            </span>
+            <input
+              className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={100}
+              value={draft.publicDisplay.homeSectionSize}
+              onChange={(e) => {
+                setSaved(false);
+                setDraft((current) => ({
+                  ...current,
+                  publicDisplay: {
+                    ...current.publicDisplay,
+                    homeSectionSize: Number(e.target.value || 1)
+                  }
+                }));
+              }}
+            />
+          </label>
+
+          <label className="grid gap-1 md:col-span-2">
+            <span className="text-sm font-semibold text-slate-900">
+              Google Analytics ID
+            </span>
+            <input
+              className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+              value={draft.analytics.googleAnalyticsId}
+              onChange={(e) => {
+                setSaved(false);
+                setDraft((current) => ({
+                  ...current,
+                  analytics: {
+                    ...current.analytics,
+                    googleAnalyticsId: e.target.value
+                  }
+                }));
+              }}
+              placeholder="G-XXXXXXXXXX"
+            />
+            <span className="text-xs text-slate-500">
+              Deixe em branco para nao carregar o script do Google Analytics.
+            </span>
+          </label>
+
+          <label className="flex items-center gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700 md:col-span-2">
+            <input
+              type="checkbox"
+              checked={draft.qrAccess.autoApproveAccounts}
+              onChange={(e) => {
+                setSaved(false);
+                setDraft((current) => ({
+                  ...current,
+                  qrAccess: {
+                    ...current.qrAccess,
+                    autoApproveAccounts: e.target.checked
+                  }
+                }));
+              }}
+            />
+            Liberar automaticamente contas criadas via QR Code
           </label>
         </div>
 

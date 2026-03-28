@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { sendMetric } from "@/components/TrackMetric";
 import { normalizeAssetReference } from "@/lib/site-url";
 
 type Banner = {
@@ -21,6 +22,7 @@ type Props = {
   title?: string;
   maxVisible?: number;
   rotationMs?: number;
+  section?: string;
 };
 
 function isBannerActiveNow(banner: Banner, now: number) {
@@ -47,19 +49,20 @@ function shuffle<T>(items: T[]) {
 export default function SidebarBannerStack({
   title = "Publicidade",
   maxVisible = 5,
-  rotationMs = 12000
+  rotationMs = 12000,
+  section = "sidebar"
 }: Props) {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [rotationKey, setRotationKey] = useState(0);
 
   useEffect(() => {
-    fetch("/api/banners?section=sidebar", { cache: "no-store" })
+    fetch(`/api/banners?section=${encodeURIComponent(section)}`, { cache: "no-store" })
       .then((response) => response.json())
       .then((data) => {
         setBanners(Array.isArray(data.banners) ? data.banners : []);
       })
       .catch(() => setBanners([]));
-  }, []);
+  }, [section]);
 
   const activeBanners = useMemo(() => {
     const now = Date.now();
@@ -135,6 +138,15 @@ export default function SidebarBannerStack({
           <a
             key={banner.id}
             href={banner.link}
+            onClick={() =>
+              void sendMetric({
+                eventType: "banner_click",
+                entityType: "banner",
+                entityId: banner.id,
+                path: banner.link || "/",
+                label: banner.title || "Banner lateral"
+              })
+            }
             className="block overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-brand-300"
             target={banner.link.startsWith("/") ? undefined : "_blank"}
             rel={banner.link.startsWith("/") ? undefined : "noreferrer noopener"}

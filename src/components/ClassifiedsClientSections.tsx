@@ -95,7 +95,11 @@ function ListingCard({
   onStatusChange?: (status: Listing["status"]) => void;
 }) {
   const contact = getContactInfo(listing);
-  const href = detailHref || `/classificados/${listing.slug}`;
+  const href = detailHref || `/veiculos/${listing.slug}`;
+  const showCompanyLink =
+    listing.ownerProfile &&
+    (listing.ownerProfile.accountType === "company" ||
+      listing.ownerProfile.accountType === "agency");
 
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-0">
@@ -125,6 +129,21 @@ function ListingCard({
         </div>
 
         <div className="mt-1 text-sm text-slate-600">{formatListingMeta(listing)}</div>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+            {listing.vehicleType === "motorcycle" ? "Moto" : "Veiculo"}
+          </span>
+          {showCompanyLink ? (
+            <Link
+              href={`/empresas/${listing.ownerProfile?.id}`}
+              className="rounded-full bg-brand-100 px-2.5 py-1 text-xs font-semibold text-brand-800 hover:bg-brand-200"
+            >
+              {listing.ownerProfile?.accountType === "agency"
+                ? "Ver agencia"
+                : "Ver empresa"}
+            </Link>
+          ) : null}
+        </div>
         <div className="mt-3 text-sm font-semibold text-slate-900">
           {formatCurrencyBRL(listing.price)}
         </div>
@@ -139,7 +158,7 @@ function ListingCard({
         <ListingCrudActions
           listingId={listing.id}
           status={listing.status}
-          editHref={`/classificados/gerenciar/${listing.id}`}
+          editHref={`/veiculos/gerenciar/${listing.id}`}
           compact
           onStatusChange={onStatusChange}
         />
@@ -162,6 +181,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
   const [stateFilter, setStateFilter] = useState("all");
   const [yearFilter, setYearFilter] = useState("all");
   const [blackPlateFilter, setBlackPlateFilter] = useState("all");
+  const [vehicleTypeFilter, setVehicleTypeFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [pendingPage, setPendingPage] = useState(1);
   const now = Date.now();
@@ -214,7 +234,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
 
   useEffect(() => {
     setPage(1);
-  }, [blackPlateFilter, makeFilter, modelFilter, stateFilter, yearFilter]);
+  }, [blackPlateFilter, makeFilter, modelFilter, stateFilter, vehicleTypeFilter, yearFilter]);
 
   useEffect(() => {
     setPendingPage(1);
@@ -228,6 +248,9 @@ export default function ClassifiedsClientSections({ listings }: Props) {
   const allMakes = Array.from(new Set(latest.map((l) => l.make).filter(Boolean))).sort();
   const allStates = Array.from(new Set(latest.map((l) => l.state).filter(Boolean))).sort();
   const allYears = Array.from(new Set(latest.map((l) => String(l.modelYear || l.year)).filter(Boolean))).sort((a,b)=>Number(b)-Number(a));
+  const vehicleTypeOptions = Array.from(
+    new Set(latest.map((listing) => listing.vehicleType ?? "car"))
+  );
   const modelOptions = Array.from(
     new Set(latest.filter((l) => makeFilter === "all" || l.make === makeFilter).map((l) => l.model).filter(Boolean))
   ).sort();
@@ -237,12 +260,13 @@ export default function ClassifiedsClientSections({ listings }: Props) {
     if (modelFilter !== "all" && listing.model !== modelFilter) return false;
     if (stateFilter !== "all" && listing.state !== stateFilter) return false;
     if (yearFilter !== "all" && String(listing.modelYear || listing.year) !== yearFilter) return false;
+    if (vehicleTypeFilter !== "all" && (listing.vehicleType ?? "car") !== vehicleTypeFilter) return false;
     if (blackPlateFilter === "sim" && !listing.specifications?.blackPlate) return false;
     if (blackPlateFilter === "nao" && listing.specifications?.blackPlate) return false;
     return true;
   });
 
-  const pageSize = 12;
+  const pageSize = settings.publicDisplay.pageSize;
   const totalPages = Math.max(1, Math.ceil(filteredLatest.length / pageSize));
   const safePage = Math.min(page, totalPages);
   const paginatedLatest = filteredLatest.slice((safePage - 1) * pageSize, safePage * pageSize);
@@ -258,7 +282,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
     <>
       {expiredCount > 0 ? (
         <Notice title="Automacao" variant="warning" className="mt-4">
-          {expiredCount} anuncio(s) foram ocultados por expiracao automatica.
+          {expiredCount} veiculo(s) foram ocultados por expiracao automatica.
         </Notice>
       ) : null}
 
@@ -268,7 +292,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
             <div>
               <h2 className="text-xl font-bold text-slate-900">Pendentes (admin)</h2>
               <p className="mt-1 text-sm text-slate-600">
-                Cada anuncio pendente pode ser aprovado, rejeitado, editado ou excluido no proprio card.
+                Cada veiculo pendente pode ser aprovado, rejeitado, editado ou excluido no proprio card.
               </p>
             </div>
           </div>
@@ -278,7 +302,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
               <ListingCard
                 key={listing.id}
                 listing={listing}
-                detailHref={`/classificados/gerenciar/${listing.id}`}
+                detailHref={`/veiculos/gerenciar/${listing.id}`}
                 showContact={Boolean(user)}
                 onStatusChange={() => window.location.reload()}
               />
@@ -318,7 +342,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
           <div>
             <h2 className="text-xl font-bold text-slate-900">Em destaque</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Anuncios destacados aparecem nesta vitrine.
+              Veiculos destacados aparecem nesta vitrine.
             </p>
           </div>
 
@@ -357,7 +381,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
 
           {featuredActive.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-600">
-              Nenhum anuncio em destaque.
+              Nenhum veiculo em destaque.
             </div>
           ) : null}
         </div>
@@ -367,14 +391,14 @@ export default function ClassifiedsClientSections({ listings }: Props) {
       <section className="mt-14">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">Ultimos anuncios</h2>
+            <h2 className="text-xl font-bold text-slate-900">Ultimos veiculos</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Lista dos anuncios mais recentes.
+              Lista dos veiculos mais recentes, incluindo carros e motos.
             </p>
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-4 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2 lg:grid-cols-6">
           <select className="h-10 rounded-md border border-slate-300 px-2 text-sm" value={makeFilter} onChange={(e)=>{ setMakeFilter(e.target.value); setModelFilter("all"); }}>
             <option value="all">Todas as marcas</option>
             {allMakes.map((make)=><option key={make} value={make}>{make}</option>)}
@@ -391,6 +415,10 @@ export default function ClassifiedsClientSections({ listings }: Props) {
             <option value="all">Todos os anos</option>
             {allYears.map((year)=><option key={year} value={year}>{year}</option>)}
           </select>
+          <select className="h-10 rounded-md border border-slate-300 px-2 text-sm" value={vehicleTypeFilter} onChange={(e)=>setVehicleTypeFilter(e.target.value)}>
+            <option value="all">Tipo: todos</option>
+            {vehicleTypeOptions.map((item)=><option key={item} value={item}>{item === "motorcycle" ? "Motos" : "Carros"}</option>)}
+          </select>
           <select className="h-10 rounded-md border border-slate-300 px-2 text-sm" value={blackPlateFilter} onChange={(e)=>setBlackPlateFilter(e.target.value)}>
             <option value="all">Placa preta: todos</option>
             <option value="sim">Placa preta: sim</option>
@@ -405,14 +433,14 @@ export default function ClassifiedsClientSections({ listings }: Props) {
 
           {paginatedLatest.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-600">
-              Nenhum anuncio disponivel no momento.
+              Nenhum veiculo disponivel no momento.
             </div>
           ) : null}
         </div>
 
         {filteredLatest.length > 0 ? (
           <div className="mt-5 flex items-center justify-between gap-3 text-sm">
-            <span className="text-slate-600">Pagina {safePage} de {totalPages} ({filteredLatest.length} anuncios)</span>
+            <span className="text-slate-600">Pagina {safePage} de {totalPages} ({filteredLatest.length} veiculos)</span>
             <div className="flex gap-2">
               <button type="button" className="rounded-md border border-slate-300 px-3 py-1.5 disabled:opacity-50" disabled={safePage <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>Anterior</button>
               <button type="button" className="rounded-md border border-slate-300 px-3 py-1.5 disabled:opacity-50" disabled={safePage >= totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))}>Proxima</button>

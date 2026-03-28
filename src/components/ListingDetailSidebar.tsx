@@ -1,8 +1,14 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
+import Link from "next/link";
+
 import Notice from "@/components/Notice";
+import ListingMessageForm from "@/components/ListingMessageForm";
 import ListingFeaturePanel from "@/components/ListingFeaturePanel";
 import type { Listing } from "@/lib/database";
+import { sendMetric } from "@/components/TrackMetric";
 import { useAuth } from "@/lib/useAuth";
 
 type Props = {
@@ -19,9 +25,36 @@ function firstTwoNames(name?: string) {
 }
 
 export default function ListingDetailSidebar({ listing }: Props) {
-  const { user, isLoading } = useAuth();
+  const { user, token, isLoading } = useAuth();
+  const [privateContact, setPrivateContact] = useState(listing.contact);
+  const hasPrivateContact = Boolean(
+    privateContact?.email || privateContact?.phone || privateContact?.name
+  );
 
-  if (isLoading) {
+  useEffect(() => {
+    setPrivateContact(listing.contact);
+  }, [listing.contact]);
+
+  useEffect(() => {
+    if (!user) return;
+    if (privateContact?.email || privateContact?.phone || privateContact?.name) return;
+
+    fetch(`/api/listings/${listing.id}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      cache: "no-store",
+      credentials: "same-origin"
+    })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.error || "Nao foi possivel carregar o contato.");
+        }
+        setPrivateContact(data?.listing?.contact || { name: "", email: "", phone: "" });
+      })
+      .catch(() => undefined);
+  }, [listing.id, privateContact?.email, privateContact?.name, privateContact?.phone, token, user]);
+
+  if (isLoading && !hasPrivateContact) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
         Carregando informacoes privadas...
@@ -29,7 +62,7 @@ export default function ListingDetailSidebar({ listing }: Props) {
     );
   }
 
-  if (!user) {
+  if (!user && !hasPrivateContact) {
     return (
       <Notice title="Area para usuarios logados" variant="info">
         Faca login para ver contato completo.
@@ -37,9 +70,15 @@ export default function ListingDetailSidebar({ listing }: Props) {
     );
   }
 
-  const ownerName = firstTwoNames(listing.contact?.name);
-  const phone = listing.contact?.phone?.trim();
-  const email = listing.contact?.email?.trim();
+  const ownerName = firstTwoNames(privateContact?.name);
+  const phone = privateContact?.phone?.trim();
+  const email = privateContact?.email?.trim();
+  const companyLink =
+    listing.ownerProfile &&
+    (listing.ownerProfile.accountType === "company" ||
+      listing.ownerProfile.accountType === "agency")
+      ? `/empresas/${listing.ownerProfile.id}`
+      : null;
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6">
@@ -52,6 +91,19 @@ export default function ListingDetailSidebar({ listing }: Props) {
         {phone ? (
           <a
             href={`tel:${phone}`}
+            onClick={() =>
+              void sendMetric({
+                eventType: "contact_click",
+                entityType: "listing",
+                entityId: listing.id,
+                ownerUserId: listing.createdBy,
+                path: `/veiculos/${listing.slug}`,
+                label: `${listing.title} telefone`,
+                metadata: {
+                  contactType: "phone"
+                }
+              })
+            }
             className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50"
           >
             Telefone: {phone}
@@ -65,6 +117,19 @@ export default function ListingDetailSidebar({ listing }: Props) {
         {email ? (
           <a
             href={`mailto:${email}`}
+            onClick={() =>
+              void sendMetric({
+                eventType: "contact_click",
+                entityType: "listing",
+                entityId: listing.id,
+                ownerUserId: listing.createdBy,
+                path: `/veiculos/${listing.slug}`,
+                label: `${listing.title} email`,
+                metadata: {
+                  contactType: "email"
+                }
+              })
+            }
             className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50"
           >
             E-mail: {email}
@@ -75,6 +140,17 @@ export default function ListingDetailSidebar({ listing }: Props) {
           </div>
         )}
       </div>
+
+      {companyLink ? (
+        <Link
+          href={companyLink}
+          className="mt-4 inline-flex w-full items-center justify-center rounded-md border border-brand-200 bg-brand-50 px-3 py-2 text-sm font-semibold text-brand-800 hover:bg-brand-100"
+        >
+          Ver mais veiculos desta empresa
+        </Link>
+      ) : null}
+
+      <ListingMessageForm listingId={listing.id} />
     </div>
   );
 }

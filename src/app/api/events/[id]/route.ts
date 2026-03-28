@@ -5,6 +5,8 @@ import { db } from '@/lib/database';
 import { isPublicEventStatus } from '@/lib/event-status';
 import { normalizeRecurrence } from '@/lib/eventRecurrence';
 import { syncOrganizerFromEvent } from '@/lib/organizers-sync';
+import { sanitizeEventForViewer } from '@/lib/privacy';
+import { logServerError } from '@/lib/server-log';
 import { normalizeAssetReference } from '@/lib/site-url';
 import { normalizeYouTubeUrl } from '@/lib/youtube';
 
@@ -76,9 +78,12 @@ export async function GET(
 
     const pastEvent = await db.pastEvents.findByEventId(event.id);
 
-    return NextResponse.json({ event, pastEvent });
+    return NextResponse.json({
+      event: sanitizeEventForViewer(event, user),
+      pastEvent
+    });
   } catch (error) {
-    console.error('Erro ao buscar evento:', error);
+    logServerError('Erro ao buscar evento', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -376,13 +381,22 @@ export async function PUT(
       }
     }
 
+    await db.audit.create({
+      actorUserId: user.id,
+      action: "event.update",
+      entityType: "event",
+      entityId: params.id,
+      status: "success",
+      path: `/api/events/${params.id}`
+    });
+
     return NextResponse.json({
-      event,
+      event: sanitizeEventForViewer(event, user),
       pastEvent,
       message: 'Evento atualizado com sucesso'
     });
   } catch (error) {
-    console.error('Erro ao atualizar evento:', error);
+    logServerError('Erro ao atualizar evento', error);
     if (error instanceof Error && error.message === 'Nao autorizado') {
       return NextResponse.json({ error: error.message }, { status: 401 });
     }
@@ -408,9 +422,9 @@ export async function DELETE(
       );
     }
 
-    if (user.role !== 'admin') {
+    if (user.role !== 'admin' && event.createdBy !== user.id) {
       return NextResponse.json(
-        { error: 'Somente administradores podem excluir eventos (acao imediata).' },
+        { error: 'Voce nao tem permissao para excluir este evento.' },
         { status: 403 }
       );
     }
@@ -424,11 +438,20 @@ export async function DELETE(
       );
     }
 
+    await db.audit.create({
+      actorUserId: user.id,
+      action: "event.delete",
+      entityType: "event",
+      entityId: params.id,
+      status: "success",
+      path: `/api/events/${params.id}`
+    });
+
     return NextResponse.json(
       { message: 'Evento excluido com sucesso' }
     );
   } catch (error) {
-    console.error('Erro ao excluir evento:', error);
+    logServerError('Erro ao excluir evento', error);
     if (error instanceof Error && error.message === 'Nao autorizado') {
       return NextResponse.json({ error: error.message }, { status: 401 });
     }

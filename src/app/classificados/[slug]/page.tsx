@@ -1,19 +1,24 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import Container from "@/components/Container";
 import CommentsSection from "@/components/CommentsSection";
-import ListingDetailSidebar from "@/components/ListingDetailSidebar";
+import Container from "@/components/Container";
 import ListingCrudActions from "@/components/ListingCrudActions";
-import Notice from "@/components/Notice";
-import PageIntro from "@/components/PageIntro";
-import ZoomableImage from "@/components/ZoomableImage";
+import ListingDetailSidebar from "@/components/ListingDetailSidebar";
 import ListingGallery from "@/components/ListingGallery";
-import { formatCurrencyBRL } from "@/lib/format";
+import PageIntro from "@/components/PageIntro";
+import TrackMetric from "@/components/TrackMetric";
+import ZoomableImage from "@/components/ZoomableImage";
+import { getUserFromAuthToken } from "@/lib/auth-middleware";
+import { AUTH_COOKIE_NAME } from "@/lib/auth-token";
 import { db } from "@/lib/database";
+import { formatCurrencyBRL } from "@/lib/format";
 import { listingImageAlt } from "@/lib/image-alt";
+import { sanitizeListingForViewer } from "@/lib/privacy";
 import { listingJsonLd } from "@/lib/schema";
+import { logServerError } from "@/lib/server-log";
 import { normalizeAssetReference } from "@/lib/site-url";
 
 type Props = {
@@ -21,11 +26,6 @@ type Props = {
     slug: string;
   };
 };
-
-type ListingMediaItem =
-  | { type: "image"; src: string; alt: string }
-  | { type: "youtube"; src: string }
-  | { type: "upload"; src: string };
 
 function toMetaDescription(text: string) {
   const clean = text.replace(/\s+/g, " ").trim();
@@ -51,7 +51,7 @@ async function findVisibleListing(slug: string) {
       listing && (listing.status === "approved" || listing.status === "active");
     return isVisible ? listing : null;
   } catch (error) {
-    console.error("Erro ao buscar classificado por slug:", error);
+    logServerError("Erro ao buscar classificado por slug", error);
     return null;
   }
 }
@@ -61,8 +61,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!listing) {
     return {
-      title: "Anúncio",
-      description: "Anúncio não encontrado."
+      title: "Anuncio",
+      description: "Anuncio nao encontrado."
     };
   }
 
@@ -86,32 +86,29 @@ export default async function ListingDetailPage({ params }: Props) {
     return notFound();
   }
 
-  const listingYear = listing.modelYear ?? listing.year ?? listing.manufactureYear;
-  const listingYearLabel = listingYear ? String(listingYear) : "Ano não informado";
-  const images = (listing.images?.length ? listing.images : ["/placeholders/car.svg"])
-    .map((image) => normalizeAssetReference(image) || "/placeholders/car.svg");
+  const user = await getUserFromAuthToken(cookies().get(AUTH_COOKIE_NAME)?.value ?? null);
+  const safeListing = sanitizeListingForViewer(listing, user);
 
-  const mediaItems: ListingMediaItem[] = images.map((src, index) => ({
-    type: "image",
-    src,
-    alt: listingImageAlt(listing.title, index + 1)
-  }));
+  const listingYear =
+    safeListing.modelYear ?? safeListing.year ?? safeListing.manufactureYear;
+  const listingYearLabel = listingYear ? String(listingYear) : "Ano nao informado";
+  const images = (safeListing.images?.length
+    ? safeListing.images
+    : ["/placeholders/car.svg"]
+  ).map((image) => normalizeAssetReference(image) || "/placeholders/car.svg");
 
-  const locationLabel = formatLocation(listing.city, listing.state);
+  const locationLabel = formatLocation(safeListing.city, safeListing.state);
   const subtitleParts = [
     locationLabel,
     listingYearLabel,
-    formatCurrencyBRL(listing.price)
+    formatCurrencyBRL(safeListing.price)
   ].filter(Boolean);
 
   return (
     <>
-      <PageIntro
-        title={listing.title}
-        subtitle={subtitleParts.join(" • ")}
-      >
+      <PageIntro title={safeListing.title} subtitle={subtitleParts.join(" • ")}>
         <Link
-          href="/classificados"
+          href="/veiculos"
           className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
         >
           Voltar
@@ -124,7 +121,7 @@ export default async function ListingDetailPage({ params }: Props) {
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(
               listingJsonLd({
-                ...listing,
+                ...safeListing,
                 images,
                 year: listingYear
               })
@@ -133,16 +130,25 @@ export default async function ListingDetailPage({ params }: Props) {
         />
 
         <ListingCrudActions
-          listingId={listing.id}
-          editHref={`/classificados/gerenciar/${listing.id}`}
+          listingId={safeListing.id}
+          editHref={`/veiculos/gerenciar/${safeListing.id}`}
+        />
+
+        <TrackMetric
+          eventType="listing_view"
+          entityType="listing"
+          entityId={safeListing.id}
+          ownerUserId={safeListing.createdBy}
+          path={`/veiculos/${safeListing.slug}`}
+          label={safeListing.title}
         />
 
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
           <div className="grid gap-6 lg:col-span-2">
-              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
               <ZoomableImage
                 src={images[0]}
-                alt={listingImageAlt(listing.title, 1)}
+                alt={listingImageAlt(safeListing.title, 1)}
                 width={1200}
                 height={800}
                 className="h-80 w-full object-cover"
@@ -150,21 +156,16 @@ export default async function ListingDetailPage({ params }: Props) {
               />
             </div>
 
-              <div>
-                {/* Client-side gallery with lightbox and video support */}
-                {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-                <ListingGallery
-                  images={images}
-                  title={listing.title}
-                />
-              </div>
+            <div>
+              <ListingGallery images={images} title={safeListing.title} />
+            </div>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-6">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900">Descrição</h2>
+                  <h2 className="text-lg font-semibold text-slate-900">Descricao</h2>
                   <p className="mt-3 text-sm leading-relaxed text-slate-700">
-                    {listing.description}
+                    {safeListing.description}
                   </p>
                 </div>
 
@@ -180,7 +181,7 @@ export default async function ListingDetailPage({ params }: Props) {
                 <div>
                   <dt className="text-slate-500">Marca / Modelo</dt>
                   <dd className="mt-1 font-semibold text-slate-900">
-                    {listing.make} {listing.model}
+                    {safeListing.make} {safeListing.model}
                   </dd>
                 </div>
                 <div>
@@ -190,24 +191,23 @@ export default async function ListingDetailPage({ params }: Props) {
                 <div>
                   <dt className="text-slate-500">Cidade / UF</dt>
                   <dd className="mt-1 font-semibold text-slate-900">
-                    {locationLabel || "Não informado"}
+                    {locationLabel || "Nao informado"}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-slate-500">Preço</dt>
+                  <dt className="text-slate-500">Preco</dt>
                   <dd className="mt-1 text-lg font-bold text-slate-900">
-                    {formatCurrencyBRL(listing.price)}
+                    {formatCurrencyBRL(safeListing.price)}
                   </dd>
                 </div>
               </dl>
-
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-6">
-              <CommentsSection listingId={listing.id} />
+              <CommentsSection listingId={safeListing.id} />
             </div>
 
-            <ListingDetailSidebar listing={listing} />
+            <ListingDetailSidebar listing={safeListing} />
           </aside>
         </div>
       </Container>

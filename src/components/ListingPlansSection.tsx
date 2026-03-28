@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import Notice from "@/components/Notice";
+import { resolvePlanOffers } from "@/lib/couponCampaigns";
 import { db } from "@/lib/database";
 import {
   cloneDefaultListingPlans,
@@ -17,14 +18,20 @@ type Props = {
 async function loadPlans() {
   try {
     const settings = await db.settings.get();
-    if (Array.isArray(settings?.listingPlans)) {
-      return normalizeListingPlans(settings.listingPlans);
-    }
+    return {
+      plans: Array.isArray(settings?.listingPlans)
+        ? normalizeListingPlans(settings.listingPlans)
+        : cloneDefaultListingPlans(),
+      campaigns: Array.isArray(settings?.couponCampaigns) ? settings.couponCampaigns : []
+    };
   } catch (error) {
     console.error("Erro ao carregar planos:", error);
   }
 
-  return cloneDefaultListingPlans();
+  return {
+    plans: cloneDefaultListingPlans(),
+    campaigns: []
+  };
 }
 
 function cardClasses(plan: ListingPlan) {
@@ -49,9 +56,11 @@ export default async function ListingPlansSection({
   className = "",
   showTitle = true
 }: Props) {
-  const plans = (await loadPlans()).filter(
+  const { plans, campaigns } = await loadPlans();
+  const visiblePlans = plans.filter(
     (plan) => plan.active && isListingPlanReadyForPublic(plan)
   );
+  const offers = resolvePlanOffers(visiblePlans, campaigns);
 
   return (
     <section className={className}>
@@ -66,25 +75,42 @@ export default async function ListingPlansSection({
         </div>
       ) : null}
 
-      {plans.length === 0 ? (
+      {offers.length === 0 ? (
         <Notice title="Sem planos" variant="info">
           Nenhum plano ativo foi cadastrado no momento.
         </Notice>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {plans.map((plan) => (
-            <article key={plan.id} className={cardClasses(plan)}>
-              {plan.badge ? <div className={badgeClasses(plan)}>{plan.badge}</div> : null}
-              <h3 className="mt-2 text-xl font-bold text-slate-900">{plan.name}</h3>
-              <div className="mt-3 text-2xl font-bold text-slate-900">{plan.priceLabel}</div>
-              {plan.durationDays > 0 ? (
-                <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Duracao: {plan.durationDays} dias
+          {offers.map((offer) => (
+            <article key={offer.plan.id} className={cardClasses(offer.plan)}>
+              {offer.plan.badge ? <div className={badgeClasses(offer.plan)}>{offer.plan.badge}</div> : null}
+              <h3 className="mt-2 text-xl font-bold text-slate-900">{offer.plan.name}</h3>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                {offer.promotionalPriceLabel ? (
+                  <span className="text-lg font-semibold text-slate-400 line-through">
+                    {offer.originalPriceLabel}
+                  </span>
+                ) : null}
+                <span className="text-2xl font-bold text-slate-900">
+                  {offer.promotionalPriceLabel || offer.originalPriceLabel}
+                </span>
+              </div>
+              {offer.campaign?.badgeText ? (
+                <div className="mt-2 inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">
+                  {offer.campaign.badgeText}
                 </div>
               ) : null}
-              <p className="mt-3 text-sm text-slate-700">{plan.description}</p>
-              <Link href={plan.ctaHref} className={buttonClasses(plan)}>
-                {plan.ctaLabel}
+              {offer.plan.durationDays > 0 ? (
+                <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Duracao: {offer.plan.durationDays} dias
+                </div>
+              ) : null}
+              <p className="mt-3 text-sm text-slate-700">{offer.plan.description}</p>
+              {offer.campaign?.description ? (
+                <p className="mt-2 text-xs text-emerald-700">{offer.campaign.description}</p>
+              ) : null}
+              <Link href={offer.plan.ctaHref} className={buttonClasses(offer.plan)}>
+                {offer.plan.ctaLabel}
               </Link>
             </article>
           ))}

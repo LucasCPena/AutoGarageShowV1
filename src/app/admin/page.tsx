@@ -6,6 +6,7 @@ import AdminCatalogPanel from "@/components/AdminCatalogPanel";
 import AdminCommentsPanel from "@/components/AdminCommentsPanel";
 import AdminOrganizersPanel from "@/components/AdminOrganizersPanel";
 import AdminSettingsPanel from "@/components/AdminSettingsPanel";
+import AdminMetricsPanel from "@/components/AdminMetricsPanel";
 import AdminUsersPanel from "@/components/AdminUsersPanel";
 import Container from "@/components/Container";
 import Notice from "@/components/Notice";
@@ -47,13 +48,13 @@ export default function AdminPage() {
     <>
       <PageIntro
         title="Admin"
-        subtitle="Configuracoes gerais do sistema e atalhos para CRUD nas telas publicas."
+        subtitle="Painel administrativo com organizacao por veiculos, eventos, noticias, banners, planos e operacao."
       />
 
       <Container className="py-10">
         <Notice title="CRUD por tela" variant="info">
-          O CRUD de eventos, classificados e noticias agora fica dentro das proprias paginas:
-          /eventos, /classificados e /noticias.
+          O CRUD de eventos, veiculos e noticias agora fica dentro das proprias paginas:
+          /eventos, /veiculos e /noticias.
         </Notice>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -64,10 +65,10 @@ export default function AdminPage() {
             Gerenciar eventos
           </Link>
           <Link
-            href="/classificados"
+            href="/veiculos"
             className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 hover:border-brand-300 hover:text-brand-700"
           >
-            Gerenciar classificados
+            Gerenciar veiculos
           </Link>
           <Link
             href="/noticias"
@@ -91,6 +92,10 @@ export default function AdminPage() {
 
         <div className="mt-10">
           <AdminSettingsPanel />
+        </div>
+
+        <div className="mt-10">
+          <AdminMetricsPanel token={token} />
         </div>
 
         <div className="mt-10">

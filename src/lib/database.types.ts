@@ -1,13 +1,36 @@
 import type { ListingPlan } from "./listingPlans";
 
+export type UserRole = "admin" | "user";
+export type UserAccountType = "individual" | "company" | "agency";
+export type UserApprovalStatus = "approved" | "pending";
+export type UserVerificationStatus = "unverified" | "verified";
+export type ListingVehicleType = "car" | "motorcycle";
+
+export interface ListingOwnerProfile {
+  id: string;
+  accountType: UserAccountType;
+  displayName: string;
+  companyName?: string;
+  logoUrl?: string;
+  approvalStatus: UserApprovalStatus;
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
   password: string;
-  role: "admin" | "user";
+  role: UserRole;
   document?: string; // CPF ou CNPJ
+  documentType?: "cpf" | "cnpj";
   phone?: string;
+  accountType?: UserAccountType;
+  companyName?: string;
+  logoUrl?: string;
+  approvalStatus?: UserApprovalStatus;
+  verificationStatus?: UserVerificationStatus;
+  listingLimitOverride?: number | null;
+  marketplaceProfile?: "mercado-de-pulgas";
   createdAt: string;
   updatedAt: string;
 }
@@ -75,6 +98,7 @@ export interface Listing {
   id: string;
   slug: string;
   title: string; // Gerado automaticamente
+  vehicleType?: ListingVehicleType;
   description: string;
   make: string;
   model: string;
@@ -107,6 +131,7 @@ export interface Listing {
   document: string; // CPF ou CNPJ do criador
   city: string;
   state: string;
+  ownerProfile?: ListingOwnerProfile;
   createdAt: string;
   updatedAt: string;
 }
@@ -198,6 +223,17 @@ export interface Settings {
     faviconUrl?: string;
     youtubeLiveUrl?: string;
   };
+  analytics?: {
+    googleAnalyticsId?: string;
+  };
+  publicDisplay?: {
+    pageSize?: number;
+    homeSectionSize?: number;
+  };
+  qrAccess?: {
+    autoApproveAccounts?: boolean;
+  };
+  couponCampaigns?: CouponCampaign[];
 }
 
 export interface VehicleBrand {
@@ -218,4 +254,67 @@ export interface News {
   status: "draft" | "published";
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CouponCampaign {
+  id: string;
+  title: string;
+  description?: string;
+  code?: string;
+  targetPlanIds: string[];
+  discountType: "percentage" | "fixed" | "free";
+  discountValue?: number;
+  badgeText?: string;
+  active: boolean;
+  startAt: string;
+  endAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdvertiserMessage {
+  id: string;
+  senderUserId?: string;
+  senderName: string;
+  senderEmail: string;
+  senderPhone?: string;
+  recipientUserId: string;
+  listingId?: string;
+  subject?: string;
+  message: string;
+  status: "new" | "read" | "archived";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MetricEvent {
+  id: string;
+  eventType:
+    | "page_view"
+    | "listing_view"
+    | "company_page_view"
+    | "banner_click"
+    | "contact_click"
+    | "message_sent"
+    | "search";
+  entityType: "page" | "listing" | "company" | "banner" | "search";
+  entityId?: string;
+  ownerUserId?: string;
+  userId?: string;
+  path: string;
+  label?: string;
+  metadata?: Record<string, string | number | boolean>;
+  createdAt: string;
+}
+
+export interface AuditEvent {
+  id: string;
+  actorUserId?: string;
+  action: string;
+  entityType: "auth" | "user" | "listing" | "event" | "message" | "upload" | "settings";
+  entityId?: string;
+  status: "success" | "failure";
+  path?: string;
+  metadata?: Record<string, string | number | boolean>;
+  createdAt: string;
 }

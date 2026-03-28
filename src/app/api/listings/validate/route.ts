@@ -5,7 +5,7 @@ import { db, isMysqlRequiredError } from "@/lib/database";
 import {
   getListingDocumentForStorage,
   getListingRules,
-  resolveListingLimit,
+  resolveEffectiveListingLimit,
   validateListingAdvertiserDocument
 } from "@/lib/listingRules";
 
@@ -48,9 +48,11 @@ export async function POST(request: NextRequest) {
     }
 
     const activeCount = await db.listings.getActiveCount(validation.digits);
-    const limit = resolveListingLimit(settings, validation.documentType);
+    const limit = resolveEffectiveListingLimit(settings, user, validation.documentType);
     const remaining = Math.max(limit - activeCount, 0);
     const canProceed = activeCount < limit;
+    const reusedVerification =
+      user.verificationStatus === "verified" && user.document === validation.digits;
 
     return NextResponse.json({
       valid: true,
@@ -60,10 +62,13 @@ export async function POST(request: NextRequest) {
       activeCount,
       limit,
       remaining,
+      reusedVerification,
       vehicleMinAgeYears: rules.vehicleMinAgeYears,
       maxAllowedYear: rules.maxAllowedYear,
       message: canProceed
-        ? "Anunciante validado com sucesso."
+        ? reusedVerification
+          ? "Validacao reaproveitada do cadastro existente."
+          : "Anunciante validado com sucesso."
         : `Limite atingido para ${validation.documentType.toUpperCase()}.`
     });
   } catch (error) {

@@ -6,12 +6,14 @@ import Link from "next/link";
 
 import AuthModal from "@/components/AuthModal";
 import Container from "@/components/Container";
+import SiteSearchForm from "@/components/SiteSearchForm";
 import {
   SITE_BRANDING_EVENT,
   normalizeSiteBranding,
   type SiteBranding
 } from "@/lib/siteBranding";
 import { useAuth } from "@/lib/useAuth";
+import { getUserDisplayName } from "@/lib/userProfiles";
 
 const DEFAULT_LOGO_URL = "/uploads/site/logo-site.png";
 
@@ -41,6 +43,7 @@ export default function SiteHeader() {
   const [branding, setBranding] = useState<SiteBranding>({});
   const [logoLoadFailed, setLogoLoadFailed] = useState(false);
   const logoUrl = branding.logoUrl || DEFAULT_LOGO_URL;
+  const userDisplayName = user ? getUserDisplayName(user) : "";
 
   useEffect(() => {
     setMounted(true);
@@ -101,14 +104,18 @@ export default function SiteHeader() {
   const navItems = useMemo(() => {
     const items = [
       { href: "/eventos", label: "Eventos" },
-      { href: "/classificados/anunciar", label: "Anuncie" },
+      { href: "/veiculos/anunciar", label: "Anuncie" },
       { href: "/organizadores", label: "Organizadores" },
-      { href: "/classificados", label: "Classificados" },
-      { href: "/noticias", label: "Noticias" }
+      { href: "/veiculos", label: "Veiculos" },
+      { href: "/noticias", label: "Noticias" },
+      { href: "/busca", label: "Busca" }
     ];
     if (mounted && user?.role === "admin") {
       items.push({ href: "/admin/banners", label: "Banners" });
       items.push({ href: "/admin", label: "Admin" });
+    }
+    if (mounted && user) {
+      items.push({ href: "/painel", label: "Painel" });
     }
     return items;
   }, [user, mounted]);
@@ -154,13 +161,23 @@ export default function SiteHeader() {
           ))}
         </nav>
 
+        <div className="hidden min-w-[260px] max-w-[340px] flex-1 items-center justify-end md:flex">
+          <SiteSearchForm compact />
+        </div>
+
         <div className="hidden items-center gap-2 md:flex">
           {mounted && user ? (
             <>
               <span className="text-sm text-slate-600">
                 <span className="text-slate-300">Ola,</span>{" "}
-                <span className="font-semibold text-white">{user.name}</span>
+                <span className="font-semibold text-white">{userDisplayName}</span>
               </span>
+              <Link
+                href="/painel"
+                className="rounded-md border border-slate-600 px-3 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-900"
+              >
+                Painel
+              </Link>
               <button
                 onClick={() => void logout()}
                 className="rounded-md border border-slate-600 px-3 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-900"
@@ -171,7 +188,7 @@ export default function SiteHeader() {
           ) : (
             <>
               <Link
-                href="/classificados/anunciar"
+                href="/veiculos/anunciar"
                 className="rounded-md border border-white/20 px-3 py-2 text-sm font-semibold text-white hover:bg-white/10"
               >
                 Anunciar
@@ -210,8 +227,14 @@ export default function SiteHeader() {
               {mounted && user ? (
                 <>
                   <div className="px-3 py-2 text-sm text-slate-600">
-                    Ola, <span className="font-semibold text-slate-900">{user.name}</span>
+                    Ola, <span className="font-semibold text-slate-900">{userDisplayName}</span>
                   </div>
+                  <Link
+                    href="/painel"
+                    className="rounded-md border border-slate-300 px-3 py-2 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    Abrir painel
+                  </Link>
                   <button
                     onClick={() => void logout()}
                     className="rounded-md border border-slate-300 px-3 py-2 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50"

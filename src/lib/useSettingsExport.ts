@@ -5,7 +5,6 @@ import { useCallback } from "react";
 import { useSiteSettings } from "@/lib/useSiteSettings";
 import { COMMENTS_STORAGE_KEY } from "@/lib/useComments";
 import { LISTING_OVERRIDES_STORAGE_KEY } from "@/lib/useListingOverrides";
-import { AUTH_STORAGE_KEY } from "@/lib/useAuth";
 
 export function useSettingsExport() {
   const { settings } = useSiteSettings();
@@ -15,7 +14,6 @@ export function useSettingsExport() {
       siteSettings: settings,
       comments: localStorage.getItem(COMMENTS_STORAGE_KEY),
       listingOverrides: localStorage.getItem(LISTING_OVERRIDES_STORAGE_KEY),
-      auth: localStorage.getItem(AUTH_STORAGE_KEY),
       exportedAt: new Date().toISOString()
     };
 
@@ -45,9 +43,6 @@ export function useSettingsExport() {
           }
           if (data.listingOverrides) {
             localStorage.setItem(LISTING_OVERRIDES_STORAGE_KEY, data.listingOverrides);
-          }
-          if (data.auth) {
-            localStorage.setItem(AUTH_STORAGE_KEY, data.auth);
           }
           resolve();
         } catch (e) {

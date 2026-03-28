@@ -13,8 +13,9 @@ export function middleware(request: NextRequest) {
   const hasPublicListingAccess = Boolean(
     request.cookies.get(PUBLIC_LISTING_PAGE_ACCESS_COOKIE)?.value
   );
+  const hasAuthSession = Boolean(request.cookies.get(AUTH_COOKIE_NAME)?.value);
 
-  if (!hasPublicListingAccess) {
+  if (!hasPublicListingAccess || hasAuthSession) {
     return NextResponse.next();
   }
 

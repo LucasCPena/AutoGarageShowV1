@@ -10,7 +10,16 @@ type User = {
   name: string;
   email: string;
   role: "admin" | "user";
+  document?: string;
+  documentType?: "cpf" | "cnpj";
+  accountType?: "individual" | "company" | "agency";
+  companyName?: string;
+  logoUrl?: string;
+  approvalStatus?: "approved" | "pending";
+  verificationStatus?: "unverified" | "verified";
+  listingLimitOverride?: number | null;
   createdAt: string;
+  updatedAt?: string;
 };
 
 type AuthState = {
@@ -19,6 +28,24 @@ type AuthState = {
   token: string | null;
 };
 
+function serializeUserForStorage(user: User) {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    documentType: user.documentType,
+    accountType: user.accountType,
+    companyName: user.companyName,
+    logoUrl: user.logoUrl,
+    approvalStatus: user.approvalStatus,
+    verificationStatus: user.verificationStatus,
+    listingLimitOverride: user.listingLimitOverride,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt
+  };
+}
+
 function isSameUser(a: User | null, b: User | null) {
   if (!a || !b) return a === b;
   return (
@@ -26,7 +53,11 @@ function isSameUser(a: User | null, b: User | null) {
     a.name === b.name &&
     a.email === b.email &&
     a.role === b.role &&
-    a.createdAt === b.createdAt
+    a.createdAt === b.createdAt &&
+    a.accountType === b.accountType &&
+    a.companyName === b.companyName &&
+    a.logoUrl === b.logoUrl &&
+    a.approvalStatus === b.approvalStatus
   );
 }
 
@@ -49,7 +80,33 @@ function normalizeUser(input: unknown): User | null {
     name: obj.name,
     email: obj.email,
     role: obj.role as User["role"],
-    createdAt: obj.createdAt as string
+    document: typeof obj.document === "string" ? obj.document : undefined,
+    documentType:
+      obj.documentType === "cpf" || obj.documentType === "cnpj"
+        ? (obj.documentType as User["documentType"])
+        : undefined,
+    accountType:
+      obj.accountType === "individual" ||
+      obj.accountType === "company" ||
+      obj.accountType === "agency"
+        ? (obj.accountType as User["accountType"])
+        : undefined,
+    companyName: typeof obj.companyName === "string" ? obj.companyName : undefined,
+    logoUrl: typeof obj.logoUrl === "string" ? obj.logoUrl : undefined,
+    approvalStatus:
+      obj.approvalStatus === "pending" || obj.approvalStatus === "approved"
+        ? (obj.approvalStatus as User["approvalStatus"])
+        : undefined,
+    verificationStatus:
+      obj.verificationStatus === "verified" || obj.verificationStatus === "unverified"
+        ? (obj.verificationStatus as User["verificationStatus"])
+        : undefined,
+    listingLimitOverride:
+      typeof obj.listingLimitOverride === "number"
+        ? obj.listingLimitOverride
+        : undefined,
+    createdAt: obj.createdAt as string,
+    updatedAt: typeof obj.updatedAt === "string" ? obj.updatedAt : undefined
   };
 }
 
@@ -73,7 +130,10 @@ function writeToStorage(user: User | null, token: string | null) {
   if (typeof window === "undefined") return;
   try {
     if (user && token) {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ user, token }));
+      window.localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ user: serializeUserForStorage(user), token })
+      );
     } else {
       window.localStorage.removeItem(STORAGE_KEY);
     }
@@ -196,15 +256,43 @@ export function useAuth() {
   );
 
   const register = useCallback(
-    async (name: string, email: string, password: string, document?: string) => {
+    async (
+      name: string,
+      email: string,
+      password: string,
+      documentOrOptions?:
+        | string
+        | {
+            document?: string;
+            accountType?: "individual" | "company" | "agency";
+            companyName?: string;
+            logoUrl?: string;
+            marketplaceProfile?: "mercado-de-pulgas";
+            source?: "site" | "qr";
+          }
+    ) => {
       try {
+        const options =
+          typeof documentOrOptions === "string"
+            ? { document: documentOrOptions }
+            : documentOrOptions || {};
         const response = await fetch('/api/auth/register', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           credentials: "same-origin",
-          body: JSON.stringify({ name, email, password, document }),
+          body: JSON.stringify({
+            name,
+            email,
+            password,
+            document: options.document,
+            accountType: options.accountType,
+            companyName: options.companyName,
+            logoUrl: options.logoUrl,
+            marketplaceProfile: options.marketplaceProfile,
+            source: options.source
+          }),
         });
 
         const data = await response.json();

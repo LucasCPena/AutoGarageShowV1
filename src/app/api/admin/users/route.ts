@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { requireAdmin } from "@/lib/auth-middleware";
 import { db, isMysqlRequiredError } from "@/lib/database";
+import { sanitizeUserForAdminList } from "@/lib/privacy";
+import { logServerError } from "@/lib/server-log";
 
 export const dynamic = "force-dynamic";
 
 function sanitizeUser(user: Awaited<ReturnType<typeof db.users.findById>>) {
   if (!user) return null;
-  const { password: _password, ...safeUser } = user;
-  return safeUser;
+  return sanitizeUserForAdminList(user);
 }
 
 export async function GET(request: NextRequest) {
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ users: sanitizedUsers });
   } catch (error) {
-    console.error("Erro ao buscar usuarios do admin:", error);
+    logServerError("Erro ao buscar usuarios do admin", error);
     if (isMysqlRequiredError(error)) {
       return NextResponse.json(
         { error: "Banco de dados indisponivel no momento." },

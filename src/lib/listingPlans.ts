@@ -20,7 +20,7 @@ const DEFAULT_LISTING_PLANS: ListingPlan[] = [
     priceLabel: "Gratis",
     durationDays: 0,
     ctaLabel: "Publicar gratis",
-    ctaHref: "/classificados/anunciar",
+    ctaHref: "/veiculos/anunciar",
     featured: false,
     active: true
   },
@@ -32,7 +32,7 @@ const DEFAULT_LISTING_PLANS: ListingPlan[] = [
     priceLabel: "Sob consulta",
     durationDays: 30,
     ctaLabel: "Quero destacar",
-    ctaHref: "/classificados/anunciar",
+    ctaHref: "/veiculos/anunciar",
     featured: true,
     active: true
   }
@@ -78,7 +78,7 @@ export function normalizeListingPlans(input: unknown) {
         priceLabel: normalizeText(item.priceLabel),
         durationDays: normalizePositiveInt(item.durationDays, 0),
         ctaLabel: normalizeText(item.ctaLabel, "Saiba mais"),
-        ctaHref: normalizeText(item.ctaHref, "/classificados/anunciar"),
+        ctaHref: normalizeText(item.ctaHref, "/veiculos/anunciar"),
         featured: normalizeBoolean(item.featured, false),
         active: normalizeBoolean(item.active, true)
       } as ListingPlan;
