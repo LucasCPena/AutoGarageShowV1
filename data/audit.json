@@ -1,1 +1,13 @@
-[]
+[
+  {
+    "action": "auth.login",
+    "entityType": "auth",
+    "status": "failure",
+    "path": "/api/auth/login",
+    "metadata": {
+      "reason": "user_not_found"
+    },
+    "id": "94caac9b-3ff2-45a1-8f3c-4b8286378d4d",
+    "createdAt": "2026-03-28T19:42:36.243Z"
+  }
+]

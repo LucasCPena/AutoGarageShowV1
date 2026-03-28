@@ -5,10 +5,16 @@
     "email": "admin@teste.com",
     "password": "admin123",
     "role": "admin",
-    "document": "12345678901234",
-    "phone": "(11) 98765-4321",
+    "document": "enc:v1:7aJaGLdaspbLKYNz:T5Q85WNp44ycMlFfv-22PQ:HYjmHBsZ04f_BRb1HdY",
+    "phone": "enc:v1:mf00f1764e8GaefQ:FChH7F-mCqCXhlaWq0BqjQ:fx1KN1eU44zPS4ARQlkb",
     "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z"
+    "updatedAt": "2024-01-01T00:00:00.000Z",
+    "accountType": "company",
+    "approvalStatus": "approved",
+    "verificationStatus": "verified",
+    "documentType": "cnpj",
+    "listingLimitOverride": null,
+    "documentHash": "0b5fe8bbcfaaa47a2240aa2ed5412649faa46b9419bb3faf0d2e4069251e9f34"
   },
   {
     "id": "user-default",
@@ -16,19 +22,31 @@
     "email": "user@teste.com",
     "password": "user123",
     "role": "user",
-    "document": "12345678909",
-    "phone": "(21) 91234-5678",
+    "document": "enc:v1:BqFp4mlmHjCkGeCw:A5C-ewVtMv9ex4pBXSInZg:PSqufHiNg1SFA98",
+    "phone": "enc:v1:kwG5K3zDA7huful2:XkqNOVkJEXW4gFjWk44uVA:PfJjlZQS7COXv34W1bKH",
     "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z"
+    "updatedAt": "2024-01-01T00:00:00.000Z",
+    "accountType": "individual",
+    "approvalStatus": "approved",
+    "verificationStatus": "verified",
+    "documentType": "cpf",
+    "listingLimitOverride": null,
+    "documentHash": "c72a795edc6508678d8441b71a211c1171fdb56b40089339a90d93708bbd66ae"
   },
   {
     "name": "QA User 1771777189126",
     "email": "qa.user.1771777189126@teste.com",
     "password": "123456",
     "role": "user",
-    "document": "52998224725",
+    "document": "enc:v1:KYTUVluxU_JSYspC:CKPiKhEQ9vj1XosxEH49hA:iZprp-4ONqFsio0",
     "id": "2d5891db-2662-46e2-9aa9-34b71bd512a6",
     "createdAt": "2026-02-22T16:19:49.310Z",
-    "updatedAt": "2026-02-22T16:19:49.310Z"
+    "updatedAt": "2026-02-22T16:19:49.310Z",
+    "accountType": "individual",
+    "approvalStatus": "approved",
+    "verificationStatus": "verified",
+    "documentType": "cpf",
+    "listingLimitOverride": null,
+    "documentHash": "1e2ad19fb6f8999f2d9a78a76034849dc103afebe2d793edf78c72abb0d06839"
   }
 ]
