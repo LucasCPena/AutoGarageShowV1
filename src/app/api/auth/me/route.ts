@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { getUserFromToken } from "@/lib/auth-middleware";
+import {
+  getPublicSecurityConfigurationMessage,
+  isSecurityConfigurationError
+} from "@/lib/security-config";
 import { logServerError } from "@/lib/server-log";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +20,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ user });
   } catch (error) {
     logServerError("Erro ao verificar autenticacao", error);
+    if (isSecurityConfigurationError(error)) {
+      return NextResponse.json(
+        { error: getPublicSecurityConfigurationMessage() },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: "Erro interno do servidor" },
       { status: 500 }

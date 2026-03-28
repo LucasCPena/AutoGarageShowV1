@@ -139,39 +139,84 @@ async function ensureUsersTable() {
 
   const columns = await getTableColumnsSafe("users");
   if (columns && !columns.has("document_type")) {
-    await query("ALTER TABLE users ADD COLUMN document_type VARCHAR(8) NULL");
+    try {
+      await query("ALTER TABLE users ADD COLUMN document_type VARCHAR(8) NULL");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[db] Nao foi possivel adicionar users.document_type: ${message}`);
+    }
     clearTableColumnsCache("users");
   }
   if (columns && !columns.has("account_type")) {
-    await query("ALTER TABLE users ADD COLUMN account_type VARCHAR(20) NULL");
+    try {
+      await query("ALTER TABLE users ADD COLUMN account_type VARCHAR(20) NULL");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[db] Nao foi possivel adicionar users.account_type: ${message}`);
+    }
     clearTableColumnsCache("users");
   }
   if (columns && !columns.has("company_name")) {
-    await query("ALTER TABLE users ADD COLUMN company_name VARCHAR(160) NULL");
+    try {
+      await query("ALTER TABLE users ADD COLUMN company_name VARCHAR(160) NULL");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[db] Nao foi possivel adicionar users.company_name: ${message}`);
+    }
     clearTableColumnsCache("users");
   }
   if (columns && !columns.has("logo_url")) {
-    await query("ALTER TABLE users ADD COLUMN logo_url VARCHAR(255) NULL");
+    try {
+      await query("ALTER TABLE users ADD COLUMN logo_url VARCHAR(255) NULL");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[db] Nao foi possivel adicionar users.logo_url: ${message}`);
+    }
     clearTableColumnsCache("users");
   }
   if (columns && !columns.has("approval_status")) {
-    await query("ALTER TABLE users ADD COLUMN approval_status VARCHAR(20) NULL");
+    try {
+      await query("ALTER TABLE users ADD COLUMN approval_status VARCHAR(20) NULL");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[db] Nao foi possivel adicionar users.approval_status: ${message}`);
+    }
     clearTableColumnsCache("users");
   }
   if (columns && !columns.has("verification_status")) {
-    await query("ALTER TABLE users ADD COLUMN verification_status VARCHAR(20) NULL");
+    try {
+      await query("ALTER TABLE users ADD COLUMN verification_status VARCHAR(20) NULL");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[db] Nao foi possivel adicionar users.verification_status: ${message}`);
+    }
     clearTableColumnsCache("users");
   }
   if (columns && !columns.has("listing_limit_override")) {
-    await query("ALTER TABLE users ADD COLUMN listing_limit_override INT NULL");
+    try {
+      await query("ALTER TABLE users ADD COLUMN listing_limit_override INT NULL");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[db] Nao foi possivel adicionar users.listing_limit_override: ${message}`);
+    }
     clearTableColumnsCache("users");
   }
   if (columns && !columns.has("marketplace_profile")) {
-    await query("ALTER TABLE users ADD COLUMN marketplace_profile VARCHAR(40) NULL");
+    try {
+      await query("ALTER TABLE users ADD COLUMN marketplace_profile VARCHAR(40) NULL");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[db] Nao foi possivel adicionar users.marketplace_profile: ${message}`);
+    }
     clearTableColumnsCache("users");
   }
   if (columns && !columns.has("document_hash")) {
-    await query("ALTER TABLE users ADD COLUMN document_hash VARCHAR(64) NULL");
+    try {
+      await query("ALTER TABLE users ADD COLUMN document_hash VARCHAR(64) NULL");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[db] Nao foi possivel adicionar users.document_hash: ${message}`);
+    }
     clearTableColumnsCache("users");
   }
 
@@ -1631,28 +1676,35 @@ export const dbMysql = {
       return (await query("SELECT * FROM audit_events ORDER BY created_at DESC")).map(mapAuditEvent);
     },
     create: async (event: Omit<AuditEvent, "id" | "createdAt">) => {
-      await ensureAuditTable();
       const newEvent = buildStoredAuditEvent({
         ...event,
         id: crypto.randomUUID(),
         createdAt: nowIso()
       });
-      await query(
-        `INSERT INTO audit_events (
-          id, actor_user_id, action, entity_type, entity_id, status, path, metadata, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          newEvent.id,
-          newEvent.actorUserId ?? null,
-          newEvent.action,
-          newEvent.entityType,
-          newEvent.entityId ?? null,
-          newEvent.status,
-          newEvent.path ?? null,
-          JSON.stringify(newEvent.metadata ?? {}),
-          newEvent.createdAt
-        ]
-      );
+
+      try {
+        await ensureAuditTable();
+        await query(
+          `INSERT INTO audit_events (
+            id, actor_user_id, action, entity_type, entity_id, status, path, metadata, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            newEvent.id,
+            newEvent.actorUserId ?? null,
+            newEvent.action,
+            newEvent.entityType,
+            newEvent.entityId ?? null,
+            newEvent.status,
+            newEvent.path ?? null,
+            JSON.stringify(newEvent.metadata ?? {}),
+            newEvent.createdAt
+          ]
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn(`[audit] Registro de auditoria ignorado: ${message}`);
+      }
+
       return mapAuditEvent({
         ...newEvent,
         actor_user_id: newEvent.actorUserId,

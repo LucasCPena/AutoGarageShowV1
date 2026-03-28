@@ -3,6 +3,10 @@ import { db, isMysqlRequiredError } from '@/lib/database';
 import { onlyDigits, validateCNPJ, validateCPF } from '@/lib/document';
 import { sanitizeUserForSession } from '@/lib/privacy';
 import { hashPassword } from '@/lib/password';
+import {
+  getPublicSecurityConfigurationMessage,
+  isSecurityConfigurationError
+} from '@/lib/security-config';
 import { logServerError } from '@/lib/server-log';
 import { toPublicAssetUrl } from '@/lib/site-url';
 
@@ -131,6 +135,12 @@ export async function POST(request: NextRequest) {
     if (isMysqlRequiredError(error)) {
       return NextResponse.json(
         { error: 'Banco de dados indisponivel no momento. Tente novamente em instantes.' },
+        { status: 503 }
+      );
+    }
+    if (isSecurityConfigurationError(error)) {
+      return NextResponse.json(
+        { error: getPublicSecurityConfigurationMessage() },
         { status: 503 }
       );
     }
