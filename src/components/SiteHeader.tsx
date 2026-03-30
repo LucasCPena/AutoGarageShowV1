@@ -44,6 +44,11 @@ export default function SiteHeader() {
   const [logoLoadFailed, setLogoLoadFailed] = useState(false);
   const logoUrl = branding.logoUrl || DEFAULT_LOGO_URL;
   const userDisplayName = user ? getUserDisplayName(user) : "";
+  const userHeaderLabel = userDisplayName
+    ? userDisplayName.length > 18
+      ? `${userDisplayName.slice(0, 18)}...`
+      : userDisplayName
+    : "";
 
   useEffect(() => {
     setMounted(true);
@@ -114,9 +119,6 @@ export default function SiteHeader() {
       items.push({ href: "/admin/banners", label: "Banners" });
       items.push({ href: "/admin", label: "Admin" });
     }
-    if (mounted && user) {
-      items.push({ href: "/painel", label: "Painel" });
-    }
     return items;
   }, [user, mounted]);
 
@@ -124,8 +126,11 @@ export default function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-800 bg-black">
-      <Container className="flex h-16 items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-2 font-semibold text-white">
+      <Container
+        maxWidthClass="max-w-screen-2xl"
+        className="flex h-16 items-center justify-between gap-4"
+      >
+        <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold text-white">
           {showCustomLogo ? (
             <>
               <img
@@ -146,7 +151,7 @@ export default function SiteHeader() {
           )}
         </Link>
 
-        <nav className="hidden items-center gap-3 text-sm font-medium text-slate-200 md:flex">
+        <nav className="hidden min-w-0 flex-1 items-center gap-3 overflow-x-auto whitespace-nowrap text-sm font-medium text-slate-200 lg:flex">
           {navItems.map((item, index) => (
             <div key={item.href} className="flex items-center gap-3">
               {index > 0 ? (
@@ -161,16 +166,18 @@ export default function SiteHeader() {
           ))}
         </nav>
 
-        <div className="hidden min-w-[260px] max-w-[340px] flex-1 items-center justify-end md:flex">
+        <div className="hidden w-full max-w-[320px] min-w-0 shrink-0 items-center justify-end md:flex xl:max-w-[360px]">
           <SiteSearchForm compact />
         </div>
 
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden shrink-0 items-center gap-2 md:flex">
           {mounted && user ? (
             <>
-              <span className="text-sm text-slate-600">
+              <span className="max-w-[150px] whitespace-nowrap text-sm text-slate-600">
                 <span className="text-slate-300">Ola,</span>{" "}
-                <span className="font-semibold text-white">{userDisplayName}</span>
+                <span className="font-semibold text-white" title={userDisplayName}>
+                  {userHeaderLabel}
+                </span>
               </span>
               <Link
                 href="/painel"

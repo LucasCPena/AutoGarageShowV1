@@ -27,9 +27,16 @@ export default function SiteSearchForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className={compact ? "flex gap-2" : "grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]"}>
+    <form
+      onSubmit={onSubmit}
+      className={
+        compact
+          ? "flex min-w-0 w-full gap-2"
+          : "grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]"
+      }
+    >
       <input
-        className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+        className={`h-11 rounded-md border border-slate-300 px-3 text-sm ${compact ? "min-w-0 flex-1" : ""}`}
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder="Buscar eventos, veiculos, noticias e empresas"
@@ -51,7 +58,7 @@ export default function SiteSearchForm({
       )}
       <button
         type="submit"
-        className="inline-flex h-11 items-center justify-center rounded-md bg-slate-900 px-5 text-sm font-semibold text-white hover:bg-slate-800"
+        className={`inline-flex h-11 items-center justify-center rounded-md bg-slate-900 px-5 text-sm font-semibold text-white hover:bg-slate-800 ${compact ? "shrink-0" : ""}`}
       >
         Buscar
       </button>
