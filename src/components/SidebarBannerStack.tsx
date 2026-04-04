@@ -90,6 +90,8 @@ export default function SidebarBannerStack({
 
   const visibleBanners = useMemo(() => {
     if (activeBanners.length <= maxVisible) return activeBanners;
+    const rotationSeed = rotationKey;
+    void rotationSeed;
     return shuffle(activeBanners).slice(0, maxVisible);
   }, [activeBanners, maxVisible, rotationKey]);
 
@@ -98,7 +100,7 @@ export default function SidebarBannerStack({
   return (
     <aside
       data-sidebar-banners={hasBanners ? "true" : "false"}
-      className={hasBanners ? "grid gap-3" : "hidden"}
+      className={hasBanners ? "grid gap-3 xl:sticky xl:top-24" : "hidden"}
       aria-hidden={!hasBanners}
     >
       <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
@@ -112,11 +114,13 @@ export default function SidebarBannerStack({
 
         const content = (
           <>
-            <img
-              src={image}
-              alt={banner.title?.trim() || "Banner publicitario"}
-              className="h-44 w-full object-cover"
-            />
+            <div className="bg-slate-50 p-2">
+              <img
+                src={image}
+                alt={banner.title?.trim() || "Banner publicitario"}
+                className="h-auto max-h-[32rem] w-full object-contain"
+              />
+            </div>
             {hasTitle ? (
               <div className="p-3 text-sm font-semibold text-slate-900">{banner.title}</div>
             ) : null}

@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/useAuth";
 
 type Props = {
   listing: Listing;
+  companyListingCount?: number;
 };
 
 function firstTwoNames(name?: string) {
@@ -24,7 +25,7 @@ function firstTwoNames(name?: string) {
   return parts.slice(0, 2).join(" ");
 }
 
-export default function ListingDetailSidebar({ listing }: Props) {
+export default function ListingDetailSidebar({ listing, companyListingCount = 0 }: Props) {
   const { user, token, isLoading } = useAuth();
   const [privateContact, setPrivateContact] = useState(listing.contact);
   const hasPrivateContact = Boolean(
@@ -146,7 +147,9 @@ export default function ListingDetailSidebar({ listing }: Props) {
           href={companyLink}
           className="mt-4 inline-flex w-full items-center justify-center rounded-md border border-brand-200 bg-brand-50 px-3 py-2 text-sm font-semibold text-brand-800 hover:bg-brand-100"
         >
-          Ver mais veiculos desta empresa
+          {companyListingCount > 0
+            ? `Ver todos os ${companyListingCount} anuncio(s) da loja`
+            : "Ver todos os anuncios da loja"}
         </Link>
       ) : null}
 

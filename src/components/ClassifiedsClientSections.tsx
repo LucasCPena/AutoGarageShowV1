@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -7,7 +7,8 @@ import Link from "next/link";
 
 import ListingCrudActions from "@/components/ListingCrudActions";
 import Notice from "@/components/Notice";
-import type { Listing } from "@/lib/database";
+import type { Listing, ListingVehicleType } from "@/lib/database";
+import { formatDateTime } from "@/lib/date";
 import { formatCurrencyBRL } from "@/lib/format";
 import { listingImageAlt } from "@/lib/image-alt";
 import { applyListingOverrides } from "@/lib/listingOverrides";
@@ -43,6 +44,18 @@ function byFeaturedUntilDesc(a: Listing, b: Listing) {
   return byCreatedAtDesc(a, b);
 }
 
+function getVehicleTypeValue(listing: Listing) {
+  return listing.vehicleType === "motorcycle" ? "motorcycle" : "car";
+}
+
+function getVehicleLabel(vehicleType: ListingVehicleType | undefined) {
+  return vehicleType === "motorcycle" ? "Moto" : "Veiculo";
+}
+
+function getVehiclePluralLabel(vehicleType: ListingVehicleType | undefined) {
+  return vehicleType === "motorcycle" ? "motos" : "veiculos";
+}
+
 function formatLocation(city?: string, state?: string) {
   const cityLabel = city?.trim() ?? "";
   const stateLabel = state?.trim() ?? "";
@@ -53,18 +66,12 @@ function formatLocation(city?: string, state?: string) {
   return "";
 }
 
-function formatListingMeta(listing: Listing) {
-  const parts: string[] = [];
-  const location = formatLocation(listing.city, listing.state);
-  if (location) parts.push(location);
+function formatMileage(value: number | undefined) {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+    return "";
+  }
 
-  const yearLabel =
-    typeof listing.year === "number" && Number.isFinite(listing.year)
-      ? String(listing.year)
-      : "";
-  if (yearLabel) parts.push(yearLabel);
-
-  return parts.join(" | ");
+  return `${new Intl.NumberFormat("pt-BR").format(Math.round(value))} km`;
 }
 
 function getListingImageSrc(images: string[] | undefined) {
@@ -79,6 +86,23 @@ function getContactInfo(listing: Listing) {
     email: email || null,
     phone: phone || null
   };
+}
+
+function matchesForcedVehicleType(
+  listing: Listing,
+  forcedVehicleType: ListingVehicleType | undefined
+) {
+  if (!forcedVehicleType) return true;
+  return getVehicleTypeValue(listing) === forcedVehicleType;
+}
+
+function shuffle<T>(items: T[]) {
+  const next = [...items];
+  for (let index = next.length - 1; index > 0; index -= 1) {
+    const target = Math.floor(Math.random() * (index + 1));
+    [next[index], next[target]] = [next[target], next[index]];
+  }
+  return next;
 }
 
 function ListingCard({
@@ -96,60 +120,113 @@ function ListingCard({
 }) {
   const contact = getContactInfo(listing);
   const href = detailHref || `/veiculos/${listing.slug}`;
+  const vehicleType = getVehicleTypeValue(listing);
+  const locationLabel = formatLocation(listing.city, listing.state);
+  const mileageLabel = formatMileage(listing.mileage);
+  const yearLabel =
+    typeof listing.modelYear === "number" && Number.isFinite(listing.modelYear)
+      ? String(listing.modelYear)
+      : typeof listing.year === "number" && Number.isFinite(listing.year)
+        ? String(listing.year)
+        : "";
+  const publishedAtLabel = formatDateTime(listing.createdAt) || "Data nao informada";
+  const sellerName = listing.ownerProfile?.displayName?.trim() || "";
   const showCompanyLink =
     listing.ownerProfile &&
     (listing.ownerProfile.accountType === "company" ||
       listing.ownerProfile.accountType === "agency");
 
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-0">
-      <Link
-        href={href}
-        className="group block overflow-hidden rounded-2xl hover:border-brand-200"
-      >
-        <Image
-          src={getListingImageSrc(listing.images)}
-          alt={listingImageAlt(listing.title)}
-          width={1200}
-          height={800}
-          className="h-64 w-full object-cover"
-          loading="lazy"
-        />
+    <article className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+      <Link href={href} className="group block overflow-hidden">
+        <div className="relative">
+          <Image
+            src={getListingImageSrc(listing.images)}
+            alt={listingImageAlt(listing.title)}
+            width={1200}
+            height={800}
+            className="h-64 w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+            loading="lazy"
+          />
+
+          <div className="absolute inset-x-0 top-0 flex flex-wrap items-start justify-between gap-2 p-4">
+            <div className="flex flex-wrap gap-2">
+              <span className="rounded-full bg-slate-900/85 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
+                {getVehicleLabel(vehicleType)}
+              </span>
+              {featuredTag ? (
+                <span className="rounded-full bg-amber-400/95 px-3 py-1 text-xs font-semibold text-slate-950">
+                  Destaque
+                </span>
+              ) : null}
+            </div>
+
+            <span className="rounded-full bg-white/95 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-sm">
+              {publishedAtLabel}
+            </span>
+          </div>
+        </div>
       </Link>
 
-      <div className="p-5 pt-4">
-        <div className="flex items-center justify-between gap-3">
-          <Link
-            href={href}
-            className="text-sm font-semibold text-slate-900 hover:text-brand-800"
-          >
-            {listing.title}
-          </Link>
-          {null}
+      <div className="p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <Link
+              href={href}
+              className="line-clamp-2 text-lg font-semibold text-slate-900 hover:text-brand-800"
+            >
+              {listing.title}
+            </Link>
+            <div className="mt-1 text-sm text-slate-600">
+              {[listing.make, listing.model].filter(Boolean).join(" | ")}
+            </div>
+          </div>
+
+          <div className="shrink-0 text-right">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+              Preco
+            </div>
+            <div className="mt-1 text-lg font-bold text-slate-900">
+              {formatCurrencyBRL(listing.price)}
+            </div>
+          </div>
         </div>
 
-        <div className="mt-1 text-sm text-slate-600">{formatListingMeta(listing)}</div>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
-            {listing.vehicleType === "motorcycle" ? "Moto" : "Veiculo"}
-          </span>
-          {showCompanyLink ? (
-            <Link
-              href={`/empresas/${listing.ownerProfile?.id}`}
-              className="rounded-full bg-brand-100 px-2.5 py-1 text-xs font-semibold text-brand-800 hover:bg-brand-200"
-            >
-              {listing.ownerProfile?.accountType === "agency"
-                ? "Ver agencia"
-                : "Ver empresa"}
-            </Link>
+        <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-600">
+          {listing.description}
+        </p>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {locationLabel ? (
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+              {locationLabel}
+            </span>
+          ) : null}
+          {yearLabel ? (
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+              Ano {yearLabel}
+            </span>
+          ) : null}
+          {mileageLabel ? (
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+              {mileageLabel}
+            </span>
           ) : null}
         </div>
-        <div className="mt-3 text-sm font-semibold text-slate-900">
-          {formatCurrencyBRL(listing.price)}
-        </div>
+
+        {showCompanyLink ? (
+          <div className="mt-4">
+            <Link
+              href={`/empresas/${listing.ownerProfile?.id}`}
+              className="inline-flex items-center rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-800 hover:bg-brand-200"
+            >
+              Mais anuncios de {sellerName || "esta loja"}
+            </Link>
+          </div>
+        ) : null}
 
         {showContact && (contact.email || contact.phone) ? (
-          <div className="mt-2 space-y-1 text-xs text-slate-600">
+          <div className="mt-4 grid gap-1 border-t border-slate-100 pt-4 text-xs text-slate-600">
             {contact.email ? <div>Email: {contact.email}</div> : null}
             {contact.phone ? <div>Telefone: {contact.phone}</div> : null}
           </div>
@@ -169,9 +246,21 @@ function ListingCard({
 
 type Props = {
   listings: Listing[];
+  forcedVehicleType?: ListingVehicleType;
+  featuredSectionTitle?: string;
+  featuredSectionSubtitle?: string;
+  latestSectionTitle?: string;
+  latestSectionSubtitle?: string;
 };
 
-export default function ClassifiedsClientSections({ listings }: Props) {
+export default function ClassifiedsClientSections({
+  listings,
+  forcedVehicleType,
+  featuredSectionTitle,
+  featuredSectionSubtitle,
+  latestSectionTitle,
+  latestSectionSubtitle
+}: Props) {
   const { settings } = useSiteSettings();
   const { user } = useAuth();
   const { overrides } = useListingOverrides();
@@ -181,17 +270,45 @@ export default function ClassifiedsClientSections({ listings }: Props) {
   const [stateFilter, setStateFilter] = useState("all");
   const [yearFilter, setYearFilter] = useState("all");
   const [blackPlateFilter, setBlackPlateFilter] = useState("all");
-  const [vehicleTypeFilter, setVehicleTypeFilter] = useState("all");
+  const [vehicleTypeFilter, setVehicleTypeFilter] = useState<string>(
+    forcedVehicleType ?? "all"
+  );
   const [page, setPage] = useState(1);
   const [pendingPage, setPendingPage] = useState(1);
   const now = Date.now();
 
+  const entityPluralLabel = getVehiclePluralLabel(forcedVehicleType);
+  const entitySingularLabel = forcedVehicleType === "motorcycle" ? "moto" : "veiculo";
+  const resolvedFeaturedTitle =
+    featuredSectionTitle ?? (forcedVehicleType === "motorcycle" ? "Motos em destaque" : "Em destaque");
+  const resolvedFeaturedSubtitle =
+    featuredSectionSubtitle ??
+    (forcedVehicleType === "motorcycle"
+      ? "Motos destacadas aparecem em uma vitrine exclusiva."
+      : "Veiculos destacados aparecem nesta vitrine.");
+  const resolvedLatestTitle =
+    latestSectionTitle ??
+    (forcedVehicleType === "motorcycle" ? "Ultimas motos" : "Ultimos veiculos");
+  const resolvedLatestSubtitle =
+    latestSectionSubtitle ??
+    (forcedVehicleType === "motorcycle"
+      ? "Lista das motos mais recentes aprovadas pela plataforma."
+      : "Lista dos veiculos mais recentes, incluindo carros e motos.");
+
+  useEffect(() => {
+    setVehicleTypeFilter(forcedVehicleType ?? "all");
+  }, [forcedVehicleType]);
+
   const effectiveListings = applyListingOverrides(listings, overrides);
-  const pending = effectiveListings
+  const scopedListings = effectiveListings.filter((listing) =>
+    matchesForcedVehicleType(listing, forcedVehicleType)
+  );
+
+  const pending = scopedListings
     .filter((listing) => listing.status === "pending")
     .sort(byCreatedAtDesc);
 
-  const approved = effectiveListings.filter(
+  const approved = scopedListings.filter(
     (listing) => listing.status === "approved" || listing.status === "active"
   );
 
@@ -222,15 +339,25 @@ export default function ClassifiedsClientSections({ listings }: Props) {
     .filter((listing) => !isFeaturedActive(listing, now))
     .sort(sortByOrderThen(byCreatedAtDesc));
 
+  const featuredSignature = featuredActive.map((listing) => listing.id).join("|");
+  const featuredRotationStart = useMemo(() => {
+    const signature = featuredSignature;
+    void signature;
+    if (featuredActive.length <= 1) return 0;
+    return Math.floor(Math.random() * featuredActive.length);
+  }, [featuredActive.length, featuredSignature]);
+
   const featuredRotated = useMemo(() => {
     if (featuredActive.length <= 1) return featuredActive;
-    const start = Math.floor(Math.random() * featuredActive.length);
-    return [...featuredActive.slice(start), ...featuredActive.slice(0, start)];
-  }, [featuredActive]);
+    return [
+      ...featuredActive.slice(featuredRotationStart),
+      ...featuredActive.slice(0, featuredRotationStart)
+    ];
+  }, [featuredActive, featuredRotationStart]);
 
   useEffect(() => {
     setFeaturedCursor(0);
-  }, [featuredRotated.length]);
+  }, [featuredSignature]);
 
   useEffect(() => {
     setPage(1);
@@ -245,31 +372,48 @@ export default function ClassifiedsClientSections({ listings }: Props) {
     ? Array.from({ length: 3 }, (_, index) => featuredRotated[(featuredCursor + index) % featuredRotated.length])
     : featuredRotated;
 
-  const allMakes = Array.from(new Set(latest.map((l) => l.make).filter(Boolean))).sort();
-  const allStates = Array.from(new Set(latest.map((l) => l.state).filter(Boolean))).sort();
-  const allYears = Array.from(new Set(latest.map((l) => String(l.modelYear || l.year)).filter(Boolean))).sort((a,b)=>Number(b)-Number(a));
+  const allMakes = Array.from(new Set(latest.map((listing) => listing.make).filter(Boolean))).sort();
+  const allStates = Array.from(new Set(latest.map((listing) => listing.state).filter(Boolean))).sort();
+  const allYears = Array.from(
+    new Set(latest.map((listing) => String(listing.modelYear || listing.year)).filter(Boolean))
+  ).sort((a, b) => Number(b) - Number(a));
   const vehicleTypeOptions = Array.from(
-    new Set(latest.map((listing) => listing.vehicleType ?? "car"))
+    new Set(latest.map((listing) => getVehicleTypeValue(listing)))
   );
   const modelOptions = Array.from(
-    new Set(latest.filter((l) => makeFilter === "all" || l.make === makeFilter).map((l) => l.model).filter(Boolean))
+    new Set(
+      latest
+        .filter((listing) => makeFilter === "all" || listing.make === makeFilter)
+        .map((listing) => listing.model)
+        .filter(Boolean)
+    )
   ).sort();
 
   const filteredLatest = latest.filter((listing) => {
     if (makeFilter !== "all" && listing.make !== makeFilter) return false;
     if (modelFilter !== "all" && listing.model !== modelFilter) return false;
     if (stateFilter !== "all" && listing.state !== stateFilter) return false;
-    if (yearFilter !== "all" && String(listing.modelYear || listing.year) !== yearFilter) return false;
-    if (vehicleTypeFilter !== "all" && (listing.vehicleType ?? "car") !== vehicleTypeFilter) return false;
+    if (yearFilter !== "all" && String(listing.modelYear || listing.year) !== yearFilter) {
+      return false;
+    }
+    if (!forcedVehicleType && vehicleTypeFilter !== "all" && getVehicleTypeValue(listing) !== vehicleTypeFilter) {
+      return false;
+    }
     if (blackPlateFilter === "sim" && !listing.specifications?.blackPlate) return false;
     if (blackPlateFilter === "nao" && listing.specifications?.blackPlate) return false;
     return true;
   });
 
-  const pageSize = settings.publicDisplay.pageSize;
-  const totalPages = Math.max(1, Math.ceil(filteredLatest.length / pageSize));
+  const configuredPageSize =
+    typeof settings.publicDisplay.pageSize === "number" && settings.publicDisplay.pageSize > 0
+      ? settings.publicDisplay.pageSize
+      : 12;
+  const totalPages = Math.max(1, Math.ceil(filteredLatest.length / configuredPageSize));
   const safePage = Math.min(page, totalPages);
-  const paginatedLatest = filteredLatest.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const paginatedLatest = filteredLatest.slice(
+    (safePage - 1) * configuredPageSize,
+    safePage * configuredPageSize
+  );
 
   const pendingPageSize = 9;
   const pendingTotalPages = Math.max(1, Math.ceil(pending.length / pendingPageSize));
@@ -278,11 +422,12 @@ export default function ClassifiedsClientSections({ listings }: Props) {
     (safePendingPage - 1) * pendingPageSize,
     safePendingPage * pendingPageSize
   );
+
   return (
     <>
       {expiredCount > 0 ? (
         <Notice title="Automacao" variant="warning" className="mt-4">
-          {expiredCount} veiculo(s) foram ocultados por expiracao automatica.
+          {expiredCount} {entitySingularLabel}(s) foram ocultados por expiracao automatica.
         </Notice>
       ) : null}
 
@@ -292,7 +437,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
             <div>
               <h2 className="text-xl font-bold text-slate-900">Pendentes (admin)</h2>
               <p className="mt-1 text-sm text-slate-600">
-                Cada veiculo pendente pode ser aprovado, rejeitado, editado ou excluido no proprio card.
+                Cada anuncio pendente pode ser aprovado, rejeitado, editado ou excluido no proprio card.
               </p>
             </div>
           </div>
@@ -312,7 +457,7 @@ export default function ClassifiedsClientSections({ listings }: Props) {
           {pending.length > 0 ? (
             <div className="mt-5 flex items-center justify-between gap-3 text-sm">
               <span className="text-slate-600">
-                Pagina {safePendingPage} de {pendingTotalPages} ({pending.length} cadastros)
+                Pagina {safePendingPage} de {pendingTotalPages} ({pending.length} cadastro(s))
               </span>
               <div className="flex gap-2">
                 <button
@@ -340,10 +485,8 @@ export default function ClassifiedsClientSections({ listings }: Props) {
       <section className="mt-10">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">Em destaque</h2>
-            <p className="mt-1 text-sm text-slate-600">
-              Veiculos destacados aparecem nesta vitrine.
-            </p>
+            <h2 className="text-xl font-bold text-slate-900">{resolvedFeaturedTitle}</h2>
+            <p className="mt-1 text-sm text-slate-600">{resolvedFeaturedSubtitle}</p>
           </div>
 
           {canSlideFeatured ? (
@@ -376,50 +519,110 @@ export default function ClassifiedsClientSections({ listings }: Props) {
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visibleFeatured.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} featuredTag showContact={Boolean(user)} />
+            <ListingCard
+              key={listing.id}
+              listing={listing}
+              featuredTag
+              showContact={Boolean(user)}
+            />
           ))}
 
           {featuredActive.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-600">
-              Nenhum veiculo em destaque.
+              Nenhum {entitySingularLabel} em destaque no momento.
             </div>
           ) : null}
         </div>
-
       </section>
 
       <section className="mt-14">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">Ultimos veiculos</h2>
-            <p className="mt-1 text-sm text-slate-600">
-              Lista dos veiculos mais recentes, incluindo carros e motos.
-            </p>
+            <h2 className="text-xl font-bold text-slate-900">{resolvedLatestTitle}</h2>
+            <p className="mt-1 text-sm text-slate-600">{resolvedLatestSubtitle}</p>
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2 lg:grid-cols-6">
-          <select className="h-10 rounded-md border border-slate-300 px-2 text-sm" value={makeFilter} onChange={(e)=>{ setMakeFilter(e.target.value); setModelFilter("all"); }}>
+        <div
+          className={`mt-4 grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2 ${
+            forcedVehicleType ? "lg:grid-cols-5" : "lg:grid-cols-6"
+          }`}
+        >
+          <select
+            className="h-10 rounded-md border border-slate-300 px-2 text-sm"
+            value={makeFilter}
+            onChange={(event) => {
+              setMakeFilter(event.target.value);
+              setModelFilter("all");
+            }}
+          >
             <option value="all">Todas as marcas</option>
-            {allMakes.map((make)=><option key={make} value={make}>{make}</option>)}
+            {allMakes.map((make) => (
+              <option key={make} value={make}>
+                {make}
+              </option>
+            ))}
           </select>
-          <select className="h-10 rounded-md border border-slate-300 px-2 text-sm" value={modelFilter} onChange={(e)=>setModelFilter(e.target.value)}>
+
+          <select
+            className="h-10 rounded-md border border-slate-300 px-2 text-sm"
+            value={modelFilter}
+            onChange={(event) => setModelFilter(event.target.value)}
+          >
             <option value="all">Todos os modelos</option>
-            {modelOptions.map((model)=><option key={model} value={model}>{model}</option>)}
+            {modelOptions.map((model) => (
+              <option key={model} value={model}>
+                {model}
+              </option>
+            ))}
           </select>
-          <select className="h-10 rounded-md border border-slate-300 px-2 text-sm" value={stateFilter} onChange={(e)=>setStateFilter(e.target.value)}>
+
+          <select
+            className="h-10 rounded-md border border-slate-300 px-2 text-sm"
+            value={stateFilter}
+            onChange={(event) => setStateFilter(event.target.value)}
+          >
             <option value="all">Todos os estados</option>
-            {allStates.map((uf)=><option key={uf} value={uf}>{uf}</option>)}
+            {allStates.map((uf) => (
+              <option key={uf} value={uf}>
+                {uf}
+              </option>
+            ))}
           </select>
-          <select className="h-10 rounded-md border border-slate-300 px-2 text-sm" value={yearFilter} onChange={(e)=>setYearFilter(e.target.value)}>
+
+          <select
+            className="h-10 rounded-md border border-slate-300 px-2 text-sm"
+            value={yearFilter}
+            onChange={(event) => setYearFilter(event.target.value)}
+          >
             <option value="all">Todos os anos</option>
-            {allYears.map((year)=><option key={year} value={year}>{year}</option>)}
+            {allYears.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
           </select>
-          <select className="h-10 rounded-md border border-slate-300 px-2 text-sm" value={vehicleTypeFilter} onChange={(e)=>setVehicleTypeFilter(e.target.value)}>
-            <option value="all">Tipo: todos</option>
-            {vehicleTypeOptions.map((item)=><option key={item} value={item}>{item === "motorcycle" ? "Motos" : "Carros"}</option>)}
-          </select>
-          <select className="h-10 rounded-md border border-slate-300 px-2 text-sm" value={blackPlateFilter} onChange={(e)=>setBlackPlateFilter(e.target.value)}>
+
+          {!forcedVehicleType ? (
+            <select
+              className="h-10 rounded-md border border-slate-300 px-2 text-sm"
+              value={vehicleTypeFilter}
+              onChange={(event) => setVehicleTypeFilter(event.target.value)}
+            >
+              <option value="all">Tipo: todos</option>
+              {vehicleTypeOptions.map((item) => (
+                <option key={item} value={item}>
+                  {item === "motorcycle" ? "Motos" : "Carros"}
+                </option>
+              ))}
+            </select>
+          ) : null}
+
+          <select
+            className="h-10 rounded-md border border-slate-300 px-2 text-sm"
+            value={blackPlateFilter}
+            onChange={(event) => setBlackPlateFilter(event.target.value)}
+          >
             <option value="all">Placa preta: todos</option>
             <option value="sim">Placa preta: sim</option>
             <option value="nao">Placa preta: nao</option>
@@ -433,17 +636,33 @@ export default function ClassifiedsClientSections({ listings }: Props) {
 
           {paginatedLatest.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-600">
-              Nenhum veiculo disponivel no momento.
+              Nenhum {entitySingularLabel} disponivel no momento.
             </div>
           ) : null}
         </div>
 
         {filteredLatest.length > 0 ? (
           <div className="mt-5 flex items-center justify-between gap-3 text-sm">
-            <span className="text-slate-600">Pagina {safePage} de {totalPages} ({filteredLatest.length} veiculos)</span>
+            <span className="text-slate-600">
+              Pagina {safePage} de {totalPages} ({filteredLatest.length} {entityPluralLabel})
+            </span>
             <div className="flex gap-2">
-              <button type="button" className="rounded-md border border-slate-300 px-3 py-1.5 disabled:opacity-50" disabled={safePage <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>Anterior</button>
-              <button type="button" className="rounded-md border border-slate-300 px-3 py-1.5 disabled:opacity-50" disabled={safePage >= totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))}>Proxima</button>
+              <button
+                type="button"
+                className="rounded-md border border-slate-300 px-3 py-1.5 disabled:opacity-50"
+                disabled={safePage <= 1}
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+              >
+                Anterior
+              </button>
+              <button
+                type="button"
+                className="rounded-md border border-slate-300 px-3 py-1.5 disabled:opacity-50"
+                disabled={safePage >= totalPages}
+                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+              >
+                Proxima
+              </button>
             </div>
           </div>
         ) : null}
@@ -451,4 +670,3 @@ export default function ClassifiedsClientSections({ listings }: Props) {
     </>
   );
 }
-

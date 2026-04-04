@@ -56,6 +56,16 @@ export function formatDateLong(iso: string | Date) {
   });
 }
 
+export function formatDateTime(iso: string | Date) {
+  return formatInEventTimeZone(iso, {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
 export function formatTime(iso: string) {
   return formatInEventTimeZone(iso, {
     hour: "2-digit",

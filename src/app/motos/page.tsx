@@ -13,7 +13,7 @@ import type { Listing } from "@/lib/database";
 import { fetchJson } from "@/lib/fetch-json";
 import { useAuth } from "@/lib/useAuth";
 
-export default function ClassifiedsPage() {
+export default function MotorcyclesPage() {
   const { token, isLoading: authLoading } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,7 +30,7 @@ export default function ClassifiedsPage() {
       ? { Authorization: `Bearer ${token}` }
       : undefined;
 
-    fetchJson<{ listings?: Listing[] }>("/api/listings", {
+    fetchJson<{ listings?: Listing[] }>("/api/listings?vehicleType=motorcycle", {
       headers,
       cache: "no-store"
     })
@@ -41,8 +41,8 @@ export default function ClassifiedsPage() {
       })
       .catch((err) => {
         if (cancelled) return;
-        console.error("Erro ao buscar classificados:", err);
-        setError("Erro ao carregar classificados");
+        console.error("Erro ao buscar motos:", err);
+        setError("Erro ao carregar motos");
         setLoading(false);
       });
 
@@ -54,7 +54,7 @@ export default function ClassifiedsPage() {
   if (loading) {
     return (
       <Container className="py-10">
-        <div>Carregando classificados...</div>
+        <div>Carregando motos...</div>
       </Container>
     );
   }
@@ -72,20 +72,27 @@ export default function ClassifiedsPage() {
   return (
     <>
       <PageIntro
-        title="Veiculos"
-        subtitle="Encontre carros e motos aprovados pela plataforma."
+        title="Motos"
+        subtitle="Encontre motos aprovadas pela plataforma com uma vitrine dedicada."
       />
 
       <Container className="py-10">
         <div className="page-with-sidebar">
           <div>
-            <MarketplaceSectionNav current="veiculos" />
+            <MarketplaceSectionNav current="motos" />
 
             <section className="mb-8">
               <HeroSlider section="listings" />
             </section>
 
-            <ClassifiedsClientSections listings={listings} />
+            <ClassifiedsClientSections
+              listings={listings}
+              forcedVehicleType="motorcycle"
+              featuredSectionTitle="Motos em destaque"
+              featuredSectionSubtitle="Selecao de motos promovidas e aprovadas para a vitrine principal."
+              latestSectionTitle="Ultimas motos"
+              latestSectionSubtitle="Confira as motos cadastradas mais recentemente, com data e hora do anuncio."
+            />
           </div>
 
           <SidebarBannerStack />

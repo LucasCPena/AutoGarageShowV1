@@ -112,6 +112,8 @@ export default function SiteHeader() {
       { href: "/veiculos/anunciar", label: "Anuncie" },
       { href: "/organizadores", label: "Organizadores" },
       { href: "/veiculos", label: "Veiculos" },
+      { href: "/motos", label: "Motos" },
+      { href: "/lojistas", label: "Lojistas" },
       { href: "/noticias", label: "Noticias" },
       { href: "/busca", label: "Busca" }
     ];
