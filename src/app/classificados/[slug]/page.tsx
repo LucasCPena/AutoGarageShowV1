@@ -116,6 +116,8 @@ export default async function ListingDetailPage({ params }: Props) {
     listingYearLabel,
     formatCurrencyBRL(safeListing.price)
   ].filter(Boolean);
+  const sellerPageLabel =
+    safeListing.ownerProfile?.accountType === "agency" ? "agencia" : "anunciante";
 
   let companyListingCount = 0;
   let moreFromSeller: Listing[] = [];
@@ -140,10 +142,10 @@ export default async function ListingDetailPage({ params }: Props) {
     <>
       <PageIntro title={safeListing.title} subtitle={subtitleParts.join(" | ")}>
         <Link
-          href="/veiculos"
+          href="/classificados"
           className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
         >
-          Voltar
+          Voltar aos classificados
         </Link>
       </PageIntro>
 
@@ -177,13 +179,13 @@ export default async function ListingDetailPage({ params }: Props) {
 
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
           <div className="grid gap-6 lg:col-span-2">
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <div className="overflow-hidden rounded-[28px] border border-slate-800 bg-slate-950 p-3 shadow-[0_24px_80px_rgba(15,23,42,0.24)]">
               <ZoomableImage
                 src={images[0]}
                 alt={listingImageAlt(safeListing.title, 1)}
                 width={1200}
                 height={800}
-                className="h-80 w-full object-cover"
+                className="h-80 w-full rounded-[22px] bg-slate-950 object-contain"
                 priority
               />
             </div>
@@ -208,7 +210,7 @@ export default async function ListingDetailPage({ params }: Props) {
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
                     <h2 className="text-lg font-semibold text-slate-900">
-                      Mais anuncios desta loja
+                      Mais anuncios deste {sellerPageLabel}
                     </h2>
                     <p className="mt-1 text-sm text-slate-600">
                       Veja outros veiculos publicados por {safeListing.ownerProfile.displayName}.
@@ -219,7 +221,7 @@ export default async function ListingDetailPage({ params }: Props) {
                     href={`/empresas/${safeListing.ownerProfile.id}`}
                     className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                   >
-                    Ver loja completa
+                    Ver pagina completa
                   </Link>
                 </div>
 
@@ -236,7 +238,7 @@ export default async function ListingDetailPage({ params }: Props) {
                             "/placeholders/car.svg"
                           }
                           alt={listingImageAlt(sellerListing.title)}
-                          className="h-44 w-full object-cover"
+                          className="h-44 w-full bg-slate-100 object-contain p-2"
                         />
                       </Link>
 
@@ -267,40 +269,44 @@ export default async function ListingDetailPage({ params }: Props) {
           </div>
 
           <aside className="grid gap-6">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6">
-              <div className="text-sm font-semibold text-slate-900">Detalhes</div>
+            <div className="rounded-[28px] border border-slate-800 bg-slate-950 p-6 text-white shadow-[0_24px_80px_rgba(15,23,42,0.22)]">
+              <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">
+                Detalhes
+              </div>
               <dl className="mt-4 grid gap-4 text-sm">
                 <div>
-                  <dt className="text-slate-500">Marca / Modelo</dt>
-                  <dd className="mt-1 font-semibold text-slate-900">
+                  <dt className="text-slate-400">Marca / Modelo</dt>
+                  <dd className="mt-1 font-semibold text-white">
                     {safeListing.make} {safeListing.model}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-slate-500">Ano</dt>
-                  <dd className="mt-1 font-semibold text-slate-900">{listingYearLabel}</dd>
+                  <dt className="text-slate-400">Ano</dt>
+                  <dd className="mt-1 font-semibold text-white">{listingYearLabel}</dd>
                 </div>
                 <div>
-                  <dt className="text-slate-500">Cidade / UF</dt>
-                  <dd className="mt-1 font-semibold text-slate-900">
+                  <dt className="text-slate-400">Cidade / UF</dt>
+                  <dd className="mt-1 font-semibold text-white">
                     {locationLabel || "Nao informado"}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-slate-500">Publicado em</dt>
-                  <dd className="mt-1 font-semibold text-slate-900">{publishedAtLabel}</dd>
+                  <dt className="text-slate-400">Publicado em</dt>
+                  <dd className="mt-1 font-semibold text-white">{publishedAtLabel}</dd>
                 </div>
                 {safeListing.ownerProfile ? (
                   <div>
-                    <dt className="text-slate-500">Loja</dt>
-                    <dd className="mt-1 font-semibold text-slate-900">
+                    <dt className="text-slate-400">
+                      {safeListing.ownerProfile.accountType === "agency" ? "Agencia" : "Anunciante"}
+                    </dt>
+                    <dd className="mt-1 font-semibold text-white">
                       {safeListing.ownerProfile.displayName}
                     </dd>
                   </div>
                 ) : null}
                 <div>
-                  <dt className="text-slate-500">Preco</dt>
-                  <dd className="mt-1 text-lg font-bold text-slate-900">
+                  <dt className="text-slate-400">Preco</dt>
+                  <dd className="mt-1 text-2xl font-bold text-white">
                     {formatCurrencyBRL(safeListing.price)}
                   </dd>
                 </div>

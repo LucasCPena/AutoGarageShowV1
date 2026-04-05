@@ -18,6 +18,13 @@ type User = {
   approvalStatus?: "approved" | "pending";
   verificationStatus?: "unverified" | "verified";
   listingLimitOverride?: number | null;
+  marketplaceProfile?: "mercado-de-pulgas" | "services";
+  activityType?: string;
+  shortDescription?: string;
+  websiteUrl?: string;
+  address?: string;
+  city?: string;
+  state?: string;
   createdAt: string;
   updatedAt?: string;
 };
@@ -41,6 +48,13 @@ function serializeUserForStorage(user: User) {
     approvalStatus: user.approvalStatus,
     verificationStatus: user.verificationStatus,
     listingLimitOverride: user.listingLimitOverride,
+    marketplaceProfile: user.marketplaceProfile,
+    activityType: user.activityType,
+    shortDescription: user.shortDescription,
+    websiteUrl: user.websiteUrl,
+    address: user.address,
+    city: user.city,
+    state: user.state,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt
   };
@@ -57,7 +71,11 @@ function isSameUser(a: User | null, b: User | null) {
     a.accountType === b.accountType &&
     a.companyName === b.companyName &&
     a.logoUrl === b.logoUrl &&
-    a.approvalStatus === b.approvalStatus
+    a.approvalStatus === b.approvalStatus &&
+    a.marketplaceProfile === b.marketplaceProfile &&
+    a.activityType === b.activityType &&
+    a.city === b.city &&
+    a.state === b.state
   );
 }
 
@@ -105,6 +123,17 @@ function normalizeUser(input: unknown): User | null {
       typeof obj.listingLimitOverride === "number"
         ? obj.listingLimitOverride
         : undefined,
+    marketplaceProfile:
+      obj.marketplaceProfile === "mercado-de-pulgas" || obj.marketplaceProfile === "services"
+        ? (obj.marketplaceProfile as User["marketplaceProfile"])
+        : undefined,
+    activityType: typeof obj.activityType === "string" ? obj.activityType : undefined,
+    shortDescription:
+      typeof obj.shortDescription === "string" ? obj.shortDescription : undefined,
+    websiteUrl: typeof obj.websiteUrl === "string" ? obj.websiteUrl : undefined,
+    address: typeof obj.address === "string" ? obj.address : undefined,
+    city: typeof obj.city === "string" ? obj.city : undefined,
+    state: typeof obj.state === "string" ? obj.state : undefined,
     createdAt: obj.createdAt as string,
     updatedAt: typeof obj.updatedAt === "string" ? obj.updatedAt : undefined
   };
@@ -267,7 +296,14 @@ export function useAuth() {
             accountType?: "individual" | "company" | "agency";
             companyName?: string;
             logoUrl?: string;
-            marketplaceProfile?: "mercado-de-pulgas";
+            marketplaceProfile?: "mercado-de-pulgas" | "services";
+            phone?: string;
+            activityType?: string;
+            shortDescription?: string;
+            websiteUrl?: string;
+            address?: string;
+            city?: string;
+            state?: string;
             source?: "site" | "qr";
           }
     ) => {
@@ -291,6 +327,13 @@ export function useAuth() {
             companyName: options.companyName,
             logoUrl: options.logoUrl,
             marketplaceProfile: options.marketplaceProfile,
+            phone: options.phone,
+            activityType: options.activityType,
+            shortDescription: options.shortDescription,
+            websiteUrl: options.websiteUrl,
+            address: options.address,
+            city: options.city,
+            state: options.state,
             source: options.source
           }),
         });

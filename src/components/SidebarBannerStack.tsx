@@ -100,7 +100,7 @@ export default function SidebarBannerStack({
   return (
     <aside
       data-sidebar-banners={hasBanners ? "true" : "false"}
-      className={hasBanners ? "grid gap-3 xl:sticky xl:top-24" : "hidden"}
+      className={hasBanners ? "grid gap-3 xl:mt-10 xl:self-start xl:sticky xl:top-28" : "hidden"}
       aria-hidden={!hasBanners}
     >
       <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">

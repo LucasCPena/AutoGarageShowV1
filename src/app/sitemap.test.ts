@@ -26,7 +26,7 @@ describe("sitemap", () => {
 
     expect(urls).toContain("https://www.autogarageshow.com.br/veiculos");
     expect(urls).toContain("https://www.autogarageshow.com.br/motos");
-    expect(urls).toContain("https://www.autogarageshow.com.br/lojistas");
+    expect(urls).toContain("https://www.autogarageshow.com.br/servicos");
     expect(urls).toContain("https://www.autogarageshow.com.br/classificados");
   });
 });

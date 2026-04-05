@@ -16,6 +16,13 @@ export interface User {
   approvalStatus?: "approved" | "pending";
   verificationStatus?: "unverified" | "verified";
   listingLimitOverride?: number | null;
+  marketplaceProfile?: "mercado-de-pulgas" | "services";
+  activityType?: string;
+  shortDescription?: string;
+  websiteUrl?: string;
+  address?: string;
+  city?: string;
+  state?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -60,6 +67,13 @@ export async function getUserFromAuthToken(token: string | null): Promise<User |
     approvalStatus: user.approvalStatus,
     verificationStatus: user.verificationStatus,
     listingLimitOverride: user.listingLimitOverride,
+    marketplaceProfile: user.marketplaceProfile,
+    activityType: user.activityType,
+    shortDescription: user.shortDescription,
+    websiteUrl: user.websiteUrl,
+    address: user.address,
+    city: user.city,
+    state: user.state,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt
   };

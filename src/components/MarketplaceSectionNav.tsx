@@ -2,16 +2,16 @@
 
 import Link from "next/link";
 
-type SectionKey = "veiculos" | "motos" | "lojistas";
+type SectionKey = "veiculos" | "motos" | "servicos";
 
 type Props = {
   current: SectionKey;
 };
 
 const items: Array<{ key: SectionKey; href: string; label: string }> = [
-  { key: "veiculos", href: "/veiculos", label: "Veiculos" },
+  { key: "veiculos", href: "/classificados", label: "Veiculos" },
   { key: "motos", href: "/motos", label: "Motos" },
-  { key: "lojistas", href: "/lojistas", label: "Lojistas" }
+  { key: "servicos", href: "/servicos", label: "Servicos" }
 ];
 
 export default function MarketplaceSectionNav({ current }: Props) {

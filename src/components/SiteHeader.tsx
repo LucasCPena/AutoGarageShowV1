@@ -110,10 +110,8 @@ export default function SiteHeader() {
     const items = [
       { href: "/eventos", label: "Eventos" },
       { href: "/veiculos/anunciar", label: "Anuncie" },
-      { href: "/organizadores", label: "Organizadores" },
-      { href: "/veiculos", label: "Veiculos" },
-      { href: "/motos", label: "Motos" },
-      { href: "/lojistas", label: "Lojistas" },
+      { href: "/organizadores", label: "Organizadores e Clubes" },
+      { href: "/classificados", label: "Classificados" },
       { href: "/noticias", label: "Noticias" },
       { href: "/busca", label: "Busca" }
     ];

@@ -210,6 +210,60 @@ async function ensureUsersTable() {
     }
     clearTableColumnsCache("users");
   }
+  if (columns && !columns.has("activity_type")) {
+    try {
+      await query("ALTER TABLE users ADD COLUMN activity_type VARCHAR(120) NULL");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[db] Nao foi possivel adicionar users.activity_type: ${message}`);
+    }
+    clearTableColumnsCache("users");
+  }
+  if (columns && !columns.has("short_description")) {
+    try {
+      await query("ALTER TABLE users ADD COLUMN short_description TEXT NULL");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[db] Nao foi possivel adicionar users.short_description: ${message}`);
+    }
+    clearTableColumnsCache("users");
+  }
+  if (columns && !columns.has("website_url")) {
+    try {
+      await query("ALTER TABLE users ADD COLUMN website_url VARCHAR(255) NULL");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[db] Nao foi possivel adicionar users.website_url: ${message}`);
+    }
+    clearTableColumnsCache("users");
+  }
+  if (columns && !columns.has("address")) {
+    try {
+      await query("ALTER TABLE users ADD COLUMN address VARCHAR(180) NULL");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[db] Nao foi possivel adicionar users.address: ${message}`);
+    }
+    clearTableColumnsCache("users");
+  }
+  if (columns && !columns.has("city")) {
+    try {
+      await query("ALTER TABLE users ADD COLUMN city VARCHAR(120) NULL");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[db] Nao foi possivel adicionar users.city: ${message}`);
+    }
+    clearTableColumnsCache("users");
+  }
+  if (columns && !columns.has("state")) {
+    try {
+      await query("ALTER TABLE users ADD COLUMN state VARCHAR(2) NULL");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[db] Nao foi possivel adicionar users.state: ${message}`);
+    }
+    clearTableColumnsCache("users");
+  }
   if (columns && !columns.has("document_hash")) {
     try {
       await query("ALTER TABLE users ADD COLUMN document_hash VARCHAR(64) NULL");
@@ -431,6 +485,12 @@ function mapUser(row: Row): User {
         ? null
         : Number(row.listing_limit_override),
     marketplaceProfile: row.marketplace_profile ?? undefined,
+    activityType: row.activity_type ?? undefined,
+    shortDescription: row.short_description ?? undefined,
+    websiteUrl: row.website_url ?? undefined,
+    address: row.address ?? undefined,
+    city: row.city ?? undefined,
+    state: row.state ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   });
@@ -679,8 +739,9 @@ export const dbMysql = {
         `INSERT INTO users (
           id, name, email, password, role, document, document_type, phone,
           account_type, company_name, logo_url, approval_status, verification_status,
-          listing_limit_override, marketplace_profile, document_hash, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          listing_limit_override, marketplace_profile, activity_type, short_description,
+          website_url, address, city, state, document_hash, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           newUser.id,
           newUser.name,
@@ -697,6 +758,12 @@ export const dbMysql = {
           newUser.verificationStatus ?? "unverified",
           newUser.listingLimitOverride ?? null,
           newUser.marketplaceProfile ?? null,
+          newUser.activityType ?? null,
+          newUser.shortDescription ?? null,
+          newUser.websiteUrl ?? null,
+          newUser.address ?? null,
+          newUser.city ?? null,
+          newUser.state ?? null,
           newUser.documentHash ?? null,
           newUser.createdAt,
           newUser.updatedAt
@@ -712,6 +779,12 @@ export const dbMysql = {
         verification_status: newUser.verificationStatus,
         listing_limit_override: newUser.listingLimitOverride,
         marketplace_profile: newUser.marketplaceProfile,
+        activity_type: newUser.activityType,
+        short_description: newUser.shortDescription,
+        website_url: newUser.websiteUrl,
+        address: newUser.address,
+        city: newUser.city,
+        state: newUser.state,
         created_at: newUser.createdAt,
         updated_at: newUser.updatedAt
       });
@@ -729,7 +802,8 @@ export const dbMysql = {
         `UPDATE users SET
           name=?, email=?, password=?, role=?, document=?, document_type=?, phone=?,
           account_type=?, company_name=?, logo_url=?, approval_status=?, verification_status=?,
-          listing_limit_override=?, marketplace_profile=?, document_hash=?, updated_at=?
+          listing_limit_override=?, marketplace_profile=?, activity_type=?, short_description=?,
+          website_url=?, address=?, city=?, state=?, document_hash=?, updated_at=?
          WHERE id=?`,
         [
           next.name,
@@ -746,6 +820,12 @@ export const dbMysql = {
           next.verificationStatus ?? "unverified",
           next.listingLimitOverride ?? null,
           next.marketplaceProfile ?? null,
+          next.activityType ?? null,
+          next.shortDescription ?? null,
+          next.websiteUrl ?? null,
+          next.address ?? null,
+          next.city ?? null,
+          next.state ?? null,
           next.documentHash ?? null,
           next.updatedAt,
           id
@@ -761,6 +841,12 @@ export const dbMysql = {
         verification_status: next.verificationStatus,
         listing_limit_override: next.listingLimitOverride,
         marketplace_profile: next.marketplaceProfile,
+        activity_type: next.activityType,
+        short_description: next.shortDescription,
+        website_url: next.websiteUrl,
+        address: next.address,
+        city: next.city,
+        state: next.state,
         created_at: next.createdAt,
         updated_at: next.updatedAt
       });

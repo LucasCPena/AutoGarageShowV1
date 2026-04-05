@@ -4,36 +4,73 @@ import Link from "next/link";
 
 import Container from "@/components/Container";
 import ListingSubmissionGate from "@/components/ListingSubmissionGate";
+import ListingPlansSection from "@/components/ListingPlansSection";
 import PageIntro from "@/components/PageIntro";
 import { hasPublicListingPageAccess } from "@/lib/public-listing-access";
+import type { ListingVehicleType } from "@/lib/database";
 
 export const metadata: Metadata = {
   title: "Anunciar",
   description: "Cadastre gratuitamente um anuncio de veiculo antigo."
 };
 
-export default function ListingSubmitPage() {
+type Props = {
+  searchParams?: {
+    tipo?: string;
+  };
+};
+
+export default function ListingSubmitPage({ searchParams }: Props) {
   const hasLimitedListingAccess = hasPublicListingPageAccess(cookies());
+  const initialVehicleType: ListingVehicleType =
+    searchParams?.tipo === "moto" ? "motorcycle" : "car";
 
   return (
     <>
       <PageIntro
-        title="Anunciar veiculo"
+        title="Anuncie"
         subtitle={
           hasLimitedListingAccess
             ? "Preencha os dados do carro e envie o anuncio. Esse acesso foi liberado somente para esta area."
-            : "Primeiro validamos o anunciante. Depois liberamos os dados do veiculo e o envio das fotos."
+            : "Escolha a categoria, consulte os planos ativos e siga para o formulario de publicacao."
         }
       />
 
       <Container className="py-10">
         {hasLimitedListingAccess ? null : (
-          <div className="mx-auto mb-4 flex max-w-2xl justify-end">
-            <Link href="/planos" className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Ver planos</Link>
-          </div>
+          <>
+            <section className="mx-auto mb-8 grid max-w-5xl gap-4 md:grid-cols-3">
+              <Link
+                href="/veiculos/anunciar#formulario-anuncio"
+                className="flex min-h-40 items-center justify-center rounded-3xl border border-slate-200 bg-slate-100 px-6 text-center text-4xl font-bold text-slate-900 hover:border-brand-200 hover:bg-brand-50"
+              >
+                Veiculos
+              </Link>
+              <Link
+                href="/veiculos/anunciar?tipo=moto#formulario-anuncio"
+                className="flex min-h-40 items-center justify-center rounded-3xl border border-slate-200 bg-slate-100 px-6 text-center text-4xl font-bold text-slate-900 hover:border-brand-200 hover:bg-brand-50"
+              >
+                Motos
+              </Link>
+              <Link
+                href="/servicos/cadastrar"
+                className="flex min-h-40 items-center justify-center rounded-3xl border border-slate-200 bg-slate-100 px-6 text-center text-4xl font-bold text-slate-900 hover:border-brand-200 hover:bg-brand-50"
+              >
+                Servicos
+              </Link>
+            </section>
+
+            <section className="mx-auto mb-10 max-w-5xl">
+              <ListingPlansSection />
+            </section>
+          </>
         )}
-        <div className="mx-auto max-w-2xl">
-          <ListingSubmissionGate publicAccess={hasLimitedListingAccess} />
+
+        <div id="formulario-anuncio" className="mx-auto max-w-2xl scroll-mt-28">
+          <ListingSubmissionGate
+            publicAccess={hasLimitedListingAccess}
+            initialVehicleType={initialVehicleType}
+          />
         </div>
       </Container>
     </>

@@ -7,13 +7,18 @@ import Link from "next/link";
 import AuthModal from "@/components/AuthModal";
 import ListingSubmissionForm from "@/components/ListingSubmissionForm";
 import Notice from "@/components/Notice";
+import type { ListingVehicleType } from "@/lib/database";
 import { useAuth } from "@/lib/useAuth";
 
 type Props = {
   publicAccess?: boolean;
+  initialVehicleType?: ListingVehicleType;
 };
 
-export default function ListingSubmissionGate({ publicAccess = false }: Props) {
+export default function ListingSubmissionGate({
+  publicAccess = false,
+  initialVehicleType = "car"
+}: Props) {
   const { user, isLoading } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "register">("register");
@@ -78,9 +83,9 @@ export default function ListingSubmissionGate({ publicAccess = false }: Props) {
     return (
       <>
         <div className="grid gap-4">
-          <Notice title="Login obrigatorio" variant="info">
-            Para anunciar um veiculo, faca login ou cadastre-se antes de preencher o formulario.
-          </Notice>
+      <Notice title="Login obrigatorio" variant="info">
+        Para anunciar um veiculo, faca login ou cadastre-se antes de preencher o formulario.
+      </Notice>
 
           <div className="flex flex-wrap gap-3">
             <button
@@ -128,10 +133,10 @@ export default function ListingSubmissionGate({ publicAccess = false }: Props) {
         <Notice title="Cadastro liberado" variant="info">
           Seu acesso por QR Code esta limitado a esta area de cadastro de carro.
         </Notice>
-        <ListingSubmissionForm publicAccess={false} />
+        <ListingSubmissionForm publicAccess={false} initialVehicleType={initialVehicleType} />
       </div>
     );
   }
 
-  return <ListingSubmissionForm publicAccess={false} />;
+  return <ListingSubmissionForm publicAccess={false} initialVehicleType={initialVehicleType} />;
 }

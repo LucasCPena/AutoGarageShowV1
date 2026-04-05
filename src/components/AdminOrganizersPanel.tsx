@@ -256,9 +256,9 @@ export default function AdminOrganizersPanel({ token }: Props) {
     <div className="rounded-2xl border border-slate-200 bg-white p-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="text-sm font-semibold text-slate-900">Organizadores</div>
+          <div className="text-sm font-semibold text-slate-900">Organizadores e Clubes</div>
           <div className="mt-1 text-sm text-slate-600">
-            Cadastro de logo e link opcional para a pagina publica de organizadores.
+            Cadastro de logo e link opcional para a pagina publica de organizadores e clubes.
           </div>
         </div>
         <div className="text-sm font-semibold text-slate-900">Total: {items.length}</div>
@@ -325,7 +325,7 @@ export default function AdminOrganizersPanel({ token }: Props) {
             onChange={handleLogoFileChange}
           />
           <span className="text-xs text-slate-500">
-            Aceita jpg, jpeg, png e webp (ate 5MB).
+            Aceita jpg, jpeg, png e webp (ate 5MB). Medida recomendada da logo: 600 x 300 px.
           </span>
         </label>
 
@@ -360,7 +360,7 @@ export default function AdminOrganizersPanel({ token }: Props) {
             <img
               src={logoPreview}
               alt={form.altText.trim() || form.name.trim() || eventImageAlt("logo do organizador")}
-              className="mt-2 h-20 w-20 rounded-lg border border-slate-200 bg-white object-contain p-2"
+              className="mt-2 h-24 w-32 rounded-lg border border-slate-200 bg-white object-contain p-2"
             />
           </div>
         ) : null}

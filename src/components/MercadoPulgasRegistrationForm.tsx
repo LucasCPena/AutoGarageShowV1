@@ -72,7 +72,7 @@ export default function MercadoPulgasRegistrationForm() {
   return (
     <form onSubmit={onSubmit} className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-6">
       <Notice title="Cadastro empresarial" variant="info">
-        Esta area aceita somente empresas do Mercado de Pulgas. O documento permitido aqui e exclusivamente CNPJ.
+        Esta area aceita empresas de pecas, ferramentas, materiais, funilaria e servicos relacionados. O documento permitido aqui e exclusivamente CNPJ.
       </Notice>
 
       {error ? (

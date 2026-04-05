@@ -91,9 +91,13 @@ function buildFallbackBrands(vehicleType: ListingVehicleType): VehicleBrand[] {
 
 type Props = {
   publicAccess?: boolean;
+  initialVehicleType?: ListingVehicleType;
 };
 
-export default function ListingSubmissionForm({ publicAccess = false }: Props) {
+export default function ListingSubmissionForm({
+  publicAccess = false,
+  initialVehicleType = "car"
+}: Props) {
   const { settings, isReady } = useSiteSettings();
   const { user, token } = useAuth();
 
@@ -102,7 +106,7 @@ export default function ListingSubmissionForm({ publicAccess = false }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const [vehicleType, setVehicleType] = useState<ListingVehicleType>("car");
+  const [vehicleType, setVehicleType] = useState<ListingVehicleType>(initialVehicleType);
   const [brands, setBrands] = useState<VehicleBrand[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
 
@@ -144,6 +148,10 @@ export default function ListingSubmissionForm({ publicAccess = false }: Props) {
   );
   const requiresAdvertiserValidation = user?.role !== "admin";
   const isAdvertiserValidated = !requiresAdvertiserValidation || Boolean(advertiserValidation);
+
+  useEffect(() => {
+    setVehicleType(initialVehicleType);
+  }, [initialVehicleType]);
 
 
   useEffect(() => {

@@ -144,7 +144,7 @@ export default function NewsPage() {
                         alt={newsImageAlt(article.title)}
                         width={1200}
                         height={800}
-                        className="h-52 w-full object-cover"
+                        className="h-52 w-full bg-slate-100 object-contain p-3"
                       />
                     </Link>
 

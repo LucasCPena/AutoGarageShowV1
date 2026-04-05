@@ -186,23 +186,27 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
   }, [current, slides.length]);
 
   const activeSlide = slides[current] ?? slides[0];
-  const hasTitle = Boolean(activeSlide?.title?.trim());
+  const hasTitle = Boolean(activeSlide?.title?.trim()) && section === "home";
   const overlayClassName =
     section === "home"
       ? "absolute inset-0 bg-gradient-to-r from-slate-900/50 to-slate-900/12"
-      : "absolute inset-0 bg-gradient-to-r from-slate-900/24 to-slate-900/4";
+      : "absolute inset-0 bg-transparent";
+  const imageClassName =
+    section === "home"
+      ? "object-cover"
+      : "bg-slate-950 p-2 object-contain";
 
   if (!activeSlide) return null;
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-slate-200 shadow-lg">
-      <div className="relative h-64 w-full sm:h-80">
+    <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-lg">
+      <div className="relative h-64 w-full bg-slate-950 sm:h-80">
         <Image
           src={activeSlide.image}
           alt={getSlideImageAlt(activeSlide.title)}
           title={activeSlide.title}
           fill
-          className="object-cover"
+          className={imageClassName}
           sizes="(max-width: 640px) 100vw, 1200px"
           priority={section === "home"}
         />

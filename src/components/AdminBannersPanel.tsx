@@ -46,6 +46,18 @@ type Props = {
 
 type Message = { type: "success" | "error"; text: string } | null;
 
+type BannerFormState = {
+  title: string;
+  image: string;
+  link: string;
+  section: BannerSection;
+  customSection: string;
+  position: number;
+  startDate: string;
+  endDate: string;
+  status: "active" | "inactive";
+};
+
 function isActiveNow(banner: Banner) {
   const now = Date.now();
   const start = new Date(banner.startDate).getTime();
@@ -73,6 +85,34 @@ function statusLabel(status: "active" | "inactive") {
   return status === "active" ? "Ativo" : "Inativo";
 }
 
+function padDatePart(value: number) {
+  return String(value).padStart(2, "0");
+}
+
+function toDateTimeLocalValue(value?: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return `${date.getFullYear()}-${padDatePart(date.getMonth() + 1)}-${padDatePart(
+    date.getDate()
+  )}T${padDatePart(date.getHours())}:${padDatePart(date.getMinutes())}`;
+}
+
+function createInitialForm(fixedSection?: string): BannerFormState {
+  return {
+    title: "",
+    image: "",
+    link: "",
+    section: (fixedSection ?? "events") as BannerSection,
+    customSection: "",
+    position: 1,
+    startDate: "",
+    endDate: "",
+    status: "active"
+  };
+}
+
 export default function AdminBannersPanel({
   token,
   fixedSection,
@@ -84,18 +124,8 @@ export default function AdminBannersPanel({
   const [message, setMessage] = useState<Message>(null);
   const [busy, setBusy] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-
-  const [form, setForm] = useState({
-    title: "",
-    image: "",
-    link: "",
-    section: fixedSection ?? ("events" as BannerSection),
-    customSection: "",
-    position: 1,
-    startDate: "",
-    endDate: "",
-    status: "active" as "active" | "inactive"
-  });
+  const [editingBannerId, setEditingBannerId] = useState<string | null>(null);
+  const [form, setForm] = useState<BannerFormState>(() => createInitialForm(fixedSection));
 
   const sorted = useMemo(
     () =>
@@ -119,6 +149,11 @@ export default function AdminBannersPanel({
     (backgroundMode
       ? "Use esta area para trocar somente o banner de fundo do topo da home."
       : "Cadastre banners e escolha em qual pagina eles devem aparecer.");
+
+  function resetForm() {
+    setEditingBannerId(null);
+    setForm(createInitialForm(fixedSection));
+  }
 
   function authHeaders(): Record<string, string> {
     return token ? { Authorization: `Bearer ${token}` } : {};
@@ -149,8 +184,30 @@ export default function AdminBannersPanel({
 
   useEffect(() => {
     if (!fixedSection) return;
-    setForm((current) => ({ ...current, section: fixedSection, customSection: "" }));
+    setForm((current) => ({ ...current, section: fixedSection as BannerSection, customSection: "" }));
   }, [fixedSection]);
+
+  function startEditing(banner: Banner) {
+    const knownSection = SECTION_OPTIONS.some((option) => option.value === banner.section);
+
+    setEditingBannerId(banner.id);
+    setForm({
+      title: banner.title ?? "",
+      image: banner.image ?? "",
+      link: banner.link ?? "",
+      section: fixedSection
+        ? (fixedSection as BannerSection)
+        : knownSection
+          ? (banner.section as BannerSection)
+          : "custom",
+      customSection: fixedSection || knownSection ? "" : banner.section,
+      position: banner.position || 1,
+      startDate: toDateTimeLocalValue(banner.startDate),
+      endDate: toDateTimeLocalValue(banner.endDate),
+      status: banner.status
+    });
+    setMessage(null);
+  }
 
   async function handleImageUpload(file: File) {
     setUploadingImage(true);
@@ -219,14 +276,15 @@ export default function AdminBannersPanel({
         position: backgroundMode ? 1 : Number(form.position) || 1,
         startDate: backgroundMode ? new Date().toISOString() : form.startDate || new Date().toISOString(),
         endDate: backgroundMode ? undefined : form.endDate || undefined,
-        status: "active" as const
+        status: editingBannerId ? form.status : ("active" as const)
       };
 
       const existingBackground = backgroundMode
         ? sorted.find((item) => item.status === "active") || sorted[0]
         : undefined;
-      const endpoint = existingBackground ? `/api/banners/${existingBackground.id}` : "/api/banners";
-      const method = existingBackground ? "PUT" : "POST";
+      const bannerIdToUpdate = editingBannerId || existingBackground?.id;
+      const endpoint = bannerIdToUpdate ? `/api/banners/${bannerIdToUpdate}` : "/api/banners";
+      const method = bannerIdToUpdate ? "PUT" : "POST";
 
       const res = await fetch(endpoint, {
         method,
@@ -236,26 +294,22 @@ export default function AdminBannersPanel({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erro ao salvar banner.");
 
-      if (existingBackground) {
-        setBanners((prev) => prev.map((item) => (item.id === existingBackground.id ? data.banner : item)));
+      if (bannerIdToUpdate) {
+        setBanners((prev) =>
+          prev.map((item) => (item.id === bannerIdToUpdate ? data.banner : item))
+        );
       } else {
         setBanners((prev) => [...prev, data.banner]);
       }
 
-      setForm((current) => ({
-        title: "",
-        image: "",
-        link: "",
-        section: fixedSection ?? current.section,
-        customSection: "",
-        position: 1,
-        startDate: "",
-        endDate: "",
-        status: "active"
-      }));
+      resetForm();
       setMessage({
         type: "success",
-        text: backgroundMode ? "Banner de fundo atualizado." : "Banner criado."
+        text: bannerIdToUpdate
+          ? backgroundMode
+            ? "Banner de fundo atualizado."
+            : "Banner atualizado."
+          : "Banner criado."
       });
     } catch (error) {
       setMessage({
@@ -298,6 +352,9 @@ export default function AdminBannersPanel({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erro ao excluir banner.");
       setBanners((prev) => prev.filter((b) => b.id !== id));
+      if (editingBannerId === id) {
+        resetForm();
+      }
     } catch (error) {
       setMessage({
         type: "error",
@@ -319,6 +376,12 @@ export default function AdminBannersPanel({
           Ativos agora: {sorted.filter(isActiveNow).length}
         </div>
       </div>
+
+      {editingBannerId ? (
+        <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          Edicao ativa. Atualize os dados e salve para manter o mesmo banner sem recriar o cadastro.
+        </div>
+      ) : null}
 
       {message ? (
         <div
@@ -384,7 +447,7 @@ export default function AdminBannersPanel({
             <img
               src={form.image}
               alt={form.title.trim() ? `Previa do banner: ${form.title.trim()}` : "Previa do banner"}
-              className="mt-2 h-28 w-full rounded-md object-cover md:h-36"
+              className="mt-2 h-28 w-full rounded-md bg-white object-contain md:h-36"
             />
           </div>
         ) : null}
@@ -471,19 +534,34 @@ export default function AdminBannersPanel({
           </>
         )}
 
-        <button
-          type="submit"
-          disabled={busy || uploadingImage}
-          className="md:col-span-2 inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
-        >
-          {busy
-            ? "Salvando..."
+        <div className="md:col-span-2 flex flex-wrap gap-3">
+          <button
+            type="submit"
+            disabled={busy || uploadingImage}
+            className="inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+          >
+            {busy
+              ? "Salvando..."
               : uploadingImage
                 ? "Enviando imagem..."
-              : backgroundMode
-                ? "Salvar banner de fundo"
-                : "Adicionar banner"}
-        </button>
+                : editingBannerId
+                  ? "Salvar edicao"
+                  : backgroundMode
+                    ? "Salvar banner de fundo"
+                    : "Adicionar banner"}
+          </button>
+
+          {editingBannerId ? (
+            <button
+              type="button"
+              disabled={busy || uploadingImage}
+              onClick={resetForm}
+              className="inline-flex h-11 items-center justify-center rounded-md border border-slate-300 px-5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+            >
+              Cancelar edicao
+            </button>
+          ) : null}
+        </div>
       </form>
 
       <div className="mt-6 grid gap-3">
@@ -526,6 +604,15 @@ export default function AdminBannersPanel({
               </div>
 
               <div className="flex flex-wrap gap-2">
+                {!backgroundMode ? (
+                  <button
+                    className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+                    disabled={busy}
+                    onClick={() => startEditing(banner)}
+                  >
+                    Editar
+                  </button>
+                ) : null}
                 <button
                   className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60"
                   disabled={busy}

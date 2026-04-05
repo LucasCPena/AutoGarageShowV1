@@ -19,7 +19,7 @@ type AdminUser = {
   approvalStatus?: "approved" | "pending";
   verificationStatus?: "verified" | "unverified";
   listingLimitOverride?: number | null;
-  marketplaceProfile?: "mercado-de-pulgas";
+  marketplaceProfile?: "mercado-de-pulgas" | "services";
   createdAt: string;
   updatedAt: string;
 };

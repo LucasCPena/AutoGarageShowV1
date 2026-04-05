@@ -77,7 +77,7 @@ export async function searchSiteContent(query: string, filter: SearchResultType 
           id: listing.id,
           type: "listing" as const,
           title: listing.title,
-          subtitle: `${listing.make} ${listing.model} • ${listing.city}/${listing.state}`,
+          subtitle: `${listing.make} ${listing.model} | ${listing.city}/${listing.state}`,
           href: `/veiculos/${listing.slug}`,
           image: listing.images?.[0]
         }))
@@ -95,7 +95,7 @@ export async function searchSiteContent(query: string, filter: SearchResultType 
           id: event.id,
           type: "event" as const,
           title: event.title,
-          subtitle: `${event.city}/${event.state} • ${event.location}`,
+          subtitle: `${event.city}/${event.state} | ${event.location}`,
           href: `/eventos/${event.slug}`,
           image: event.coverImage || event.images?.[0]
         }))
@@ -123,14 +123,23 @@ export async function searchSiteContent(query: string, filter: SearchResultType 
       ...users
         .filter(isVisibleCompany)
         .filter((user) => matchesQuery([user.companyName, user.name], term))
-        .map((user) => ({
-          id: user.id,
-          type: "company" as const,
-          title: user.companyName || user.name,
-          subtitle: user.accountType === "agency" ? "Agencia" : "Empresa anunciante",
-          href: `/empresas/${user.id}`,
-          image: user.logoUrl
-        }))
+        .map((user) => {
+          const normalized = normalizeUserRecord(user);
+          const isServiceProvider = normalized.marketplaceProfile === "services";
+
+          return {
+            id: user.id,
+            type: "company" as const,
+            title: user.companyName || user.name,
+            subtitle: isServiceProvider
+              ? normalized.activityType || "Prestador de servicos"
+              : user.accountType === "agency"
+                ? "Agencia"
+                : "Empresa anunciante",
+            href: isServiceProvider ? `/servicos/${user.id}` : `/empresas/${user.id}`,
+            image: user.logoUrl
+          };
+        })
     );
   }
 

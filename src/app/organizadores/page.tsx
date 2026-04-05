@@ -8,8 +8,8 @@ import { db, type Organizer } from "@/lib/database";
 import { normalizeAssetReference } from "@/lib/site-url";
 
 export const metadata: Metadata = {
-  title: "Organizadores",
-  description: "Vitrine de logos dos organizadores."
+  title: "Organizadores e Clubes",
+  description: "Vitrine de logos dos organizadores e clubes parceiros."
 };
 
 export const dynamic = "force-dynamic";
@@ -46,8 +46,8 @@ export default async function OrganizersPage() {
   return (
     <>
       <PageIntro
-        title="Organizadores"
-        subtitle="Logos dos parceiros e organizadores cadastrados pela administracao."
+        title="Organizadores e Clubes"
+        subtitle="Logos dos parceiros, organizadores e clubes cadastrados pela administracao."
       />
 
       <Container className="py-10">
@@ -57,8 +57,8 @@ export default async function OrganizersPage() {
               <section className="mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white">
                 <img
                   src={organizerBanner}
-                  alt="Banner dos organizadores"
-                  className="h-48 w-full object-cover sm:h-64"
+                  alt="Banner dos organizadores e clubes"
+                  className="h-48 w-full bg-slate-950 object-contain p-2 sm:h-64"
                 />
               </section>
             ) : null}
@@ -80,11 +80,11 @@ export default async function OrganizersPage() {
 
                   const href = normalizeOrganizerLink(organizer.link);
                   const card = (
-                    <div className="flex h-36 items-center justify-center rounded-2xl border border-slate-200 bg-white p-6">
+                    <div className="flex h-40 items-center justify-center rounded-2xl border border-slate-200 bg-white p-6">
                       <img
                         src={logo}
                         alt={organizer.altText?.trim() || organizer.name?.trim() || `Organizador ${index + 1}`}
-                        className="max-h-16 w-auto max-w-[55%] object-contain"
+                        className="max-h-20 w-auto max-w-[72%] object-contain"
                       />
                     </div>
                   );

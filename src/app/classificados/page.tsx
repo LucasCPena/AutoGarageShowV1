@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import ClassifiedsClientSections from "@/components/ClassifiedsClientSections";
@@ -72,8 +73,8 @@ export default function ClassifiedsPage() {
   return (
     <>
       <PageIntro
-        title="Veiculos"
-        subtitle="Encontre carros e motos aprovados pela plataforma."
+        title="Classificados"
+        subtitle="Encontre veiculos, motos e servicos especializados em uma vitrine unificada."
       />
 
       <Container className="py-10">
@@ -81,7 +82,34 @@ export default function ClassifiedsPage() {
           <div>
             <MarketplaceSectionNav current="veiculos" />
 
-            <section className="mb-8">
+            <section className="mb-6 flex flex-wrap gap-3 rounded-2xl border border-slate-200 bg-white p-3">
+              <a
+                href="#classificados-banner"
+                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-800"
+              >
+                Banner principal
+              </a>
+              <a
+                href="#classificados-destaques"
+                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-800"
+              >
+                Em destaque
+              </a>
+              <a
+                href="#classificados-recentes"
+                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-800"
+              >
+                Ultimos veiculos
+              </a>
+              <Link
+                href="/servicos"
+                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-800"
+              >
+                Servicos
+              </Link>
+            </section>
+
+            <section id="classificados-banner" className="mb-8">
               <HeroSlider section="listings" />
             </section>
 

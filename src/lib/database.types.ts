@@ -5,6 +5,7 @@ export type UserAccountType = "individual" | "company" | "agency";
 export type UserApprovalStatus = "approved" | "pending";
 export type UserVerificationStatus = "unverified" | "verified";
 export type ListingVehicleType = "car" | "motorcycle";
+export type UserMarketplaceProfile = "mercado-de-pulgas" | "services";
 
 export interface ListingOwnerProfile {
   id: string;
@@ -30,7 +31,13 @@ export interface User {
   approvalStatus?: UserApprovalStatus;
   verificationStatus?: UserVerificationStatus;
   listingLimitOverride?: number | null;
-  marketplaceProfile?: "mercado-de-pulgas";
+  marketplaceProfile?: UserMarketplaceProfile;
+  activityType?: string;
+  shortDescription?: string;
+  websiteUrl?: string;
+  address?: string;
+  city?: string;
+  state?: string;
   createdAt: string;
   updatedAt: string;
 }

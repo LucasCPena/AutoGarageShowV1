@@ -9,6 +9,18 @@ import {
 } from '@/lib/security-config';
 import { logServerError } from '@/lib/server-log';
 import { toPublicAssetUrl } from '@/lib/site-url';
+import { normalizeServiceActivity } from '@/lib/serviceActivities';
+
+function normalizeWebsiteUrl(input: unknown) {
+  const trimmed = typeof input === "string" ? input.trim() : "";
+  if (!trimmed) return undefined;
+  if (trimmed.startsWith("/")) return trimmed;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (/^[a-z0-9.-]+\.[a-z]{2,}(\/.*)?$/i.test(trimmed)) {
+    return `https://${trimmed}`;
+  }
+  return trimmed;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,25 +29,49 @@ export async function POST(request: NextRequest) {
       email,
       password,
       document,
+      phone,
       accountType,
       companyName,
       logoUrl,
       marketplaceProfile,
+      activityType,
+      shortDescription,
+      websiteUrl,
+      address,
+      city,
+      state,
       source
     } = await request.json();
     const normalizedName = typeof name === "string" ? name.trim() : "";
     const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
     const normalizedDocument = onlyDigits(typeof document === "string" ? document : "");
+    const normalizedMarketplaceProfile =
+      marketplaceProfile === "mercado-de-pulgas" || marketplaceProfile === "services"
+        ? marketplaceProfile
+        : undefined;
     const normalizedAccountType =
-      accountType === "company" || accountType === "agency" ? accountType : "individual";
+      accountType === "company" || accountType === "agency"
+        ? accountType
+        : normalizedMarketplaceProfile === "services"
+          ? "company"
+          : "individual";
     const normalizedCompanyName =
       typeof companyName === "string" ? companyName.trim() : "";
+    const normalizedPhone = onlyDigits(typeof phone === "string" ? phone : "");
     const normalizedLogoUrl = toPublicAssetUrl(logoUrl, { uploadType: "site" });
+    const normalizedActivityType = normalizeServiceActivity(activityType);
+    const normalizedShortDescription =
+      typeof shortDescription === "string" ? shortDescription.trim().slice(0, 600) : "";
+    const normalizedWebsiteUrl = normalizeWebsiteUrl(websiteUrl);
+    const normalizedAddress = typeof address === "string" ? address.trim().slice(0, 180) : "";
+    const normalizedCity = typeof city === "string" ? city.trim().slice(0, 120) : "";
+    const normalizedState = typeof state === "string" ? state.trim().toUpperCase().slice(0, 2) : "";
     const normalizedSource = source === "qr" ? "qr" : "site";
     const role = "user";
     const documentType = normalizedDocument.length === 14 ? "cnpj" : "cpf";
     const isCompanyAccount =
       normalizedAccountType === "company" || normalizedAccountType === "agency";
+    const isServicesProfile = normalizedMarketplaceProfile === "services";
     const settings = await db.settings.get();
     const autoApproveQrAccounts = settings?.qrAccess?.autoApproveAccounts === true;
     const approvalStatus =
@@ -95,6 +131,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (isServicesProfile) {
+      if (!normalizedPhone) {
+        return NextResponse.json(
+          { error: "Informe o telefone da empresa." },
+          { status: 400 }
+        );
+      }
+
+      if (!normalizedActivityType || !normalizedShortDescription) {
+        return NextResponse.json(
+          { error: "Informe o tipo de atividade e uma descricao curta do servico." },
+          { status: 400 }
+        );
+      }
+
+      if (!normalizedAddress || !normalizedCity || !normalizedState) {
+        return NextResponse.json(
+          { error: "Informe endereco, municipio e estado para o cadastro de servicos." },
+          { status: 400 }
+        );
+      }
+    }
+
     const passwordHash = await hashPassword(String(password));
     const user = await db.users.create({
       name: normalizedName,
@@ -103,14 +162,20 @@ export async function POST(request: NextRequest) {
       role,
       document: normalizedDocument || undefined,
       documentType,
+      phone: normalizedPhone || undefined,
       accountType: normalizedAccountType,
       companyName: isCompanyAccount ? normalizedCompanyName : undefined,
       logoUrl: normalizedLogoUrl || undefined,
       approvalStatus,
       verificationStatus: "verified",
       listingLimitOverride: null,
-      marketplaceProfile:
-        marketplaceProfile === "mercado-de-pulgas" ? "mercado-de-pulgas" : undefined
+      marketplaceProfile: normalizedMarketplaceProfile,
+      activityType: normalizedActivityType || undefined,
+      shortDescription: normalizedShortDescription || undefined,
+      websiteUrl: normalizedWebsiteUrl,
+      address: normalizedAddress || undefined,
+      city: normalizedCity || undefined,
+      state: normalizedState || undefined
     });
 
     await db.audit.create({
@@ -122,6 +187,7 @@ export async function POST(request: NextRequest) {
       path: "/api/auth/register",
       metadata: {
         accountType: normalizedAccountType,
+        marketplaceProfile: normalizedMarketplaceProfile || "default",
         source: normalizedSource
       }
     });

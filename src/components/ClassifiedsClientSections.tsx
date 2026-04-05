@@ -145,7 +145,7 @@ function ListingCard({
             alt={listingImageAlt(listing.title)}
             width={1200}
             height={800}
-            className="h-64 w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+            className="h-56 w-full bg-slate-100 object-contain p-2 transition duration-300 group-hover:scale-[1.02]"
             loading="lazy"
           />
 
@@ -220,7 +220,7 @@ function ListingCard({
               href={`/empresas/${listing.ownerProfile?.id}`}
               className="inline-flex items-center rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-800 hover:bg-brand-200"
             >
-              Mais anuncios de {sellerName || "esta loja"}
+              Mais anuncios de {sellerName || "este anunciante"}
             </Link>
           </div>
         ) : null}
@@ -482,7 +482,7 @@ export default function ClassifiedsClientSections({
         </section>
       ) : null}
 
-      <section className="mt-10">
+      <section id="classificados-destaques" className="mt-10 scroll-mt-28">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-slate-900">{resolvedFeaturedTitle}</h2>
@@ -535,7 +535,7 @@ export default function ClassifiedsClientSections({
         </div>
       </section>
 
-      <section className="mt-14">
+      <section id="classificados-recentes" className="mt-14 scroll-mt-28">
         <div className="flex items-end justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-slate-900">{resolvedLatestTitle}</h2>
@@ -629,7 +629,7 @@ export default function ClassifiedsClientSections({
           </select>
         </div>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {paginatedLatest.map((listing) => (
             <ListingCard key={listing.id} listing={listing} showContact={Boolean(user)} />
           ))}

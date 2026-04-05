@@ -8,7 +8,7 @@ import Container from "@/components/Container";
 import SidebarBannerStack from "@/components/SidebarBannerStack";
 import TrackMetric from "@/components/TrackMetric";
 import type { EventRecurrence } from "@/lib/database";
-import { formatDateLong, formatDateShort } from "@/lib/date";
+import { formatDateLong, formatDateShort, formatDateTime } from "@/lib/date";
 import { formatCurrencyBRL } from "@/lib/format";
 import { fetchJson } from "@/lib/fetch-json";
 import { listingImageAlt } from "@/lib/image-alt";
@@ -590,6 +590,9 @@ export default function HomePage() {
                     />
                   </div>
                   <div className="p-4">
+                    <div className="text-xs font-semibold text-slate-500">
+                      {formatDateTime(listing.createdAt)}
+                    </div>
                     <div className="text-xs font-semibold text-slate-700">
                       {listing.make} {listing.model} | {listing.modelYear}
                     </div>

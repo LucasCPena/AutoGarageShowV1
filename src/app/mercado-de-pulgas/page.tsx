@@ -10,7 +10,7 @@ export default function MercadoPulgasPage() {
     <>
       <PageIntro
         title="Mercado de Pulgas"
-        subtitle="Cadastro empresarial com CNPJ para empresas e anunciantes do mercado."
+        subtitle="Cadastro empresarial para pecas, ferramentas, materiais, funilaria e outros fornecedores do setor."
       />
 
       <Container className="py-10">

@@ -80,6 +80,7 @@ export default function ListingDetailSidebar({ listing, companyListingCount = 0 
       listing.ownerProfile.accountType === "agency")
       ? `/empresas/${listing.ownerProfile.id}`
       : null;
+  const sellerLabel = listing.ownerProfile?.accountType === "agency" ? "agencia" : "anunciante";
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6">
@@ -148,10 +149,12 @@ export default function ListingDetailSidebar({ listing, companyListingCount = 0 
           className="mt-4 inline-flex w-full items-center justify-center rounded-md border border-brand-200 bg-brand-50 px-3 py-2 text-sm font-semibold text-brand-800 hover:bg-brand-100"
         >
           {companyListingCount > 0
-            ? `Ver todos os ${companyListingCount} anuncio(s) da loja`
-            : "Ver todos os anuncios da loja"}
+            ? `Ver todos os ${companyListingCount} anuncio(s) deste ${sellerLabel}`
+            : `Ver todos os anuncios deste ${sellerLabel}`}
         </Link>
       ) : null}
+
+      <ListingFeaturePanel listing={listing} />
 
       <ListingMessageForm listingId={listing.id} />
     </div>
