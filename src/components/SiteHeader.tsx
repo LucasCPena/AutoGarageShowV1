@@ -112,8 +112,7 @@ export default function SiteHeader() {
       { href: "/veiculos/anunciar", label: "Anuncie" },
       { href: "/organizadores", label: "Organizadores e Clubes" },
       { href: "/classificados", label: "Classificados" },
-      { href: "/noticias", label: "Noticias" },
-      { href: "/busca", label: "Busca" }
+      { href: "/noticias", label: "Noticias" }
     ];
     if (mounted && user?.role === "admin") {
       items.push({ href: "/admin/banners", label: "Banners" });
