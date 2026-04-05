@@ -12,6 +12,7 @@ type User = {
   role: "admin" | "user";
   document?: string;
   documentType?: "cpf" | "cnpj";
+  phone?: string;
   accountType?: "individual" | "company" | "agency";
   companyName?: string;
   logoUrl?: string;
@@ -41,6 +42,8 @@ function serializeUserForStorage(user: User) {
     name: user.name,
     email: user.email,
     role: user.role,
+    document: user.document,
+    phone: user.phone,
     documentType: user.documentType,
     accountType: user.accountType,
     companyName: user.companyName,
@@ -68,6 +71,7 @@ function isSameUser(a: User | null, b: User | null) {
     a.email === b.email &&
     a.role === b.role &&
     a.createdAt === b.createdAt &&
+    a.phone === b.phone &&
     a.accountType === b.accountType &&
     a.companyName === b.companyName &&
     a.logoUrl === b.logoUrl &&
@@ -103,6 +107,7 @@ function normalizeUser(input: unknown): User | null {
       obj.documentType === "cpf" || obj.documentType === "cnpj"
         ? (obj.documentType as User["documentType"])
         : undefined,
+    phone: typeof obj.phone === "string" ? obj.phone : undefined,
     accountType:
       obj.accountType === "individual" ||
       obj.accountType === "company" ||

@@ -10,6 +10,7 @@ export interface User {
   role: "admin" | "user";
   document?: string;
   documentType?: "cpf" | "cnpj";
+  phone?: string;
   accountType?: "individual" | "company" | "agency";
   companyName?: string;
   logoUrl?: string;
@@ -61,6 +62,7 @@ export async function getUserFromAuthToken(token: string | null): Promise<User |
     role: user.role,
     document: user.document,
     documentType: user.documentType,
+    phone: user.phone,
     accountType: user.accountType,
     companyName: user.companyName,
     logoUrl: user.logoUrl,

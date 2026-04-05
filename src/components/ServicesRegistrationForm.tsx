@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Notice from "@/components/Notice";
 import { onlyDigits, validateCNPJ } from "@/lib/document";
@@ -28,7 +28,7 @@ function formatPhone(value: string) {
 }
 
 export default function ServicesRegistrationForm() {
-  const { user, register } = useAuth();
+  const { user, token, register, updateUser } = useAuth();
   const [companyName, setCompanyName] = useState("");
   const [responsibleName, setResponsibleName] = useState("");
   const [cnpj, setCnpj] = useState("");
@@ -49,6 +49,26 @@ export default function ServicesRegistrationForm() {
   const resolvedActivityType =
     activityType === "__other__" ? customActivityType.trim() : activityType.trim();
 
+  useEffect(() => {
+    if (!user) return;
+
+    setCompanyName((current) => current || user.companyName || "");
+    setResponsibleName((current) => current || user.name || "");
+    setCnpj((current) => current || formatCnpj(user.document || ""));
+    setAddress((current) => current || user.address || "");
+    setCity((current) => current || user.city || "");
+    setState((current) => current || user.state || "");
+    setPhone((current) => current || formatPhone(user.phone || ""));
+    setWebsiteUrl((current) => current || user.websiteUrl || "");
+    setShortDescription((current) => current || user.shortDescription || "");
+
+    if (user.activityType) {
+      const hasPreset = DEFAULT_SERVICE_ACTIVITIES.includes(user.activityType);
+      setActivityType(hasPreset ? user.activityType : "__other__");
+      setCustomActivityType(hasPreset ? "" : user.activityType);
+    }
+  }, [user]);
+
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -67,22 +87,59 @@ export default function ServicesRegistrationForm() {
     setSubmitting(true);
 
     try {
-      await register(responsibleName, email, password, {
-        document: onlyDigits(cnpj),
-        phone: onlyDigits(phone),
-        accountType: "company",
-        companyName,
-        marketplaceProfile: "services",
-        activityType: resolvedActivityType,
-        address,
-        city,
-        state,
-        websiteUrl,
-        shortDescription,
-        source: "site"
-      });
+      if (user) {
+        if (!token) {
+          throw new Error("Sua sessao expirou. Faca login novamente.");
+        }
 
-      setSuccess("Prestador cadastrado com sucesso. Redirecionando para a vitrine de servicos.");
+        const response = await fetch("/api/auth/me", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            name: responsibleName,
+            document: onlyDigits(cnpj),
+            companyName,
+            phone: onlyDigits(phone),
+            activityType: resolvedActivityType,
+            address,
+            city,
+            state,
+            websiteUrl,
+            shortDescription
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Nao foi possivel atualizar o perfil.");
+        }
+
+        updateUser(data.user);
+        setSuccess("Perfil de servicos salvo com sucesso. Redirecionando para a vitrine.");
+      } else {
+        await register(responsibleName, email, password, {
+          document: onlyDigits(cnpj),
+          phone: onlyDigits(phone),
+          accountType: "company",
+          companyName,
+          marketplaceProfile: "services",
+          activityType: resolvedActivityType,
+          address,
+          city,
+          state,
+          websiteUrl,
+          shortDescription,
+          source: "site"
+        });
+
+        setSuccess("Prestador cadastrado com sucesso. Redirecionando para a vitrine de servicos.");
+      }
+
       window.setTimeout(() => {
         window.location.assign("/servicos");
       }, 1200);
@@ -97,19 +154,17 @@ export default function ServicesRegistrationForm() {
     }
   }
 
-  if (user) {
-    return (
-      <Notice title="Conta autenticada" variant="info">
-        Sua conta ja esta autenticada. Para cadastrar outro prestador, encerre a sessao atual antes de continuar.
-      </Notice>
-    );
-  }
-
   return (
     <form onSubmit={onSubmit} className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-6">
       <Notice title="Cadastro de servicos" variant="info">
-        Cadastre empresas de funilaria, restauracao, tapeçaria, eletrica, pecas e outros servicos relacionados ao setor.
+        Cadastre empresas de funilaria, restauracao, tapecearia, eletrica, pecas e outros servicos relacionados ao setor.
       </Notice>
+
+      {user ? (
+        <Notice title="Conta autenticada" variant="info">
+          Sua conta esta logada. Preencha os dados abaixo para cadastrar ou atualizar o seu perfil de servicos.
+        </Notice>
+      ) : null}
 
       {error ? (
         <Notice title="Validacao" variant="warning">
@@ -253,36 +308,40 @@ export default function ServicesRegistrationForm() {
         />
       </label>
 
-      <label className="grid gap-1">
-        <span className="text-sm font-semibold text-slate-900">E-mail</span>
-        <input
-          required
-          type="email"
-          className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          placeholder="contato@empresa.com"
-        />
-      </label>
+      {!user ? (
+        <>
+          <label className="grid gap-1">
+            <span className="text-sm font-semibold text-slate-900">E-mail</span>
+            <input
+              required
+              type="email"
+              className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="contato@empresa.com"
+            />
+          </label>
 
-      <label className="grid gap-1 md:col-span-2">
-        <span className="text-sm font-semibold text-slate-900">Senha</span>
-        <input
-          required
-          type="password"
-          className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          placeholder="Crie uma senha segura"
-        />
-      </label>
+          <label className="grid gap-1 md:col-span-2">
+            <span className="text-sm font-semibold text-slate-900">Senha</span>
+            <input
+              required
+              type="password"
+              className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Crie uma senha segura"
+            />
+          </label>
+        </>
+      ) : null}
 
       <button
         type="submit"
         disabled={submitting}
         className="inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
       >
-        {submitting ? "Enviando..." : "Cadastrar servico"}
+        {submitting ? "Enviando..." : user ? "Salvar perfil de servico" : "Cadastrar servico"}
       </button>
     </form>
   );
