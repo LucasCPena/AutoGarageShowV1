@@ -5,6 +5,7 @@ import Link from "next/link";
 import Container from "@/components/Container";
 import ListingSubmissionGate from "@/components/ListingSubmissionGate";
 import ListingPlansSection from "@/components/ListingPlansSection";
+import MarketplaceImportantNotice from "@/components/MarketplaceImportantNotice";
 import PageIntro from "@/components/PageIntro";
 import { hasPublicListingPageAccess } from "@/lib/public-listing-access";
 import type { ListingVehicleType } from "@/lib/database";
@@ -60,17 +61,20 @@ export default function ListingSubmitPage({ searchParams }: Props) {
               </Link>
             </section>
 
+            <MarketplaceImportantNotice />
+
             <section className="mx-auto mb-10 max-w-5xl">
               <ListingPlansSection />
             </section>
           </>
         )}
 
-        <div id="formulario-anuncio" className="mx-auto max-w-2xl scroll-mt-28">
+        <div id="formulario-anuncio" className="mx-auto grid max-w-2xl gap-8 scroll-mt-28">
           <ListingSubmissionGate
             publicAccess={hasLimitedListingAccess}
             initialVehicleType={initialVehicleType}
           />
+          <MarketplaceImportantNotice />
         </div>
       </Container>
     </>

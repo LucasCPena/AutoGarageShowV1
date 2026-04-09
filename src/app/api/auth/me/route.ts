@@ -53,7 +53,6 @@ export async function PUT(request: NextRequest) {
     const currentUser = await requireAuth(request);
     const body = await request.json();
 
-    const normalizedName = typeof body?.name === "string" ? body.name.trim() : "";
     const normalizedDocument = onlyDigits(typeof body?.document === "string" ? body.document : "");
     const normalizedCompanyName =
       typeof body?.companyName === "string" ? body.companyName.trim().slice(0, 160) : "";
@@ -69,10 +68,6 @@ export async function PUT(request: NextRequest) {
     const normalizedCity = typeof body?.city === "string" ? body.city.trim().slice(0, 120) : "";
     const normalizedState =
       typeof body?.state === "string" ? body.state.trim().toUpperCase().slice(0, 2) : "";
-
-    if (!normalizedName) {
-      return NextResponse.json({ error: "Informe o nome do responsavel." }, { status: 400 });
-    }
 
     if (!normalizedCompanyName) {
       return NextResponse.json({ error: "Informe o nome da empresa." }, { status: 400 });
@@ -101,7 +96,6 @@ export async function PUT(request: NextRequest) {
     }
 
     const updatedUser = await db.users.update(currentUser.id, {
-      name: normalizedName,
       document: normalizedDocument,
       documentType: "cnpj",
       phone: normalizedPhone,

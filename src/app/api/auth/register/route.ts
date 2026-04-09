@@ -49,10 +49,13 @@ export async function POST(request: NextRequest) {
       marketplaceProfile === "mercado-de-pulgas" || marketplaceProfile === "services"
         ? marketplaceProfile
         : undefined;
+    const documentType = normalizedDocument.length === 14 ? "cnpj" : "cpf";
     const normalizedAccountType =
       accountType === "company" || accountType === "agency"
         ? accountType
         : normalizedMarketplaceProfile === "services"
+          ? "company"
+          : documentType === "cnpj"
           ? "company"
           : "individual";
     const normalizedCompanyName =
@@ -68,7 +71,6 @@ export async function POST(request: NextRequest) {
     const normalizedState = typeof state === "string" ? state.trim().toUpperCase().slice(0, 2) : "";
     const normalizedSource = source === "qr" ? "qr" : "site";
     const role = "user";
-    const documentType = normalizedDocument.length === 14 ? "cnpj" : "cpf";
     const isCompanyAccount =
       normalizedAccountType === "company" || normalizedAccountType === "agency";
     const isServicesProfile = normalizedMarketplaceProfile === "services";

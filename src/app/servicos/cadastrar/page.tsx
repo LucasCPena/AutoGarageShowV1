@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import Container from "@/components/Container";
+import MarketplaceImportantNotice from "@/components/MarketplaceImportantNotice";
 import PageIntro from "@/components/PageIntro";
 import ServicesRegistrationForm from "@/components/ServicesRegistrationForm";
 import SidebarBannerStack from "@/components/SidebarBannerStack";
@@ -20,7 +21,10 @@ export default function ServiceRegisterPage() {
 
       <Container className="py-10">
         <div className="page-with-sidebar">
-          <ServicesRegistrationForm />
+          <div className="grid gap-8">
+            <ServicesRegistrationForm />
+            <MarketplaceImportantNotice />
+          </div>
           <SidebarBannerStack />
         </div>
       </Container>

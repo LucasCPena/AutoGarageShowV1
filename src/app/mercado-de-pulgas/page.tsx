@@ -1,4 +1,5 @@
 import Container from "@/components/Container";
+import MarketplaceImportantNotice from "@/components/MarketplaceImportantNotice";
 import MercadoPulgasRegistrationForm from "@/components/MercadoPulgasRegistrationForm";
 import PageIntro from "@/components/PageIntro";
 import SidebarBannerStack from "@/components/SidebarBannerStack";
@@ -15,7 +16,10 @@ export default function MercadoPulgasPage() {
 
       <Container className="py-10">
         <div className="page-with-sidebar">
-          <MercadoPulgasRegistrationForm />
+          <div className="grid gap-8">
+            <MercadoPulgasRegistrationForm />
+            <MarketplaceImportantNotice />
+          </div>
           <SidebarBannerStack section="mercado-de-pulgas" title="Destaques do Mercado" />
         </div>
       </Container>

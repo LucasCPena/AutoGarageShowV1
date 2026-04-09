@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import Container from "@/components/Container";
+import HeroSlider from "@/components/HeroSlider";
 import SidebarBannerStack from "@/components/SidebarBannerStack";
 import TrackMetric from "@/components/TrackMetric";
 import type { EventRecurrence } from "@/lib/database";
@@ -56,6 +57,7 @@ interface Listing {
   id: string;
   slug: string;
   title: string;
+  vehicleType?: "car" | "motorcycle";
   description: string;
   make: string;
   model: string;
@@ -115,6 +117,22 @@ interface Banner {
   updatedAt: string;
 }
 
+interface ServiceEntry {
+  id: string;
+  displayName: string;
+  companyName?: string;
+  activityType?: string;
+  shortDescription?: string;
+  websiteUrl?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  phone?: string;
+  logoUrl?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 function byIsoDateDesc(a: { createdAt: string }, b: { createdAt: string }) {
   return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
 }
@@ -152,6 +170,7 @@ export default function HomePage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [listings, setListings] = useState<Listing[]>([]);
   const [news, setNews] = useState<News[]>([]);
+  const [services, setServices] = useState<ServiceEntry[]>([]);
   const [siteSettings, setSiteSettings] = useState<any>({});
   const [pendingEventsCount, setPendingEventsCount] = useState(0);
   const [pendingListingsCount, setPendingListingsCount] = useState(0);
@@ -169,10 +188,11 @@ export default function HomePage() {
           fetchJson<{ events?: Event[] }>('/api/events', noStore),
           fetchJson<{ listings?: Listing[] }>('/api/listings', noStore),
           fetchJson<{ news?: News[] }>('/api/noticias', noStore),
-          fetchJson<{ banners?: Banner[] }>('/api/banners', noStore)
+          fetchJson<{ banners?: Banner[] }>('/api/banners', noStore),
+          fetchJson<{ services?: ServiceEntry[] }>('/api/services', noStore)
         ] as const;
 
-        const [settingsResult, eventsResult, listingsResult, newsResult, bannersResult] =
+        const [settingsResult, eventsResult, listingsResult, newsResult, bannersResult, servicesResult] =
           await Promise.allSettled(requests);
 
         const failedRequests: Array<{ name: string; reason: unknown }> = [];
@@ -190,6 +210,9 @@ export default function HomePage() {
         }
         if (bannersResult.status === "rejected") {
           failedRequests.push({ name: "banners", reason: bannersResult.reason });
+        }
+        if (servicesResult.status === "rejected") {
+          failedRequests.push({ name: "services", reason: servicesResult.reason });
         }
 
         failedRequests.forEach(({ name, reason }) => {
@@ -211,6 +234,8 @@ export default function HomePage() {
           newsResult.status === "fulfilled" ? newsResult.value : {};
         const bannersData =
           bannersResult.status === "fulfilled" ? bannersResult.value : {};
+        const servicesData =
+          servicesResult.status === "fulfilled" ? servicesResult.value : {};
 
         const fetchedSettings = settingsData.settings;
         setSiteSettings(fetchedSettings || {});
@@ -266,6 +291,7 @@ export default function HomePage() {
         setEvents(eventsData.events || []);
         setListings(listingsData.listings || []);
         setNews(newsData.news || []);
+        setServices(servicesData.services || []);
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
         setError(error instanceof Error ? error.message : "Erro ao carregar dados.");
@@ -394,6 +420,14 @@ export default function HomePage() {
     .slice(0, homeSectionSize);
 
   const latestNews = [...news].sort(byIsoDateDesc).slice(0, homeSectionSize);
+  const latestMotorcycles = visibleListings
+    .filter((listing) => listing.vehicleType === "motorcycle")
+    .slice()
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 3);
+  const latestServices = [...services]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 3);
   const heroBackgroundImage = safeImageSrc(
     config.bannerImage,
     "/placeholders/hero-top-custom.svg"
@@ -609,6 +643,115 @@ export default function HomePage() {
           </section>
         )}
 
+        {latestMotorcycles.length > 0 ? (
+          <section className="mb-12">
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-slate-900">Ultimas Motos</h2>
+              <Link
+                href="/motos"
+                className="font-semibold text-brand-600 hover:text-brand-800"
+              >
+                Ver Motos
+              </Link>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {latestMotorcycles.map((listing) => (
+                <Link
+                  key={listing.id}
+                  href={`/veiculos/${listing.slug}`}
+                  className="group block overflow-hidden rounded-2xl border border-slate-200 bg-white transition-colors hover:border-brand-200"
+                >
+                  <div className="relative aspect-video">
+                    <Image
+                      src={safeImageSrc(listing.images[0], "/placeholders/car.svg")}
+                      alt={listingImageAlt(listing.title)}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 1200px"
+                    />
+                  </div>
+                  <div className="p-4">
+                    <div className="text-xs font-semibold text-slate-500">
+                      {formatDateTime(listing.createdAt)}
+                    </div>
+                    <div className="mt-1 text-xs font-semibold text-brand-700">
+                      {listing.make} {listing.model} | {listing.modelYear}
+                    </div>
+                    <h3 className="mt-1 text-lg font-semibold text-slate-900 group-hover:text-brand-800">
+                      {listing.title}
+                    </h3>
+                    <div className="mt-2 text-2xl font-bold text-slate-900">
+                      {formatCurrencyBRL(listing.price)}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {latestServices.length > 0 ? (
+          <section className="mb-12">
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-slate-900">Lojas e Servicos</h2>
+              <Link
+                href="/servicos"
+                className="font-semibold text-brand-600 hover:text-brand-800"
+              >
+                Ver Servicos
+              </Link>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {latestServices.map((service) => (
+                <Link
+                  key={service.id}
+                  href={`/servicos/${service.id}`}
+                  className="group block rounded-2xl border border-slate-200 bg-white p-5 transition-colors hover:border-brand-200"
+                >
+                  <div className="flex items-start gap-4">
+                    {service.logoUrl ? (
+                      <div className="relative h-16 w-16 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                        <Image
+                          src={safeImageSrc(service.logoUrl, "/placeholders/car.svg")}
+                          alt={service.displayName}
+                          fill
+                          className="object-contain p-2"
+                          sizes="64px"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 text-lg font-bold text-white">
+                        {service.displayName.slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
+
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                        {service.activityType || "Servico"}
+                      </div>
+                      <h3 className="mt-1 text-lg font-semibold text-slate-900 group-hover:text-brand-800">
+                        {service.displayName}
+                      </h3>
+                      <div className="mt-2 text-sm text-slate-600">
+                        {[service.city, service.state].filter(Boolean).join(" / ") || "Localizacao nao informada"}
+                      </div>
+                      <div className="mt-2 text-xs font-semibold text-slate-500">
+                        {formatDateTime(service.createdAt)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {service.shortDescription ? (
+                    <p className="mt-4 line-clamp-3 text-sm leading-6 text-slate-600">
+                      {service.shortDescription}
+                    </p>
+                  ) : null}
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
         {liveEmbedUrl ? (
           <section className="mb-12">
             <div className="flex items-center justify-between mb-6">
@@ -626,6 +769,10 @@ export default function HomePage() {
             </div>
           </section>
         ) : null}
+
+        <section className="mb-12">
+          <HeroSlider section="news" />
+        </section>
 
         {/* Ultimas Noticias */}
         {config.showLatestNews && latestNews.length > 0 && (

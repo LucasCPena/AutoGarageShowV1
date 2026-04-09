@@ -273,6 +273,18 @@ async function ensureUsersTable() {
     }
     clearTableColumnsCache("users");
   }
+  try {
+    await query("ALTER TABLE users MODIFY COLUMN document VARCHAR(255) NULL");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`[db] Nao foi possivel ajustar users.document para campos criptografados: ${message}`);
+  }
+  try {
+    await query("ALTER TABLE users MODIFY COLUMN phone VARCHAR(255) NULL");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`[db] Nao foi possivel ajustar users.phone para campos criptografados: ${message}`);
+  }
 
   usersTableEnsured = true;
 }

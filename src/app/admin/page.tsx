@@ -5,6 +5,7 @@ import Link from "next/link";
 import AdminCatalogPanel from "@/components/AdminCatalogPanel";
 import AdminCommentsPanel from "@/components/AdminCommentsPanel";
 import AdminOrganizersPanel from "@/components/AdminOrganizersPanel";
+import AdminPrivacyPanel from "@/components/AdminPrivacyPanel";
 import AdminSettingsPanel from "@/components/AdminSettingsPanel";
 import AdminMetricsPanel from "@/components/AdminMetricsPanel";
 import AdminUsersPanel from "@/components/AdminUsersPanel";
@@ -57,7 +58,7 @@ export default function AdminPage() {
           /eventos, /veiculos e /noticias.
         </Notice>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
           <Link
             href="/eventos"
             className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 hover:border-brand-300 hover:text-brand-700"
@@ -88,10 +89,20 @@ export default function AdminPage() {
           >
             Gerenciar planos
           </Link>
+          <a
+            href="#admin-privacy-panel"
+            className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 hover:border-brand-300 hover:text-brand-700"
+          >
+            Politica de privacidade
+          </a>
         </div>
 
         <div className="mt-10">
           <AdminSettingsPanel />
+        </div>
+
+        <div className="mt-10">
+          <AdminPrivacyPanel token={token} />
         </div>
 
         <div className="mt-10">

@@ -1,7 +1,8 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 
 import Container from "@/components/Container";
 import EventSubmissionForm from "@/components/EventSubmissionForm";
+import MarketplaceImportantNotice from "@/components/MarketplaceImportantNotice";
 import PageIntro from "@/components/PageIntro";
 
 export const metadata: Metadata = {
@@ -18,11 +19,11 @@ export default function EventSubmitPage() {
       />
 
       <Container className="py-10">
-        <div className="mx-auto max-w-2xl">
+        <div className="mx-auto grid max-w-2xl gap-8">
           <EventSubmissionForm />
+          <MarketplaceImportantNotice />
         </div>
       </Container>
     </>
   );
 }
-

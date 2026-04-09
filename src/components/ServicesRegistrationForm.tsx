@@ -30,7 +30,6 @@ function formatPhone(value: string) {
 export default function ServicesRegistrationForm() {
   const { user, token, register, updateUser } = useAuth();
   const [companyName, setCompanyName] = useState("");
-  const [responsibleName, setResponsibleName] = useState("");
   const [cnpj, setCnpj] = useState("");
   const [activityType, setActivityType] = useState(DEFAULT_SERVICE_ACTIVITIES[0] || "");
   const [customActivityType, setCustomActivityType] = useState("");
@@ -53,7 +52,6 @@ export default function ServicesRegistrationForm() {
     if (!user) return;
 
     setCompanyName((current) => current || user.companyName || "");
-    setResponsibleName((current) => current || user.name || "");
     setCnpj((current) => current || formatCnpj(user.document || ""));
     setAddress((current) => current || user.address || "");
     setCity((current) => current || user.city || "");
@@ -100,7 +98,6 @@ export default function ServicesRegistrationForm() {
           },
           credentials: "same-origin",
           body: JSON.stringify({
-            name: responsibleName,
             document: onlyDigits(cnpj),
             companyName,
             phone: onlyDigits(phone),
@@ -122,7 +119,7 @@ export default function ServicesRegistrationForm() {
         updateUser(data.user);
         setSuccess("Perfil de servicos salvo com sucesso. Redirecionando para a vitrine.");
       } else {
-        await register(responsibleName, email, password, {
+        await register(companyName, email, password, {
           document: onlyDigits(cnpj),
           phone: onlyDigits(phone),
           accountType: "company",
@@ -186,17 +183,6 @@ export default function ServicesRegistrationForm() {
           value={companyName}
           onChange={(event) => setCompanyName(event.target.value)}
           placeholder="Nome fantasia ou razao social"
-        />
-      </label>
-
-      <label className="grid gap-1">
-        <span className="text-sm font-semibold text-slate-900">Responsavel</span>
-        <input
-          required
-          className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-          value={responsibleName}
-          onChange={(event) => setResponsibleName(event.target.value)}
-          placeholder="Nome do responsavel"
         />
       </label>
 
