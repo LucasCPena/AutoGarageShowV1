@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 
 import Container from "@/components/Container";
-import HeroSlider from "@/components/HeroSlider";
 import SidebarBannerStack from "@/components/SidebarBannerStack";
 import TrackMetric from "@/components/TrackMetric";
 import type { EventRecurrence } from "@/lib/database";
@@ -26,9 +25,7 @@ interface HomeConfig {
   showFeaturedListings: boolean;
   showLatestListings: boolean;
   showLatestNews: boolean;
-  bannerTitle?: string;
   bannerImage?: string;
-  bannerLink?: string;
 }
 
 interface Event {
@@ -179,7 +176,7 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Buscar todas as configuracoes e dados
+    // Buscar todas as configurações e dados
     const fetchData = async () => {
       try {
         const noStore: RequestInit = { cache: "no-store" };
@@ -220,7 +217,7 @@ export default function HomePage() {
         });
 
         if (failedRequests.length === requests.length) {
-          setError("Nao foi possivel carregar os dados no momento.");
+          setError("Não foi possível carregar os dados no momento.");
           return;
         }
 
@@ -243,7 +240,7 @@ export default function HomePage() {
         if (fetchedSettings?.events?.requireApproval === true) {
           setConfig((current) => ({
             ...current,
-            heroSubtitle: "Portal de carros antigos com aprovacao manual"
+            heroSubtitle: "Portal de carros antigos com aprovação manual"
           }));
         }
 
@@ -282,9 +279,7 @@ export default function HomePage() {
         if (bannerHome) {
           setConfig((current) => ({
             ...current,
-            bannerTitle: bannerHome.title,
-            bannerImage: bannerHome.image,
-            bannerLink: bannerHome.link
+            bannerImage: bannerHome.image
           }));
         }
 
@@ -324,19 +319,19 @@ export default function HomePage() {
       if (eventsResult.status === "fulfilled") {
         setPendingEventsCount((eventsResult.value.events || []).length);
       } else {
-        console.error("Falha ao carregar pendencias de eventos:", eventsResult.reason);
+          console.error("Falha ao carregar pendências de eventos:", eventsResult.reason);
       }
 
       if (listingsResult.status === "fulfilled") {
         setPendingListingsCount((listingsResult.value.listings || []).length);
       } else {
-        console.error("Falha ao carregar pendencias de classificados:", listingsResult.reason);
+          console.error("Falha ao carregar pendências de classificados:", listingsResult.reason);
       }
 
       if (commentsResult.status === "fulfilled") {
         setPendingCommentsCount((commentsResult.value.comments || []).length);
       } else {
-        console.error("Falha ao carregar pendencias de comentarios:", commentsResult.reason);
+          console.error("Falha ao carregar pendências de comentários:", commentsResult.reason);
       }
     });
 
@@ -473,19 +468,19 @@ export default function HomePage() {
         <TrackMetric eventType="page_view" entityType="page" path="/" label="Home" />
         <div className="page-with-sidebar">
           <div>
-        {/* Resumo Estatistico */}
+        {/* Resumo estatístico */}
         {canViewHomeStats ? (
           <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div className="text-xs font-semibold text-slate-600">Ocorrencias futuras de eventos</div>
+              <div className="text-xs font-semibold text-slate-600">Ocorrências futuras de eventos</div>
               <div className="mt-2 text-2xl font-bold text-slate-900">{totalEventOccurrencesCount}</div>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div className="text-xs font-semibold text-slate-600">Veiculos ativos</div>
+              <div className="text-xs font-semibold text-slate-600">Veículos ativos</div>
               <div className="mt-2 text-2xl font-bold text-slate-900">{activeListingsCount}</div>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div className="text-xs font-semibold text-slate-600">Noticias</div>
+              <div className="text-xs font-semibold text-slate-600">Notícias</div>
               <div className="mt-2 text-2xl font-bold text-slate-900">{publishedNewsCount}</div>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -493,26 +488,26 @@ export default function HomePage() {
               <div className="mt-2 text-2xl font-bold text-slate-900">{pendingEventsCount}</div>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div className="text-xs font-semibold text-slate-600">Veiculos para liberar</div>
+              <div className="text-xs font-semibold text-slate-600">Veículos para liberar</div>
               <div className="mt-2 text-2xl font-bold text-slate-900">{pendingListingsCount}</div>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div className="text-xs font-semibold text-slate-600">Comentarios para liberar</div>
+              <div className="text-xs font-semibold text-slate-600">Comentários para liberar</div>
               <div className="mt-2 text-2xl font-bold text-slate-900">{pendingCommentsCount}</div>
             </div>
           </div>
         ) : null}
 
-        {/* Proximos Eventos */}
+        {/* Próximos eventos */}
         {config.showUpcomingEvents && upcoming.length > 0 && (
           <section className="mb-12">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">Proximos Eventos</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Próximos eventos</h2>
               <Link
                 href="/eventos"
                 className="text-brand-600 hover:text-brand-800 font-semibold"
               >
-                Ver Eventos
+                Ver eventos
               </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -549,16 +544,16 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* Veiculos em Destaque */}
+        {/* Veículos em destaque */}
         {config.showFeaturedListings && featured.length > 0 && (
           <section className="mb-12">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">Veiculos em Destaque</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Veículos em destaque</h2>
               <Link
                 href="/veiculos"
                 className="text-brand-600 hover:text-brand-800 font-semibold"
               >
-                Ver Todos
+                Ver todos
               </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -595,16 +590,16 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* Ultimos Veiculos */}
+        {/* Últimos veículos */}
         {config.showLatestListings && latestListings.length > 0 && (
           <section className="mb-12">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">Ultimos Veiculos</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Últimos veículos</h2>
               <Link
                 href="/veiculos"
                 className="text-brand-600 hover:text-brand-800 font-semibold"
               >
-                Ver Todos
+                Ver todos
               </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -646,12 +641,12 @@ export default function HomePage() {
         {latestMotorcycles.length > 0 ? (
           <section className="mb-12">
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-slate-900">Ultimas Motos</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Últimas motos</h2>
               <Link
                 href="/motos"
                 className="font-semibold text-brand-600 hover:text-brand-800"
               >
-                Ver Motos
+                Ver motos
               </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -693,12 +688,12 @@ export default function HomePage() {
         {latestServices.length > 0 ? (
           <section className="mb-12">
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-slate-900">Lojas e Servicos</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Lojas e serviços</h2>
               <Link
                 href="/servicos"
                 className="font-semibold text-brand-600 hover:text-brand-800"
               >
-                Ver Servicos
+                Ver serviços
               </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -733,7 +728,7 @@ export default function HomePage() {
                         {service.displayName}
                       </h3>
                       <div className="mt-2 text-sm text-slate-600">
-                        {[service.city, service.state].filter(Boolean).join(" / ") || "Localizacao nao informada"}
+                        {[service.city, service.state].filter(Boolean).join(" / ") || "Localização não informada"}
                       </div>
                       <div className="mt-2 text-xs font-semibold text-slate-500">
                         {formatDateTime(service.createdAt)}
@@ -761,7 +756,7 @@ export default function HomePage() {
               <iframe
                 className="aspect-video w-full"
                 src={liveEmbedUrl}
-                title={`Transmissao ao vivo: ${liveEvent?.title ?? "Transmissao"}`}
+                title={`Transmissão ao vivo: ${liveEvent?.title ?? "Transmissão"}`}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 referrerPolicy="strict-origin-when-cross-origin"
                 allowFullScreen
@@ -770,20 +765,16 @@ export default function HomePage() {
           </section>
         ) : null}
 
-        <section className="mb-12">
-          <HeroSlider section="news" />
-        </section>
-
-        {/* Ultimas Noticias */}
+        {/* Últimas notícias */}
         {config.showLatestNews && latestNews.length > 0 && (
           <section className="mb-12">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">Ultimas Noticias</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Últimas notícias</h2>
               <Link
                 href="/noticias"
                 className="text-brand-600 hover:text-brand-800 font-semibold"
               >
-                Ver Todas
+                Ver todas
               </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

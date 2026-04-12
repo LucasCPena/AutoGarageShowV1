@@ -7,16 +7,16 @@ import ServicesRegistrationForm from "@/components/ServicesRegistrationForm";
 import SidebarBannerStack from "@/components/SidebarBannerStack";
 
 export const metadata: Metadata = {
-  title: "Cadastrar servico",
-  description: "Cadastro de prestadores de servicos especializados em carros antigos."
+  title: "Cadastrar serviço",
+  description: "Cadastro de prestadores de serviços especializados em carros antigos."
 };
 
 export default function ServiceRegisterPage() {
   return (
     <>
       <PageIntro
-        title="Cadastrar servico"
-        subtitle="Crie o perfil da sua empresa para aparecer na vitrine publica de servicos."
+        title="Cadastrar serviço"
+        subtitle="Crie o perfil da sua empresa para aparecer na vitrine pública de serviços."
       />
 
       <Container className="py-10">

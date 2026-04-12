@@ -29,7 +29,7 @@ export default function AdminPage() {
     return (
       <Container className="py-10">
         <Notice title="Acesso Restrito" variant="warning">
-          Voce precisa estar logado como administrador para acessar esta pagina.
+          Você precisa estar logado como administrador para acessar esta página.
         </Notice>
       </Container>
     );
@@ -39,7 +39,7 @@ export default function AdminPage() {
     return (
       <Container className="py-10">
         <Notice title="Acesso Restrito" variant="warning">
-          Esta area e exclusiva para administradores.
+          Esta área é exclusiva para administradores.
         </Notice>
       </Container>
     );
@@ -49,12 +49,12 @@ export default function AdminPage() {
     <>
       <PageIntro
         title="Admin"
-        subtitle="Painel administrativo com organizacao por veiculos, eventos, noticias, banners, planos e operacao."
+        subtitle="Painel administrativo com organização por veículos, eventos, notícias, banners, planos e operação."
       />
 
       <Container className="py-10">
         <Notice title="CRUD por tela" variant="info">
-          O CRUD de eventos, veiculos e noticias agora fica dentro das proprias paginas:
+          O CRUD de eventos, veículos e notícias agora fica dentro das próprias páginas:
           /eventos, /veiculos e /noticias.
         </Notice>
 
@@ -69,13 +69,13 @@ export default function AdminPage() {
             href="/veiculos"
             className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 hover:border-brand-300 hover:text-brand-700"
           >
-            Gerenciar veiculos
+            Gerenciar veículos
           </Link>
           <Link
             href="/noticias"
             className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 hover:border-brand-300 hover:text-brand-700"
           >
-            Gerenciar noticias
+            Gerenciar notícias
           </Link>
           <Link
             href="/admin/banners"
@@ -93,7 +93,7 @@ export default function AdminPage() {
             href="#admin-privacy-panel"
             className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 hover:border-brand-300 hover:text-brand-700"
           >
-            Politica de privacidade
+            Política de privacidade
           </a>
         </div>
 

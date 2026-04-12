@@ -12,8 +12,8 @@ import { db } from "@/lib/database";
 import { getUserDisplayName, isCompanyAccount, normalizeUserRecord } from "@/lib/userProfiles";
 
 export const metadata: Metadata = {
-  title: "Servicos",
-  description: "Guia publico de prestadores de servicos automotivos cadastrados na plataforma."
+  title: "Serviços",
+  description: "Guia público de prestadores de serviços automotivos cadastrados na plataforma."
 };
 
 export const dynamic = "force-dynamic";
@@ -48,14 +48,14 @@ export default async function ServicesPage() {
       .sort((a, b) => a.displayName.localeCompare(b.displayName, "pt-BR"));
   } catch (error) {
     loadError = true;
-    console.error("Erro ao carregar servicos:", error);
+    console.error("Erro ao carregar serviços:", error);
   }
 
   return (
     <>
       <PageIntro
-        title="Servicos"
-        subtitle="Busque prestadores por atividade, estado e municipio em uma vitrine dedicada."
+        title="Serviços"
+        subtitle="Busque prestadores por atividade, estado e município em uma vitrine dedicada."
       />
 
       <Container className="py-10">
@@ -65,7 +65,7 @@ export default async function ServicesPage() {
 
             {loadError ? (
               <Notice title="Erro" variant="warning">
-                Nao foi possivel carregar os servicos agora.
+                Não foi possível carregar os serviços agora.
               </Notice>
             ) : (
               <ServicesDirectoryClient services={services} />

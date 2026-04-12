@@ -115,7 +115,7 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
     <>
       <PageIntro
         title="Eventos"
-        subtitle="No topo do calendario, navegue por mes com as setas para anterior e proximo."
+        subtitle="No topo do calendário, navegue por mês com as setas para anterior e próximo."
       >
         <Link
           href="/eventos/cadastrar"
@@ -126,12 +126,12 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
       </PageIntro>
 
       <Container className="py-10">
-        <section className="mb-8">
-          <HeroSlider section="events" />
-        </section>
-
         <div className="page-with-sidebar">
           <div>
+            <section className="mb-8">
+              <HeroSlider section="events" />
+            </section>
+
             <section>
               <Calendar events={publicEvents} />
             </section>
@@ -140,7 +140,7 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
 
             {dbError ? (
               <Notice title="Banco indisponivel" variant="warning" className="mt-6">
-                Nao foi possivel carregar os eventos agora. Tente novamente em instantes.
+                Não foi possível carregar os eventos agora. Tente novamente em instantes.
               </Notice>
             ) : null}
 
@@ -210,7 +210,7 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
 
               {eventCards.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-600">
-                  Nenhum evento publico cadastrado.
+                  Nenhum evento público cadastrado.
                 </div>
               ) : null}
             </div>
@@ -242,11 +242,11 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
                       href={pageHref(currentPage + 1)}
                       className="rounded-md border border-slate-300 px-3 py-1.5 hover:bg-slate-50"
                     >
-                      Proxima
+                      Próxima
                     </Link>
                   ) : (
                     <span className="rounded-md border border-slate-200 px-3 py-1.5 text-slate-400">
-                      Proxima
+                      Próxima
                     </span>
                   )}
                 </div>

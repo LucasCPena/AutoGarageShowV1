@@ -73,25 +73,25 @@ export default function MotorcyclesPage() {
     <>
       <PageIntro
         title="Motos"
-        subtitle="Encontre motos aprovadas pela plataforma com uma vitrine dedicada."
+        subtitle="Encontre motos aprovadas pela plataforma em uma vitrine dedicada."
       />
 
       <Container className="py-10">
         <div className="page-with-sidebar">
           <div>
-            <MarketplaceSectionNav current="motos" />
-
             <section className="mb-8">
               <HeroSlider section="listings" />
             </section>
+
+            <MarketplaceSectionNav current="motos" />
 
             <ClassifiedsClientSections
               listings={listings}
               forcedVehicleType="motorcycle"
               featuredSectionTitle="Motos em destaque"
-              featuredSectionSubtitle="Selecao de motos promovidas e aprovadas para a vitrine principal."
-              latestSectionTitle="Ultimas motos"
-              latestSectionSubtitle="Confira as motos cadastradas mais recentemente, com data e hora do anuncio."
+              featuredSectionSubtitle="Seleção de motos promovidas e aprovadas para a vitrine principal."
+              latestSectionTitle="Últimas motos"
+              latestSectionSubtitle="Confira as motos cadastradas mais recentemente, com data e hora do anúncio."
             />
           </div>
 

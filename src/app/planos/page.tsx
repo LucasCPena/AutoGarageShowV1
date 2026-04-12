@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Planos",
-  description: "Conheca os planos disponiveis para anunciar na plataforma."
+  description: "Conheça os planos disponíveis para anunciar na plataforma."
 };
 
 export default function PlansPage() {
@@ -17,7 +17,7 @@ export default function PlansPage() {
     <>
       <PageIntro
         title="Planos"
-        subtitle="Consulte os planos disponiveis para anunciar no portal."
+        subtitle="Consulte os planos disponíveis para anunciar no portal."
       />
 
       <Container className="py-10">

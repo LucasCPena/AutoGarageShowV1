@@ -27,6 +27,8 @@ function formatPhone(value: string) {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
+type SubmissionMode = "update-current" | "new-account";
+
 export default function ServicesRegistrationForm() {
   const { user, token, register, updateUser } = useAuth();
   const [companyName, setCompanyName] = useState("");
@@ -41,31 +43,75 @@ export default function ServicesRegistrationForm() {
   const [shortDescription, setShortDescription] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [submissionMode, setSubmissionMode] = useState<SubmissionMode>("new-account");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const resolvedActivityType =
     activityType === "__other__" ? customActivityType.trim() : activityType.trim();
+  const canUpdateCurrentAccount = Boolean(user && user.role !== "admin");
+  const editingCurrentProfile =
+    Boolean(user) && canUpdateCurrentAccount && submissionMode === "update-current";
 
-  useEffect(() => {
+  function loadUserIntoForm() {
     if (!user) return;
 
-    setCompanyName((current) => current || user.companyName || "");
-    setCnpj((current) => current || formatCnpj(user.document || ""));
-    setAddress((current) => current || user.address || "");
-    setCity((current) => current || user.city || "");
-    setState((current) => current || user.state || "");
-    setPhone((current) => current || formatPhone(user.phone || ""));
-    setWebsiteUrl((current) => current || user.websiteUrl || "");
-    setShortDescription((current) => current || user.shortDescription || "");
+    setCompanyName(user.companyName || "");
+    setCnpj(formatCnpj(user.document || ""));
+    setAddress(user.address || "");
+    setCity(user.city || "");
+    setState(user.state || "");
+    setPhone(formatPhone(user.phone || ""));
+    setWebsiteUrl(user.websiteUrl || "");
+    setShortDescription(user.shortDescription || "");
 
     if (user.activityType) {
       const hasPreset = DEFAULT_SERVICE_ACTIVITIES.includes(user.activityType);
       setActivityType(hasPreset ? user.activityType : "__other__");
       setCustomActivityType(hasPreset ? "" : user.activityType);
+      return;
     }
+
+    setActivityType(DEFAULT_SERVICE_ACTIVITIES[0] || "");
+    setCustomActivityType("");
+  }
+
+  function clearFormForNewAccount() {
+    setCompanyName("");
+    setCnpj("");
+    setAddress("");
+    setCity("");
+    setState("");
+    setPhone("");
+    setWebsiteUrl("");
+    setShortDescription("");
+    setEmail("");
+    setPassword("");
+    setActivityType(DEFAULT_SERVICE_ACTIVITIES[0] || "");
+    setCustomActivityType("");
+    setError(null);
+    setSuccess(null);
+  }
+
+  useEffect(() => {
+    if (!user || user.role === "admin") {
+      setSubmissionMode("new-account");
+      return;
+    }
+
+    if (user.marketplaceProfile === "services") {
+      setSubmissionMode("update-current");
+      return;
+    }
+
+    setSubmissionMode("new-account");
   }, [user]);
+
+  useEffect(() => {
+    if (!editingCurrentProfile) return;
+    loadUserIntoForm();
+  }, [editingCurrentProfile, user]);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -73,7 +119,7 @@ export default function ServicesRegistrationForm() {
     setSuccess(null);
 
     if (!validateCNPJ(cnpj)) {
-      setError("Informe um CNPJ valido para o cadastro empresarial.");
+      setError("Informe um CNPJ válido para o cadastro empresarial.");
       return;
     }
 
@@ -85,9 +131,9 @@ export default function ServicesRegistrationForm() {
     setSubmitting(true);
 
     try {
-      if (user) {
+      if (editingCurrentProfile) {
         if (!token) {
-          throw new Error("Sua sessao expirou. Faca login novamente.");
+          throw new Error("Sua sessão expirou. Faça login novamente.");
         }
 
         const response = await fetch("/api/auth/me", {
@@ -113,13 +159,20 @@ export default function ServicesRegistrationForm() {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || "Nao foi possivel atualizar o perfil.");
+          throw new Error(data.error || "Não foi possível atualizar o perfil.");
         }
 
         updateUser(data.user);
-        setSuccess("Perfil de servicos salvo com sucesso. Redirecionando para a vitrine.");
+        setSuccess("Perfil de serviços salvo com sucesso. Redirecionando para a página da empresa.");
+        window.setTimeout(() => {
+          window.location.assign(`/servicos/${data.user.id}`);
+        }, 1200);
       } else {
-        await register(companyName, email, password, {
+        if (!email.trim() || !password.trim()) {
+          throw new Error("Informe e-mail e senha para criar a nova conta da empresa.");
+        }
+
+        const createdUser = await register(companyName, email, password, {
           document: onlyDigits(cnpj),
           phone: onlyDigits(phone),
           accountType: "company",
@@ -131,20 +184,20 @@ export default function ServicesRegistrationForm() {
           state,
           websiteUrl,
           shortDescription,
-          source: "site"
+          source: "site",
+          autoLogin: !user
         });
 
-        setSuccess("Prestador cadastrado com sucesso. Redirecionando para a vitrine de servicos.");
+        setSuccess("Prestador cadastrado com sucesso. Redirecionando para a página da empresa.");
+        window.setTimeout(() => {
+          window.location.assign(`/servicos/${createdUser.id}`);
+        }, 1200);
       }
-
-      window.setTimeout(() => {
-        window.location.assign("/servicos");
-      }, 1200);
     } catch (submitError) {
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "Nao foi possivel concluir o cadastro."
+          : "Não foi possível concluir o cadastro."
       );
     } finally {
       setSubmitting(false);
@@ -153,18 +206,65 @@ export default function ServicesRegistrationForm() {
 
   return (
     <form onSubmit={onSubmit} className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-6">
-      <Notice title="Cadastro de servicos" variant="info">
-        Cadastre empresas de funilaria, restauracao, tapecearia, eletrica, pecas e outros servicos relacionados ao setor.
+      <Notice title="Cadastro de serviços" variant="info">
+        Cadastre empresas de funilaria, restauração, tapeçaria, elétrica, peças e outros serviços relacionados ao setor.
       </Notice>
+
+      {user?.role === "admin" ? (
+        <Notice title="Conta administrativa" variant="warning">
+          Para evitar misturar permissões administrativas com um perfil público de serviços, esta tela cria sempre uma nova conta empresarial.
+        </Notice>
+      ) : null}
 
       {user ? (
         <Notice title="Conta autenticada" variant="info">
-          Sua conta esta logada. Preencha os dados abaixo para cadastrar ou atualizar o seu perfil de servicos.
+          <div className="grid gap-3">
+            <p>
+              {editingCurrentProfile
+                ? "Você está editando o perfil de serviços vinculado à conta atual."
+                : "Para evitar sobrescrever a conta logada, o modo padrão desta tela cria uma nova empresa em uma conta separada."}
+            </p>
+
+            {canUpdateCurrentAccount ? (
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearFormForNewAccount();
+                    setSubmissionMode("new-account");
+                  }}
+                  className={`rounded-md px-3 py-2 text-sm font-semibold ${
+                    submissionMode === "new-account"
+                      ? "bg-slate-900 text-white"
+                      : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  Nova empresa
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSubmissionMode("update-current");
+                    setError(null);
+                    setSuccess(null);
+                    loadUserIntoForm();
+                  }}
+                  className={`rounded-md px-3 py-2 text-sm font-semibold ${
+                    submissionMode === "update-current"
+                      ? "bg-slate-900 text-white"
+                      : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  Usar conta atual
+                </button>
+              </div>
+            ) : null}
+          </div>
         </Notice>
       ) : null}
 
       {error ? (
-        <Notice title="Validacao" variant="warning">
+        <Notice title="Validação" variant="warning">
           {error}
         </Notice>
       ) : null}
@@ -182,7 +282,7 @@ export default function ServicesRegistrationForm() {
           className="h-11 rounded-md border border-slate-300 px-3 text-sm"
           value={companyName}
           onChange={(event) => setCompanyName(event.target.value)}
-          placeholder="Nome fantasia ou razao social"
+          placeholder="Nome fantasia ou razão social"
         />
       </label>
 
@@ -233,30 +333,30 @@ export default function ServicesRegistrationForm() {
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             value={customActivityType}
             onChange={(event) => setCustomActivityType(event.target.value)}
-            placeholder="Ex.: Vidracaria, pintura, mecanica especializada"
+            placeholder="Ex.: vidraçaria, pintura, mecânica especializada"
           />
         </label>
       ) : null}
 
       <label className="grid gap-1 md:col-span-2">
-        <span className="text-sm font-semibold text-slate-900">Endereco</span>
+        <span className="text-sm font-semibold text-slate-900">Endereço</span>
         <input
           required
           className="h-11 rounded-md border border-slate-300 px-3 text-sm"
           value={address}
           onChange={(event) => setAddress(event.target.value)}
-          placeholder="Rua, numero e complemento"
+          placeholder="Rua, número e complemento"
         />
       </label>
 
       <label className="grid gap-1">
-        <span className="text-sm font-semibold text-slate-900">Municipio</span>
+        <span className="text-sm font-semibold text-slate-900">Município</span>
         <input
           required
           className="h-11 rounded-md border border-slate-300 px-3 text-sm"
           value={city}
           onChange={(event) => setCity(event.target.value)}
-          placeholder="Municipio"
+          placeholder="Município"
         />
       </label>
 
@@ -273,7 +373,7 @@ export default function ServicesRegistrationForm() {
       </label>
 
       <label className="grid gap-1 md:col-span-2">
-        <span className="text-sm font-semibold text-slate-900">Descricao curta</span>
+        <span className="text-sm font-semibold text-slate-900">Descrição curta</span>
         <textarea
           required
           className="min-h-28 rounded-md border border-slate-300 px-3 py-2 text-sm"
@@ -294,7 +394,7 @@ export default function ServicesRegistrationForm() {
         />
       </label>
 
-      {!user ? (
+      {!editingCurrentProfile ? (
         <>
           <label className="grid gap-1">
             <span className="text-sm font-semibold text-slate-900">E-mail</span>
@@ -327,7 +427,11 @@ export default function ServicesRegistrationForm() {
         disabled={submitting}
         className="inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
       >
-        {submitting ? "Enviando..." : user ? "Salvar perfil de servico" : "Cadastrar servico"}
+        {submitting
+          ? "Enviando..."
+          : editingCurrentProfile
+            ? "Salvar perfil de serviço"
+            : "Cadastrar serviço"}
       </button>
     </form>
   );

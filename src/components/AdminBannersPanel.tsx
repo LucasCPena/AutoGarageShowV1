@@ -18,11 +18,11 @@ const SECTION_OPTIONS: Array<{ value: BannerSection; label: string }> = [
   { value: "home", label: "Home (topo principal)" },
   { value: "events", label: "Eventos" },
   { value: "listings", label: "Classificados" },
-  { value: "news", label: "Noticias" },
+  { value: "news", label: "Notícias" },
   { value: "plans", label: "Planos" },
   { value: "sidebar", label: "Banner lateral" },
   { value: "mercado-de-pulgas", label: "Mercado de Pulgas" },
-  { value: "custom", label: "Outra secao" }
+  { value: "custom", label: "Outra seção" }
 ];
 
 type Banner = {
@@ -70,7 +70,7 @@ function sectionLabel(section: string) {
   if (normalized === "home") return "Home";
   if (normalized === "events") return "Eventos";
   if (normalized === "listings") return "Classificados";
-  if (normalized === "news") return "Noticias";
+  if (normalized === "news") return "Notícias";
   if (normalized === "plans") return "Planos";
   if (normalized === "sidebar") return "Banner lateral";
   if (normalized === "mercado-de-pulgas") return "Mercado de Pulgas";
@@ -147,8 +147,8 @@ export default function AdminBannersPanel({
   const panelDescription =
     description ??
     (backgroundMode
-      ? "Use esta area para trocar somente o banner de fundo do topo da home."
-      : "Cadastre banners e escolha em qual pagina eles devem aparecer.");
+      ? "Use esta área para trocar somente o banner de fundo do topo da home."
+      : "Cadastre banners e escolha em qual página eles devem aparecer.");
 
   function resetForm() {
     setEditingBannerId(null);
@@ -172,7 +172,7 @@ export default function AdminBannersPanel({
       const data = await res.json();
       setBanners(data.banners || []);
     } catch {
-      setMessage({ type: "error", text: "Nao foi possivel carregar banners." });
+      setMessage({ type: "error", text: "Não foi possível carregar banners." });
     } finally {
       setLoading(false);
     }
@@ -255,7 +255,7 @@ export default function AdminBannersPanel({
     setMessage(null);
     try {
       if (!form.image.trim()) {
-        throw new Error("Informe a URL da imagem ou faca upload de um arquivo.");
+        throw new Error("Informe a URL da imagem ou faça upload de um arquivo.");
       }
 
       const resolvedSection = fixedSection
@@ -265,7 +265,7 @@ export default function AdminBannersPanel({
           : form.section;
 
       if (!resolvedSection) {
-        throw new Error("Informe a secao onde o banner deve ser exibido.");
+        throw new Error("Informe a seção onde o banner deve ser exibido.");
       }
 
       const payload = {
@@ -460,7 +460,7 @@ export default function AdminBannersPanel({
           <>
             {fixedSection ? (
               <label className="grid gap-1">
-                <span className="text-sm font-semibold text-slate-900">Pagina</span>
+                <span className="text-sm font-semibold text-slate-900">Página</span>
                 <input
                   readOnly
                   className="h-11 rounded-md border border-slate-300 bg-slate-50 px-3 text-sm text-slate-700"
@@ -469,7 +469,7 @@ export default function AdminBannersPanel({
               </label>
             ) : (
               <label className="grid gap-1">
-                <span className="text-sm font-semibold text-slate-900">Pagina de exibicao</span>
+                <span className="text-sm font-semibold text-slate-900">Página de exibição</span>
                 <select
                   className="h-11 rounded-md border border-slate-300 px-3 text-sm"
                   value={form.section}
@@ -488,7 +488,7 @@ export default function AdminBannersPanel({
 
             {!fixedSection && form.section === "custom" ? (
               <label className="grid gap-1 md:col-span-2">
-                <span className="text-sm font-semibold text-slate-900">Slug da secao</span>
+                <span className="text-sm font-semibold text-slate-900">Slug da seção</span>
                 <input
                   className="h-11 rounded-md border border-slate-300 px-3 text-sm"
                   value={form.customSection}
@@ -496,7 +496,7 @@ export default function AdminBannersPanel({
                   placeholder="Ex.: mercado-de-pulgas"
                 />
                 <span className="text-xs text-slate-500">
-                  Use o mesmo slug da pagina que vai chamar o banner.
+                  Use o mesmo slug da página que vai chamar o banner.
                 </span>
               </label>
             ) : null}
@@ -575,8 +575,8 @@ export default function AdminBannersPanel({
             {backgroundMode
               ? "Defina uma imagem para o fundo da home."
               : fixedSection
-                ? "Crie banners para esta secao."
-                : "Crie ate 3 banners para o carrossel."}
+                ? "Crie banners para esta seção."
+                : "Crie até 3 banners para o carrossel."}
           </Notice>
         ) : (
           bannersToRender.map((banner) => (

@@ -330,6 +330,12 @@ async function ensureListingsTable() {
     await query("ALTER TABLE listings ADD COLUMN document_hash VARCHAR(64) NULL");
     clearTableColumnsCache("listings");
   }
+  try {
+    await query("ALTER TABLE listings MODIFY COLUMN document VARCHAR(255) NOT NULL");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`[db] Nao foi possivel ajustar listings.document para campos criptografados: ${message}`);
+  }
 
   listingsTableEnsured = true;
 }

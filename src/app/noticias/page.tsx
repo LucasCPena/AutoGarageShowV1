@@ -66,8 +66,8 @@ export default function NewsPage() {
       })
       .catch((fetchError) => {
         if (cancelled) return;
-        console.error("Erro ao buscar noticias:", fetchError);
-        setError("Erro ao carregar noticias");
+        console.error("Erro ao buscar notícias:", fetchError);
+        setError("Erro ao carregar notícias");
         setLoading(false);
       });
 
@@ -99,8 +99,8 @@ export default function NewsPage() {
   return (
     <>
       <PageIntro
-        title="Noticias"
-        subtitle="Conteudo sobre carros antigos, eventos e classificados."
+        title="Notícias"
+        subtitle="Conteúdo sobre carros antigos, eventos e classificados."
       />
 
       <Container className="py-10">
@@ -117,7 +117,7 @@ export default function NewsPage() {
                   onClick={() => setShowCrud((current) => !current)}
                   className="inline-flex h-10 items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700"
                 >
-                  {showCrud ? "Fechar editor" : "Nova noticia"}
+                  {showCrud ? "Fechar editor" : "Nova notícia"}
                 </button>
               </div>
             ) : null}
@@ -183,7 +183,7 @@ export default function NewsPage() {
                         href={`/noticias/${article.slug}`}
                         className="mt-2 inline-flex text-xs font-semibold text-brand-700 hover:text-brand-800"
                       >
-                        Ler noticia completa
+                        Ler notícia completa
                       </Link>
                     </div>
 

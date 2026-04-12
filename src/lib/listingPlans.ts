@@ -4,6 +4,8 @@ export type ListingPlan = {
   name: string;
   description: string;
   priceLabel: string;
+  discountType?: "none" | "percentage" | "fixed" | "free";
+  discountValue?: number | null;
   durationDays: number;
   ctaLabel: string;
   ctaHref: string;
@@ -18,6 +20,8 @@ const DEFAULT_LISTING_PLANS: ListingPlan[] = [
     name: "Publicacao padrao",
     description: "Anuncio em ordem cronologica, sujeito a aprovacao.",
     priceLabel: "Gratis",
+    discountType: "none",
+    discountValue: null,
     durationDays: 0,
     ctaLabel: "Publicar gratis",
     ctaHref: "/veiculos/anunciar",
@@ -30,6 +34,8 @@ const DEFAULT_LISTING_PLANS: ListingPlan[] = [
     name: "Destaque por 30 dias",
     description: "Seu anuncio vai para a vitrine de destaques por um periodo fixo de 30 dias.",
     priceLabel: "Sob consulta",
+    discountType: "none",
+    discountValue: null,
     durationDays: 30,
     ctaLabel: "Quero destacar",
     ctaHref: "/veiculos/anunciar",
@@ -49,6 +55,24 @@ function normalizeBoolean(value: unknown, fallback = false) {
 function normalizePositiveInt(value: unknown, fallback = 0) {
   if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
   return Math.max(0, Math.round(value));
+}
+
+function normalizeDiscountType(value: unknown) {
+  if (
+    value === "percentage" ||
+    value === "fixed" ||
+    value === "free" ||
+    value === "none"
+  ) {
+    return value;
+  }
+  return "none" as const;
+}
+
+function normalizeDiscountValue(value: unknown) {
+  if (value === null) return null;
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  return Math.max(0, value);
 }
 
 export function cloneDefaultListingPlans() {
@@ -76,6 +100,8 @@ export function normalizeListingPlans(input: unknown) {
         name: normalizeText(item.name),
         description: normalizeText(item.description),
         priceLabel: normalizeText(item.priceLabel),
+        discountType: normalizeDiscountType(item.discountType),
+        discountValue: normalizeDiscountValue(item.discountValue),
         durationDays: normalizePositiveInt(item.durationDays, 0),
         ctaLabel: normalizeText(item.ctaLabel, "Saiba mais"),
         ctaHref: normalizeText(item.ctaHref, "/veiculos/anunciar"),

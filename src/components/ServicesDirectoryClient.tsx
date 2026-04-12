@@ -60,9 +60,9 @@ export default function ServicesDirectoryClient({ services }: Props) {
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">Servicos para o antigomobilismo</h2>
+            <h2 className="text-2xl font-bold text-slate-900">Serviços para o antigomobilismo</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              Encontre funilaria, restauracao, tapeçaria, eletrica, pecas e outros especialistas cadastrados na plataforma.
+              Encontre funilaria, restauração, tapeçaria, elétrica, peças e outros especialistas cadastrados na plataforma.
             </p>
           </div>
 
@@ -70,7 +70,7 @@ export default function ServicesDirectoryClient({ services }: Props) {
             href="/servicos/cadastrar"
             className="inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700"
           >
-            Cadastrar servico
+            Cadastrar serviço
           </Link>
         </div>
 
@@ -80,7 +80,7 @@ export default function ServicesDirectoryClient({ services }: Props) {
             value={activityFilter}
             onChange={(event) => setActivityFilter(event.target.value)}
           >
-            <option value="all">Tipo de servico: todos</option>
+            <option value="all">Tipo de serviço: todos</option>
             {activityOptions.map((item) => (
               <option key={item} value={item}>
                 {item}
@@ -109,7 +109,7 @@ export default function ServicesDirectoryClient({ services }: Props) {
             value={cityFilter}
             onChange={(event) => setCityFilter(event.target.value)}
           >
-            <option value="all">Municipio: todos</option>
+            <option value="all">Município: todos</option>
             {cityOptions.map((item) => (
               <option key={item} value={item}>
                 {item}
@@ -120,7 +120,7 @@ export default function ServicesDirectoryClient({ services }: Props) {
       </section>
 
       {filtered.length === 0 ? (
-        <Notice title="Nenhum servico encontrado" variant="info">
+        <Notice title="Nenhum serviço encontrado" variant="info">
           Nenhum prestador corresponde aos filtros selecionados.
         </Notice>
       ) : (
@@ -133,17 +133,25 @@ export default function ServicesDirectoryClient({ services }: Props) {
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    {service.activityType || "Prestador de servicos"}
+                    {service.activityType || "Prestador de serviços"}
                   </div>
                   <h3 className="mt-2 text-2xl font-bold text-slate-900">{service.displayName}</h3>
                   <div className="mt-2 text-sm text-slate-600">
-                    {[service.city, service.state].filter(Boolean).join(" / ") || "Localizacao nao informada"}
+                    {[service.city, service.state].filter(Boolean).join(" / ") || "Localização não informada"}
                   </div>
                 </div>
 
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 text-lg font-bold text-white">
-                  {service.displayName.slice(0, 2).toUpperCase()}
-                </div>
+                {service.logoUrl ? (
+                  <img
+                    src={service.logoUrl}
+                    alt={service.displayName}
+                    className="h-16 w-16 rounded-2xl border border-slate-200 bg-white object-contain p-2"
+                  />
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 text-lg font-bold text-white">
+                    {service.displayName.slice(0, 2).toUpperCase()}
+                  </div>
+                )}
               </div>
 
               {service.shortDescription ? (
@@ -151,7 +159,7 @@ export default function ServicesDirectoryClient({ services }: Props) {
               ) : null}
 
               <div className="mt-4 grid gap-2 text-sm text-slate-600">
-                {service.address ? <div>Endereco: {service.address}</div> : null}
+                {service.address ? <div>Endereço: {service.address}</div> : null}
                 {service.phone ? <div>Telefone: {service.phone}</div> : null}
                 {service.websiteUrl ? <div className="break-all">Site: {service.websiteUrl}</div> : null}
               </div>

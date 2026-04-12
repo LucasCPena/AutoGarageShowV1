@@ -150,12 +150,16 @@ function readFromStorage(): { user: User | null; token: string | null } {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (!stored) return { user: null, token: null };
     const parsed = JSON.parse(stored);
+    const token = typeof parsed?.token === "string" ? parsed.token : null;
+    if (!token) {
+      return { user: null, token: null };
+    }
     return {
       user: normalizeUser(parsed.user),
-      token: parsed.token
+      token
     };
   } catch (error) {
-    console.error('Erro ao ler do localStorage:', error);
+    console.error("Erro ao ler do localStorage:", error);
     return { user: null, token: null };
   }
 }
@@ -173,7 +177,7 @@ function writeToStorage(user: User | null, token: string | null) {
     }
     window.dispatchEvent(new Event(AUTH_EVENT));
   } catch (error) {
-    console.error('Erro ao salvar no localStorage:', error);
+    console.error("Erro ao salvar no localStorage:", error);
     return;
   }
 }
@@ -197,9 +201,9 @@ async function validateSession(token: string) {
 
 export function useAuth() {
   const [state, setState] = useState<AuthState>(() => {
-    const { user, token } = readFromStorage();
+    const { token } = readFromStorage();
     return {
-      user: token ? null : user,
+      user: null,
       token,
       isLoading: Boolean(token)
     };
@@ -210,7 +214,7 @@ export function useAuth() {
 
     const syncFromStorage = async () => {
       const syncId = ++activeSync;
-      const { user, token } = readFromStorage();
+      const { user: storedUser, token } = readFromStorage();
 
       if (!token) {
         setState({ user: null, token: null, isLoading: false });
@@ -231,7 +235,7 @@ export function useAuth() {
 
         setState({ user: freshUser, token, isLoading: false });
 
-        if (!isSameUser(user, freshUser)) {
+        if (!isSameUser(storedUser, freshUser)) {
           writeToStorage(freshUser, token);
         }
       } catch {
@@ -264,10 +268,10 @@ export function useAuth() {
   const login = useCallback(
     async (email: string, password: string, name?: string) => {
       try {
-        const response = await fetch('/api/auth/login', {
-          method: 'POST',
+        const response = await fetch("/api/auth/login", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           credentials: "same-origin",
           body: JSON.stringify({ email, password }),
@@ -276,7 +280,7 @@ export function useAuth() {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || 'Erro ao fazer login');
+          throw new Error(data.error || "Erro ao fazer login");
         }
 
         setState({ user: data.user, token: data.token, isLoading: false });
@@ -310,6 +314,7 @@ export function useAuth() {
             city?: string;
             state?: string;
             source?: "site" | "qr";
+            autoLogin?: boolean;
           }
     ) => {
       try {
@@ -317,10 +322,11 @@ export function useAuth() {
           typeof documentOrOptions === "string"
             ? { document: documentOrOptions }
             : documentOrOptions || {};
-        const response = await fetch('/api/auth/register', {
-          method: 'POST',
+        const autoLogin = options.autoLogin !== false;
+        const response = await fetch("/api/auth/register", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           credentials: "same-origin",
           body: JSON.stringify({
@@ -346,10 +352,14 @@ export function useAuth() {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || 'Erro ao registrar');
+          throw new Error(data.error || "Erro ao registrar");
         }
 
         // Após registrar, fazer login automaticamente
+        if (!autoLogin) {
+          return data.user;
+        }
+
         return await login(email, password, name);
       } catch (error) {
         throw error;

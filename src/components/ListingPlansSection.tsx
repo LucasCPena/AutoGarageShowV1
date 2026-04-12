@@ -69,16 +69,16 @@ export default async function ListingPlansSection({
           <div>
             <h2 className="text-2xl font-bold text-slate-900">Planos</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Veja os planos disponiveis para anunciar na plataforma.
+              Veja os planos disponíveis para anunciar na plataforma.
             </p>
           </div>
         </div>
       ) : null}
 
       {offers.length === 0 ? (
-        <Notice title="Sem planos" variant="info">
+          <Notice title="Sem planos" variant="info">
           Nenhum plano ativo foi cadastrado no momento.
-        </Notice>
+          </Notice>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {offers.map((offer) => (
@@ -102,7 +102,7 @@ export default async function ListingPlansSection({
               ) : null}
               {offer.plan.durationDays > 0 ? (
                 <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Duracao: {offer.plan.durationDays} dias
+                  Duração: {offer.plan.durationDays} dias
                 </div>
               ) : null}
               <p className="mt-3 text-sm text-slate-700">{offer.plan.description}</p>

@@ -22,6 +22,11 @@ function normalizePositiveNumber(value: unknown, fallback = 0) {
   return Math.max(0, value);
 }
 
+function normalizeDiscountValue(value: number | null | undefined) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return 0;
+  return Math.max(0, value);
+}
+
 export function normalizeCouponCampaigns(input: unknown) {
   if (!Array.isArray(input)) return [] as CouponCampaign[];
 
@@ -75,7 +80,7 @@ export function isCouponCampaignActive(campaign: CouponCampaign, referenceDate =
   return true;
 }
 
-function parsePriceLabel(priceLabel: string) {
+export function parsePriceLabel(priceLabel: string) {
   const normalized = priceLabel.replace(/[^\d,.-]/g, "").trim();
   if (!normalized) return null;
   const digits = normalized.replace(/\./g, "").replace(",", ".");
@@ -83,11 +88,65 @@ function parsePriceLabel(priceLabel: string) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function formatPriceLabel(value: number) {
+export function formatPriceLabel(value: number) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL"
   }).format(value);
+}
+
+export function resolvePriceLabelsFromDiscount(options: {
+  originalPriceLabel: string;
+  discountType?: ListingPlan["discountType"];
+  discountValue?: number | null;
+}) {
+  const originalPriceLabel = options.originalPriceLabel.trim();
+  const discountType = options.discountType ?? "none";
+  const discountValue = normalizeDiscountValue(options.discountValue);
+
+  if (!originalPriceLabel) {
+    return {
+      originalPriceLabel,
+      promotionalPriceLabel: undefined,
+      isFree: false
+    };
+  }
+
+  if (discountType === "none") {
+    return {
+      originalPriceLabel,
+      promotionalPriceLabel: undefined,
+      isFree: originalPriceLabel.toLowerCase() === "gratis"
+    };
+  }
+
+  if (discountType === "free") {
+    return {
+      originalPriceLabel,
+      promotionalPriceLabel: "Gratis",
+      isFree: true
+    };
+  }
+
+  const baseValue = parsePriceLabel(originalPriceLabel);
+  if (baseValue === null) {
+    return {
+      originalPriceLabel,
+      promotionalPriceLabel: undefined,
+      isFree: false
+    };
+  }
+
+  const discounted =
+    discountType === "fixed"
+      ? Math.max(0, baseValue - discountValue)
+      : Math.max(0, baseValue * (1 - discountValue / 100));
+
+  return {
+    originalPriceLabel,
+    promotionalPriceLabel: discounted <= 0 ? "Gratis" : formatPriceLabel(discounted),
+    isFree: discounted <= 0
+  };
 }
 
 function getBestCampaign(plan: ListingPlan, campaigns: CouponCampaign[], referenceDate = new Date()) {
@@ -103,15 +162,19 @@ export function resolvePlanOffer(
   campaigns: CouponCampaign[],
   referenceDate = new Date()
 ): ResolvedPlanOffer {
-  const originalPriceLabel = plan.priceLabel.trim();
+  const planOffer = resolvePriceLabelsFromDiscount({
+    originalPriceLabel: plan.priceLabel,
+    discountType: plan.discountType,
+    discountValue: plan.discountValue
+  });
   const campaign = getBestCampaign(plan, campaigns, referenceDate);
 
   if (!campaign) {
     return {
       plan,
-      originalPriceLabel,
-      promotionalPriceLabel: undefined,
-      isFree: originalPriceLabel.toLowerCase() === "gratis"
+      originalPriceLabel: planOffer.originalPriceLabel,
+      promotionalPriceLabel: planOffer.promotionalPriceLabel,
+      isFree: planOffer.isFree
     };
   }
 
@@ -119,18 +182,18 @@ export function resolvePlanOffer(
     return {
       plan,
       campaign,
-      originalPriceLabel,
+      originalPriceLabel: planOffer.originalPriceLabel,
       promotionalPriceLabel: "Gratis",
       isFree: true
     };
   }
 
-  const baseValue = parsePriceLabel(originalPriceLabel);
+  const baseValue = parsePriceLabel(planOffer.originalPriceLabel);
   if (baseValue === null) {
     return {
       plan,
       campaign,
-      originalPriceLabel,
+      originalPriceLabel: planOffer.originalPriceLabel,
       promotionalPriceLabel: undefined,
       isFree: false
     };
@@ -144,7 +207,7 @@ export function resolvePlanOffer(
   return {
     plan,
     campaign,
-    originalPriceLabel,
+    originalPriceLabel: planOffer.originalPriceLabel,
     promotionalPriceLabel: discounted <= 0 ? "Gratis" : formatPriceLabel(discounted),
     isFree: discounted <= 0
   };

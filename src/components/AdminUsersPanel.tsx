@@ -86,7 +86,7 @@ export default function AdminUsersPanel({ token }: Props) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Nao foi possivel carregar usuarios.");
+        throw new Error(data.error || "Não foi possível carregar usuários.");
       }
 
       const nextUsers: AdminUser[] = Array.isArray(data.users) ? data.users : [];
@@ -103,7 +103,7 @@ export default function AdminUsersPanel({ token }: Props) {
         text:
           loadError instanceof Error
             ? loadError.message
-            : "Nao foi possivel carregar usuarios."
+            : "Não foi possível carregar usuários."
       });
     } finally {
       setLoading(false);
@@ -115,7 +115,7 @@ export default function AdminUsersPanel({ token }: Props) {
       setLoading(false);
       setMessage({
         type: "error",
-        text: "Sessao expirada. Faca login novamente como admin."
+        text: "Sessão expirada. Faça login novamente como admin."
       });
       return;
     }
@@ -142,7 +142,7 @@ export default function AdminUsersPanel({ token }: Props) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Nao foi possivel atualizar o usuario.");
+        throw new Error(data.error || "Não foi possível atualizar o usuário.");
       }
 
       const updatedUser = data.user as AdminUser;
@@ -168,7 +168,7 @@ export default function AdminUsersPanel({ token }: Props) {
         text:
           saveError instanceof Error
             ? saveError.message
-            : "Nao foi possivel atualizar o usuario."
+            : "Não foi possível atualizar o usuário."
       });
     } finally {
       setBusyId(null);
@@ -189,13 +189,13 @@ export default function AdminUsersPanel({ token }: Props) {
     <div className="rounded-2xl border border-slate-200 bg-white p-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="text-sm font-semibold text-slate-900">Usuarios do admin</div>
+          <div className="text-sm font-semibold text-slate-900">Usuários do admin</div>
           <div className="mt-1 text-sm text-slate-600">
-            Gerencie perfis, aprovacao, tipo de conta e limites individuais por cliente.
+            Gerencie perfis, aprovação, tipo de conta e limites individuais por cliente.
           </div>
         </div>
         <div className="text-sm text-slate-600">
-          {users.length} usuario(s) • {adminCount} admin(s)
+          {users.length} usuário(s) • {adminCount} admin(s)
         </div>
       </div>
 
@@ -212,10 +212,10 @@ export default function AdminUsersPanel({ token }: Props) {
 
       <div className="mt-6 grid gap-4">
         {loading ? (
-          <div className="text-sm text-slate-600">Carregando usuarios...</div>
+          <div className="text-sm text-slate-600">Carregando usuários...</div>
         ) : users.length === 0 ? (
-          <Notice title="Sem usuarios" variant="info">
-            Nenhum usuario encontrado.
+          <Notice title="Sem usuários" variant="info">
+            Nenhum usuário encontrado.
           </Notice>
         ) : (
           users.map((item) => {
@@ -233,10 +233,10 @@ export default function AdminUsersPanel({ token }: Props) {
                     </div>
                     <div className="mt-1 break-all">{item.email}</div>
                     <div className="mt-1">
-                      Documento: {item.document || "Nao informado"}{" "}
+                      Documento: {item.document || "Não informado"}{" "}
                       {item.documentType ? `(${item.documentType.toUpperCase()})` : ""}
                     </div>
-                    <div className="mt-1">Telefone: {item.phone || "Nao informado"}</div>
+                    <div className="mt-1">Telefone: {item.phone || "Não informado"}</div>
                     <div className="mt-1">
                       Perfil especial: {item.marketplaceProfile || "padrao"}
                     </div>
@@ -255,7 +255,7 @@ export default function AdminUsersPanel({ token }: Props) {
                   <div className="grid gap-3 md:grid-cols-2">
                     <label className="grid gap-1">
                       <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        Permissao
+                        Permissão
                       </span>
                       <select
                         className="h-11 rounded-md border border-slate-300 px-3 text-sm"
@@ -294,7 +294,7 @@ export default function AdminUsersPanel({ token }: Props) {
 
                     <label className="grid gap-1">
                       <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        Aprovacao
+                        Aprovação
                       </span>
                       <select
                         className="h-11 rounded-md border border-slate-300 px-3 text-sm"
@@ -313,7 +313,7 @@ export default function AdminUsersPanel({ token }: Props) {
 
                     <label className="grid gap-1">
                       <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        Verificacao
+                        Verificação
                       </span>
                       <select
                         className="h-11 rounded-md border border-slate-300 px-3 text-sm"
@@ -327,7 +327,7 @@ export default function AdminUsersPanel({ token }: Props) {
                         }
                       >
                         <option value="verified">Verificado</option>
-                        <option value="unverified">Nao verificado</option>
+                        <option value="unverified">Não verificado</option>
                       </select>
                     </label>
 
@@ -342,7 +342,7 @@ export default function AdminUsersPanel({ token }: Props) {
                         onChange={(event) =>
                           updateDraft(item.id, { companyName: event.target.value })
                         }
-                        placeholder="Preencha para contas empresa/agencia"
+                        placeholder="Preencha para contas empresa/agência"
                       />
                     </label>
 

@@ -9,15 +9,15 @@ type Props = {
 };
 
 const items: Array<{ key: SectionKey; href: string; label: string }> = [
-  { key: "veiculos", href: "/classificados", label: "Veiculos" },
+  { key: "veiculos", href: "/classificados", label: "Veículos" },
   { key: "motos", href: "/motos", label: "Motos" },
-  { key: "servicos", href: "/servicos", label: "Servicos" }
+  { key: "servicos", href: "/servicos", label: "Serviços" }
 ];
 
 export default function MarketplaceSectionNav({ current }: Props) {
   return (
     <nav
-      aria-label="Secoes do marketplace"
+      aria-label="Seções do marketplace"
       className="mb-6 flex flex-wrap gap-3 rounded-2xl border border-slate-200 bg-white p-3"
     >
       {items.map((item) => {

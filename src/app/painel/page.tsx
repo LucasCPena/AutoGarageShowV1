@@ -117,13 +117,13 @@ export default function DashboardPage() {
         ]);
 
         if (!listingsResponse.ok) {
-          throw new Error(listingsData?.error || "Nao foi possivel carregar os veiculos.");
+          throw new Error(listingsData?.error || "Não foi possível carregar os veículos.");
         }
         if (!messagesResponse.ok) {
-          throw new Error(messagesData?.error || "Nao foi possivel carregar as mensagens.");
+          throw new Error(messagesData?.error || "Não foi possível carregar as mensagens.");
         }
         if (!metricsResponse.ok) {
-          throw new Error(metricsData?.error || "Nao foi possivel carregar as metricas.");
+          throw new Error(metricsData?.error || "Não foi possível carregar as métricas.");
         }
 
         if (cancelled) return;
@@ -136,7 +136,7 @@ export default function DashboardPage() {
         setError(
           fetchError instanceof Error
             ? fetchError.message
-            : "Nao foi possivel carregar o painel."
+            : "Não foi possível carregar o painel."
         );
       })
       .finally(() => {
@@ -178,7 +178,7 @@ export default function DashboardPage() {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data?.error || "Nao foi possivel atualizar a mensagem.");
+        throw new Error(data?.error || "Não foi possível atualizar a mensagem.");
       }
 
       setMessages((current) =>
@@ -190,7 +190,7 @@ export default function DashboardPage() {
       setError(
         updateError instanceof Error
           ? updateError.message
-          : "Nao foi possivel atualizar a mensagem."
+          : "Não foi possível atualizar a mensagem."
       );
     } finally {
       setMessageBusyId(null);
@@ -210,11 +210,11 @@ export default function DashboardPage() {
       <>
         <PageIntro
           title="Painel"
-          subtitle="Entre com sua conta para acompanhar anuncios, mensagens e desempenho."
+          subtitle="Entre com sua conta para acompanhar anúncios, mensagens e desempenho."
         />
         <Container className="py-10">
-          <Notice title="Login obrigatorio" variant="info">
-            Faca login para acessar seu painel de cliente ou agencia.
+          <Notice title="Login obrigatório" variant="info">
+            Faça login para acessar seu painel de cliente ou agência.
           </Notice>
         </Container>
       </>
@@ -227,23 +227,23 @@ export default function DashboardPage() {
         title="Painel"
         subtitle={
           user.accountType === "agency"
-            ? "Ambiente profissional da agencia com mensagens, metricas e controle de anuncios."
+            ? "Ambiente profissional da agência com mensagens, métricas e controle de anúncios."
             : user.accountType === "company"
-              ? "Acompanhe seus veiculos, mensagens e desempenho comercial."
-              : "Acompanhe seus anuncios, mensagens e desempenho."
+              ? "Acompanhe seus veículos, mensagens e desempenho comercial."
+              : "Acompanhe seus anúncios, mensagens e desempenho."
         }
       >
         <Link
           href="/veiculos/anunciar"
           className="rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
         >
-          Novo veiculo
+          Novo veículo
         </Link>
       </PageIntro>
 
       <Container className="py-10">
         {error ? (
-          <Notice title="Atencao" variant="warning">
+          <Notice title="Atenção" variant="warning">
             {error}
           </Notice>
         ) : null}
@@ -261,7 +261,7 @@ export default function DashboardPage() {
               <div>
                 <div className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-200">
                   {user.accountType === "agency"
-                    ? "Painel de agencia"
+                    ? "Painel de agência"
                     : user.accountType === "company"
                       ? "Painel corporativo"
                       : "Painel do anunciante"}
@@ -271,8 +271,8 @@ export default function DashboardPage() {
                 </h2>
                 <p className="mt-2 text-sm text-slate-200">
                   Status da conta:{" "}
-                  {user.approvalStatus === "pending" ? "aguardando liberacao" : "ativa"}.
-                  {" "}Verificacao:{" "}
+                  {user.approvalStatus === "pending" ? "aguardando liberação" : "ativa"}.
+                  {" "}Verificação:{" "}
                   {user.verificationStatus === "verified" ? "reaproveitada/validada" : "pendente"}.
                 </p>
               </div>
@@ -280,7 +280,7 @@ export default function DashboardPage() {
 
             <div className="grid gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
               <div>
-                Limite de anuncios:{" "}
+                Limite de anúncios:{" "}
                 <strong>{typeof currentLimit === "number" ? currentLimit : "sem limite"}</strong>
               </div>
               <div>
@@ -296,7 +296,7 @@ export default function DashboardPage() {
         <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-2xl border border-slate-200 bg-white p-5">
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Veiculos
+              Veículos
             </div>
             <div className="mt-2 text-3xl font-bold text-slate-900">{listings.length}</div>
           </div>
@@ -329,17 +329,21 @@ export default function DashboardPage() {
         <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="text-lg font-bold text-slate-900">Meus veiculos</h3>
+              <h3 className="text-lg font-bold text-slate-900">Meus veículos</h3>
               <p className="mt-1 text-sm text-slate-600">
-                Seus anuncios publicados, pendentes ou em revisao.
+                Seus anúncios publicados, pendentes ou em revisão.
               </p>
             </div>
             {user.accountType === "company" || user.accountType === "agency" ? (
               <Link
-                href={`/empresas/${user.id}`}
+                href={
+                  user.marketplaceProfile === "services"
+                    ? `/servicos/${user.id}`
+                    : `/empresas/${user.id}`
+                }
                 className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               >
-                Ver pagina da empresa
+                Ver perfil público
               </Link>
             ) : null}
           </div>
@@ -372,7 +376,7 @@ export default function DashboardPage() {
                     href={`/veiculos/${listing.slug}`}
                     className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-white"
                   >
-                    Ver anuncio
+                    Ver anúncio
                   </Link>
                   <Link
                     href={`/veiculos/gerenciar/${listing.id}`}
@@ -385,8 +389,8 @@ export default function DashboardPage() {
             ))}
 
             {listings.length === 0 ? (
-              <Notice title="Sem veiculos" variant="info">
-                Voce ainda nao possui anuncios cadastrados.
+              <Notice title="Sem veículos" variant="info">
+                Você ainda não possui anúncios cadastrados.
               </Notice>
             ) : null}
           </div>
@@ -462,7 +466,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-6">
-            <h3 className="text-lg font-bold text-slate-900">Metricas detalhadas</h3>
+            <h3 className="text-lg font-bold text-slate-900">Métricas detalhadas</h3>
             <p className="mt-1 text-sm text-slate-600">
               Visitas, cliques e desempenho consolidado da sua conta.
             </p>
@@ -487,7 +491,7 @@ export default function DashboardPage() {
 
               {!(metrics?.byEntity || []).length ? (
                 <Notice title="Sem dados ainda" variant="info">
-                  As metricas comecarao a aparecer conforme o publico navegar, clicar e enviar contatos.
+                  As métricas começarão a aparecer conforme o público navegar, clicar e enviar contatos.
                 </Notice>
               ) : null}
             </div>

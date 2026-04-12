@@ -139,7 +139,7 @@ export default function AuthModal({
           type="button"
           onClick={onClose}
           className="absolute right-4 top-4 z-20 text-slate-400 hover:text-slate-600"
-          aria-label="Fechar autenticacao"
+          aria-label="Fechar autenticação"
         >
           x
         </button>
@@ -204,7 +204,7 @@ export default function AuthModal({
                       value={companyName}
                       onChange={(event) => setCompanyName(event.target.value)}
                       className="h-11 w-full rounded-md border border-slate-300 px-3 text-sm"
-                      placeholder="Razao social ou nome fantasia"
+                      placeholder="Razão social ou nome fantasia"
                     />
                   </div>
                 ) : null}
@@ -272,7 +272,7 @@ export default function AuthModal({
             <div className="text-center text-sm text-slate-600">
               {mode === "login" ? (
                 <>
-                  Nao tem conta?{" "}
+                  Não tem conta?{" "}
                   <button
                     type="button"
                     onClick={() => setMode("register")}
@@ -283,7 +283,7 @@ export default function AuthModal({
                 </>
               ) : (
                 <>
-                  Ja tem conta?{" "}
+                  Já tem conta?{" "}
                   <button
                     type="button"
                     onClick={() => setMode("login")}

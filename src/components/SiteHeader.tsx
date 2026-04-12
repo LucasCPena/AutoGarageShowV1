@@ -112,7 +112,7 @@ export default function SiteHeader() {
       { href: "/veiculos/anunciar", label: "Anuncie" },
       { href: "/organizadores", label: "Organizadores e Clubes" },
       { href: "/classificados", label: "Classificados" },
-      { href: "/noticias", label: "Noticias" }
+      { href: "/noticias", label: "Notícias" }
     ];
     if (mounted && user?.role === "admin") {
       items.push({ href: "/admin/banners", label: "Banners" });
@@ -173,7 +173,7 @@ export default function SiteHeader() {
           {mounted && user ? (
             <>
               <span className="max-w-[150px] whitespace-nowrap text-sm text-slate-600">
-                <span className="text-slate-300">Ola,</span>{" "}
+                <span className="text-slate-300">Olá,</span>{" "}
                 <span className="font-semibold text-white" title={userDisplayName}>
                   {userHeaderLabel}
                 </span>
@@ -233,7 +233,7 @@ export default function SiteHeader() {
               {mounted && user ? (
                 <>
                   <div className="px-3 py-2 text-sm text-slate-600">
-                    Ola, <span className="font-semibold text-slate-900">{userDisplayName}</span>
+                    Olá, <span className="font-semibold text-slate-900">{userDisplayName}</span>
                   </div>
                   <Link
                     href="/painel"

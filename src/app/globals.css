@@ -19,6 +19,10 @@ a {
   gap: 2rem;
 }
 
+.page-with-sidebar > :first-child {
+  min-width: 0;
+}
+
 @media (min-width: 1280px) {
   .page-with-sidebar {
     grid-template-columns: minmax(0, 1fr);

@@ -74,12 +74,16 @@ export default function ClassifiedsPage() {
     <>
       <PageIntro
         title="Classificados"
-        subtitle="Encontre veiculos, motos e servicos especializados em uma vitrine unificada."
+        subtitle="Encontre veículos, motos e serviços especializados em uma vitrine unificada."
       />
 
       <Container className="py-10">
         <div className="page-with-sidebar">
           <div>
+            <section id="classificados-banner" className="mb-8">
+              <HeroSlider section="listings" />
+            </section>
+
             <MarketplaceSectionNav current="veiculos" />
 
             <section className="mb-6 flex flex-wrap gap-3 rounded-2xl border border-slate-200 bg-white p-3">
@@ -99,18 +103,14 @@ export default function ClassifiedsPage() {
                 href="#classificados-recentes"
                 className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-800"
               >
-                Ultimos veiculos
+                Últimos veículos
               </a>
               <Link
                 href="/servicos"
                 className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-800"
               >
-                Servicos
+                Serviços
               </Link>
-            </section>
-
-            <section id="classificados-banner" className="mb-8">
-              <HeroSlider section="listings" />
             </section>
 
             <ClassifiedsClientSections listings={listings} />

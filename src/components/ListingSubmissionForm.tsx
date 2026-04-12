@@ -190,7 +190,7 @@ export default function ListingSubmissionForm({
 
     const oversized = files.find((file) => file.size > MAX_IMAGE_SIZE);
     if (oversized) {
-      setError("Cada imagem deve ter no maximo 5MB.");
+      setError("Cada imagem deve ter no máximo 5 MB.");
       return;
     }
 
@@ -208,7 +208,7 @@ export default function ListingSubmissionForm({
       ];
 
       if (selected.length < files.length) {
-        setError(`Limite de ${MAX_PHOTOS} fotos por anuncio.`);
+        setError(`Limite de ${MAX_PHOTOS} fotos por anúncio.`);
       }
 
       setCoverPhotoId((selectedCover) => selectedCover || next[0]?.id || null);
@@ -273,7 +273,7 @@ export default function ListingSubmissionForm({
           setMake((current) => current || data.brands[0]?.id || "");
           return;
         }
-        throw new Error("Catalogo vazio");
+        throw new Error("Catálogo vazio");
       } catch {
         if (!active) return;
         setBrands(fallback);
@@ -357,7 +357,7 @@ export default function ListingSubmissionForm({
 
   async function validateAdvertiserBeforeProceeding() {
     if (!token) {
-      setError("Faca login para validar o anunciante.");
+      setError("Faça login para validar o anunciante.");
       return;
     }
 
@@ -391,7 +391,7 @@ export default function ListingSubmissionForm({
       const data = await response.json();
 
       if (!response.ok || !data.canProceed) {
-        throw new Error(data.error || data.message || "Nao foi possivel validar o anunciante.");
+        throw new Error(data.error || data.message || "Não foi possível validar o anunciante.");
       }
 
       setAdvertiserValidation({
@@ -408,7 +408,7 @@ export default function ListingSubmissionForm({
       setError(
         validationError instanceof Error
           ? validationError.message
-          : "Nao foi possivel validar o anunciante."
+          : "Não foi possível validar o anunciante."
       );
     } finally {
       setValidatingAdvertiser(false);
@@ -421,19 +421,19 @@ export default function ListingSubmissionForm({
     e.preventDefault();
 
     if (!token) {
-      setError("Faca login para publicar o veiculo.");
+      setError("Faça login para publicar o veículo.");
       setSubmitted(false);
       return;
     }
 
     if (!generatedTitle.trim()) {
-      setError("Preencha marca, modelo e anos para gerar o titulo.");
+      setError("Preencha marca, modelo e anos para gerar o título.");
       setSubmitted(false);
       return;
     }
 
     if (!isAdvertiserValidated) {
-      setError("Valide o anunciante antes de continuar para o envio do anuncio.");
+      setError("Valide o anunciante antes de continuar para o envio do anúncio.");
       setSubmitted(false);
       return;
     }
@@ -446,7 +446,7 @@ export default function ListingSubmissionForm({
 
     if (yearManufacture > maxAllowedYear || yearModel > maxAllowedYear) {
       setError(
-        `Apenas veiculos com ${settings.vehicleMinAgeYears}+ anos. Maximo permitido: ${maxAllowedYear}.`
+        `Apenas veículos com ${settings.vehicleMinAgeYears}+ anos. Máximo permitido: ${maxAllowedYear}.`
       );
       setSubmitted(false);
       return;
@@ -470,7 +470,7 @@ export default function ListingSubmissionForm({
 
     const priceValue = parseFormattedInteger(price);
     if (!Number.isFinite(priceValue) || priceValue <= 0) {
-      setError("Informe um preco valido.");
+      setError("Informe um preço válido.");
       setSubmitted(false);
       return;
     }
@@ -489,13 +489,13 @@ export default function ListingSubmissionForm({
     }
 
     if (!description.trim()) {
-      setError("Informe a descricao.");
+      setError("Informe a descrição.");
       setSubmitted(false);
       return;
     }
 
     if (photos.length > MAX_PHOTOS) {
-      setError(`Voce pode enviar no maximo ${MAX_PHOTOS} fotos por anuncio.`);
+      setError(`Você pode enviar no máximo ${MAX_PHOTOS} fotos por anúncio.`);
       setSubmitted(false);
       return;
     }
@@ -566,15 +566,15 @@ export default function ListingSubmissionForm({
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao publicar veiculo.");
+        throw new Error(data.error || "Erro ao publicar veículo.");
       }
 
       setSubmitted(true);
       const successText =
         data.message ||
           (user?.role === "admin"
-            ? "Veiculo publicado com sucesso."
-            : "Veiculo enviado com sucesso.");
+            ? "Veículo publicado com sucesso."
+            : "Veículo enviado com sucesso.");
       setSuccessMessage(successText);
       photos.forEach((item) => URL.revokeObjectURL(item.previewUrl));
       setPhotos([]);
@@ -584,7 +584,7 @@ export default function ListingSubmissionForm({
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "Erro ao publicar veiculo."
+          : "Erro ao publicar veículo."
       );
       setSubmitted(false);
     } finally {
@@ -595,12 +595,12 @@ export default function ListingSubmissionForm({
   return (
     <form onSubmit={onSubmit} className="grid gap-6">
       {submitted ? (
-        <Notice title="Veiculo enviado" variant="success">
-          {successMessage || "Veiculo processado com sucesso."}
+        <Notice title="Veículo enviado" variant="success">
+          {successMessage || "Veículo processado com sucesso."}
         </Notice>
       ) : (
         <Notice title="Regras" variant="info">
-          Cadastro gratuito. Limites por documento: {settings.listingLimits.cpf} anuncio por CPF e {settings.listingLimits.cnpj} anuncios por CNPJ. Apenas veiculos com {settings.vehicleMinAgeYears}+ anos (ano maximo: {maxAllowedYear}). {publicAccess ? "Este acesso do QR Code libera somente este formulario apos cadastro/login." : ""}
+          Cadastro gratuito. Limites por documento: {settings.listingLimits.cpf} anúncio por CPF e {settings.listingLimits.cnpj} anúncios por CNPJ. Apenas veículos com {settings.vehicleMinAgeYears}+ anos (ano máximo: {maxAllowedYear}). {publicAccess ? "Este acesso do QR Code libera somente este formulário após cadastro/login." : ""}
         </Notice>
       )}
 
@@ -618,7 +618,7 @@ export default function ListingSubmissionForm({
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Tipo de veiculo</span>
+          <span className="text-sm font-semibold text-slate-900">Tipo de veículo</span>
           <select
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             value={vehicleType}
@@ -687,14 +687,14 @@ export default function ListingSubmissionForm({
                   {documentValue || advertiserValidation.document}
                 </div>
                 <div className="text-sm text-slate-600">
-                  Anuncios ativos: {advertiserValidation.activeCount} de {advertiserValidation.limit}
+                  Anúncios ativos: {advertiserValidation.activeCount} de {advertiserValidation.limit}
                   {typeof advertiserValidation.remaining === "number"
                     ? ` • restantes: ${advertiserValidation.remaining}`
                     : ""}
                 </div>
                 {advertiserValidation.reusedVerification ? (
                   <div className="text-sm text-emerald-700">
-                    A verificacao do cadastro foi reaproveitada automaticamente.
+                    A verificação do cadastro foi reaproveitada automaticamente.
                   </div>
                 ) : null}
                 {!lockCompanyDocument ? (
@@ -718,7 +718,7 @@ export default function ListingSubmissionForm({
                   Etapa 1: validar o anunciante
                 </div>
                 <p className="text-sm text-slate-600">
-                  Antes de liberar os dados do veiculo e o envio das fotos, valide o{" "}
+                  Antes de liberar os dados do veículo e o envio das fotos, valide o{" "}
                   {documentType === "cnpj" ? "CNPJ" : "CPF"} do anunciante.
                 </p>
                 <button
@@ -737,7 +737,7 @@ export default function ListingSubmissionForm({
         {isAdvertiserValidated ? (
           <>
         <label className="grid gap-1 md:col-span-2">
-          <span className="text-sm font-semibold text-slate-900">Titulo do anuncio (automatico)</span>
+          <span className="text-sm font-semibold text-slate-900">Título do anúncio (automático)</span>
           <input
             readOnly
             className="h-11 rounded-md border border-slate-300 bg-slate-50 px-3 text-sm"
@@ -762,7 +762,7 @@ export default function ListingSubmissionForm({
               setError(null);
             }}
           >
-            <option value="">{catalogLoading ? "Carregando catalogo..." : "Selecione"}</option>
+            <option value="">{catalogLoading ? "Carregando catálogo..." : "Selecione"}</option>
             {brands.map((brand) => (
               <option key={brand.id} value={brand.id}>
                 {brand.name}
@@ -882,7 +882,7 @@ export default function ListingSubmissionForm({
         </label>
 
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Preco</span>
+          <span className="text-sm font-semibold text-slate-900">Preço</span>
           <input
             required
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
@@ -977,11 +977,11 @@ export default function ListingSubmissionForm({
               setError(null);
             }}
           />
-          Marcar este anuncio como placa preta
+          Marcar este anúncio como placa preta
         </label>
 
         <label className="grid gap-1 md:col-span-2">
-          <span className="text-sm font-semibold text-slate-900">Descricao</span>
+          <span className="text-sm font-semibold text-slate-900">Descrição</span>
           <textarea
             required
             className="min-h-32 rounded-md border border-slate-300 px-3 py-2 text-sm"
@@ -1006,7 +1006,7 @@ export default function ListingSubmissionForm({
           </div>
 
           <div className="grid gap-1">
-            <span className="text-sm font-semibold text-slate-900">Enviar pela camera</span>
+            <span className="text-sm font-semibold text-slate-900">Enviar pela câmera</span>
             <input
               className="h-11 rounded-md border border-slate-300 px-3 py-2 text-sm"
               type="file"
@@ -1018,7 +1018,7 @@ export default function ListingSubmissionForm({
           </div>
 
           <span className="text-xs text-slate-500">
-            Selecione ate {MAX_PHOTOS} imagens. Em celulares, voce tambem pode abrir a camera do dispositivo. A foto marcada como destaque vira a capa do anuncio.
+            Selecione até {MAX_PHOTOS} imagens. Em celulares, você também pode abrir a câmera do dispositivo. A foto marcada como destaque vira a capa do anúncio.
           </span>
 
           {photos.length > 0 ? (
@@ -1029,7 +1029,7 @@ export default function ListingSubmissionForm({
                   <div key={item.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                     <img
                       src={item.previewUrl}
-                      alt={listingImageAlt(generatedTitle || "anuncio em cadastro", index + 1)}
+                      alt={listingImageAlt(generatedTitle || "anúncio em cadastro", index + 1)}
                       className="h-48 w-full object-cover"
                     />
                     <div className="grid gap-2 p-2">
@@ -1093,7 +1093,7 @@ export default function ListingSubmissionForm({
           <Notice title="Envio concluido" variant="success">
             {user?.role === "admin"
               ? successMessage
-              : `${successMessage} Aguarde a liberacao para o anuncio entrar no ar.`}
+              : `${successMessage} Aguarde a liberação para o anúncio entrar no ar.`}
           </Notice>
         ) : null}
 

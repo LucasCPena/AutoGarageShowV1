@@ -39,13 +39,13 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
     <>
       <PageIntro
         title={displayName}
-        subtitle={normalized.activityType || "Prestador de servicos especializado"}
+        subtitle={normalized.activityType || "Prestador de serviços especializado"}
       >
         <Link
           href="/servicos"
           className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
         >
-          Voltar aos servicos
+          Voltar aos serviços
         </Link>
       </PageIntro>
 
@@ -56,18 +56,18 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
               <div className="grid gap-5 md:grid-cols-2">
                 <div>
                   <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    {normalized.activityType || "Prestador de servicos"}
+                    {normalized.activityType || "Prestador de serviços"}
                   </div>
                   <h2 className="mt-2 text-3xl font-bold text-slate-900">{displayName}</h2>
                   <p className="mt-4 text-sm leading-6 text-slate-600">
-                    {normalized.shortDescription || "Empresa cadastrada na vitrine publica de servicos."}
+                    {normalized.shortDescription || "Empresa cadastrada na vitrine pública de serviços."}
                   </p>
                 </div>
 
                 <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-700">
-                  {normalized.address ? <div>Endereco: {normalized.address}</div> : null}
+                  {normalized.address ? <div>Endereço: {normalized.address}</div> : null}
                   <div>
-                    Localizacao: {[normalized.city, normalized.state].filter(Boolean).join(" / ") || "Nao informada"}
+                    Localização: {[normalized.city, normalized.state].filter(Boolean).join(" / ") || "Não informada"}
                   </div>
                   {normalized.phone ? <div>Telefone: {normalized.phone}</div> : null}
                   {normalized.websiteUrl ? (
@@ -86,7 +86,7 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
 
             {related.length > 0 ? (
               <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="text-xl font-bold text-slate-900">Servicos relacionados</h3>
+                <h3 className="text-xl font-bold text-slate-900">Serviços relacionados</h3>
                 <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {related.map((item) => (
                     <Link
