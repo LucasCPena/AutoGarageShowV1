@@ -77,12 +77,12 @@ export default function MotorcyclesPage() {
       />
 
       <Container className="py-10">
+        <section className="mb-8">
+          <HeroSlider section="listings" />
+        </section>
+
         <div className="page-with-sidebar">
           <div>
-            <section className="mb-8">
-              <HeroSlider section="listings" />
-            </section>
-
             <MarketplaceSectionNav current="motos" />
 
             <ClassifiedsClientSections

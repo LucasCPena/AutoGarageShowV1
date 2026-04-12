@@ -104,12 +104,12 @@ export default function NewsPage() {
       />
 
       <Container className="py-10">
+        <section className="mb-8">
+          <HeroSlider section="news" />
+        </section>
+
         <div className="page-with-sidebar">
           <div>
-            <section className="mb-8">
-              <HeroSlider section="news" />
-            </section>
-
             {authLoading ? null : user?.role === "admin" ? (
               <div className="mb-6 flex justify-end">
                 <button

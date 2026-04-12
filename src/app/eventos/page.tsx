@@ -126,12 +126,12 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
       </PageIntro>
 
       <Container className="py-10">
+        <section className="mb-8">
+          <HeroSlider section="events" />
+        </section>
+
         <div className="page-with-sidebar">
           <div>
-            <section className="mb-8">
-              <HeroSlider section="events" />
-            </section>
-
             <section>
               <Calendar events={publicEvents} />
             </section>

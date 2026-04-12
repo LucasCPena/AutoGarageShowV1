@@ -78,12 +78,12 @@ export default function ClassifiedsPage() {
       />
 
       <Container className="py-10">
+        <section id="classificados-banner" className="mb-8">
+          <HeroSlider section="listings" />
+        </section>
+
         <div className="page-with-sidebar">
           <div>
-            <section id="classificados-banner" className="mb-8">
-              <HeroSlider section="listings" />
-            </section>
-
             <MarketplaceSectionNav current="veiculos" />
 
             <section className="mb-6 flex flex-wrap gap-3 rounded-2xl border border-slate-200 bg-white p-3">

@@ -335,16 +335,26 @@ export default function DashboardPage() {
               </p>
             </div>
             {user.accountType === "company" || user.accountType === "agency" ? (
-              <Link
-                href={
-                  user.marketplaceProfile === "services"
-                    ? `/servicos/${user.id}`
-                    : `/empresas/${user.id}`
-                }
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-              >
-                Ver perfil público
-              </Link>
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  href={
+                    user.marketplaceProfile === "services"
+                      ? `/servicos/${user.id}`
+                      : `/empresas/${user.id}`
+                  }
+                  className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Ver perfil público
+                </Link>
+                {user.marketplaceProfile === "services" ? (
+                  <Link
+                    href={`/servicos/gerenciar/${user.id}`}
+                    className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    Gerenciar serviço
+                  </Link>
+                ) : null}
+              </div>
             ) : null}
           </div>
 

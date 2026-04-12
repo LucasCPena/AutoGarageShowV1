@@ -10,7 +10,6 @@ import ListingDetailSidebar from "@/components/ListingDetailSidebar";
 import ListingGallery from "@/components/ListingGallery";
 import PageIntro from "@/components/PageIntro";
 import TrackMetric from "@/components/TrackMetric";
-import ZoomableImage from "@/components/ZoomableImage";
 import { getUserFromAuthToken } from "@/lib/auth-middleware";
 import { AUTH_COOKIE_NAME } from "@/lib/auth-token";
 import { db, type Listing } from "@/lib/database";
@@ -179,20 +178,7 @@ export default async function ListingDetailPage({ params }: Props) {
 
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
           <div className="grid gap-6 lg:col-span-2">
-            <div className="overflow-hidden rounded-[28px] border border-slate-800 bg-slate-950 p-3 shadow-[0_24px_80px_rgba(15,23,42,0.24)]">
-              <ZoomableImage
-                src={images[0]}
-                alt={listingImageAlt(safeListing.title, 1)}
-                width={1200}
-                height={800}
-                className="h-80 w-full rounded-[22px] bg-slate-950 object-contain"
-                priority
-              />
-            </div>
-
-            <div>
-              <ListingGallery images={images} title={safeListing.title} />
-            </div>
+            <ListingGallery images={images} title={safeListing.title} />
 
             <section className="rounded-2xl border border-slate-200 bg-white p-6">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -269,44 +255,44 @@ export default async function ListingDetailPage({ params }: Props) {
           </div>
 
           <aside className="grid gap-6">
-            <div className="rounded-[28px] border border-slate-800 bg-slate-950 p-6 text-white shadow-[0_24px_80px_rgba(15,23,42,0.22)]">
-              <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">
+            <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
                 Detalhes
               </div>
               <dl className="mt-4 grid gap-4 text-sm">
                 <div>
-                  <dt className="text-slate-400">Marca / Modelo</dt>
-                  <dd className="mt-1 font-semibold text-white">
+                  <dt className="text-slate-500">Marca / Modelo</dt>
+                  <dd className="mt-1 font-semibold text-slate-900">
                     {safeListing.make} {safeListing.model}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-slate-400">Ano</dt>
-                  <dd className="mt-1 font-semibold text-white">{listingYearLabel}</dd>
+                  <dt className="text-slate-500">Ano</dt>
+                  <dd className="mt-1 font-semibold text-slate-900">{listingYearLabel}</dd>
                 </div>
                 <div>
-                  <dt className="text-slate-400">Cidade / UF</dt>
-                  <dd className="mt-1 font-semibold text-white">
+                  <dt className="text-slate-500">Cidade / UF</dt>
+                  <dd className="mt-1 font-semibold text-slate-900">
                     {locationLabel || "Nao informado"}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-slate-400">Publicado em</dt>
-                  <dd className="mt-1 font-semibold text-white">{publishedAtLabel}</dd>
+                  <dt className="text-slate-500">Publicado em</dt>
+                  <dd className="mt-1 font-semibold text-slate-900">{publishedAtLabel}</dd>
                 </div>
                 {safeListing.ownerProfile ? (
                   <div>
-                    <dt className="text-slate-400">
+                    <dt className="text-slate-500">
                       {safeListing.ownerProfile.accountType === "agency" ? "Agencia" : "Anunciante"}
                     </dt>
-                    <dd className="mt-1 font-semibold text-white">
+                    <dd className="mt-1 font-semibold text-slate-900">
                       {safeListing.ownerProfile.displayName}
                     </dd>
                   </div>
                 ) : null}
                 <div>
-                  <dt className="text-slate-400">Preco</dt>
-                  <dd className="mt-1 text-2xl font-bold text-white">
+                  <dt className="text-slate-500">Preco</dt>
+                  <dd className="mt-1 text-2xl font-bold text-slate-900">
                     {formatCurrencyBRL(safeListing.price)}
                   </dd>
                 </div>

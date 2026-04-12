@@ -868,6 +868,11 @@ export const dbMysql = {
         created_at: next.createdAt,
         updated_at: next.updatedAt
       });
+    },
+    delete: async (id: string) => {
+      await ensureUsersTable();
+      await query("DELETE FROM users WHERE id = ?", [id]);
+      return true;
     }
   },
   events: {

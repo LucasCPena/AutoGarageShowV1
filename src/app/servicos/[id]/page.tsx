@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import Container from "@/components/Container";
 import PageIntro from "@/components/PageIntro";
+import ServiceCrudActions from "@/components/ServiceCrudActions";
 import SidebarBannerStack from "@/components/SidebarBannerStack";
 import { db } from "@/lib/database";
 import { getUserDisplayName, isCompanyAccount, normalizeUserRecord } from "@/lib/userProfiles";
@@ -50,6 +51,11 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
       </PageIntro>
 
       <Container className="py-10">
+        <ServiceCrudActions
+          serviceId={normalized.id}
+          editHref={`/servicos/gerenciar/${normalized.id}`}
+        />
+
         <div className="page-with-sidebar">
           <div className="grid gap-6">
             <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">

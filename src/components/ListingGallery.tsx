@@ -20,11 +20,6 @@ export default function ListingGallery({ images, title }: Props) {
     setIndex(0);
   }, [images]);
 
-  const openAt = useCallback((nextIndex: number) => {
-    setIndex(nextIndex);
-    setOpen(true);
-  }, []);
-
   const move = useCallback(
     (direction: -1 | 1) => {
       setIndex((current) => {
@@ -50,78 +45,91 @@ export default function ListingGallery({ images, title }: Props) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [move, open]);
 
+  const activeImage = imgList[index] || "/placeholders/car.svg";
+
   return (
     <div className="grid gap-4">
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_160px]">
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-          <button type="button" onClick={() => openAt(index)} className="block w-full">
-            <Image
-              src={imgList[index] || "/placeholders/car.svg"}
-              alt={listingImageAlt(title, index + 1)}
-              width={1200}
-              height={800}
-              className="h-[320px] w-full object-cover md:h-[420px]"
-              priority={index === 0}
-            />
-          </button>
-        </div>
+      <div className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-gradient-to-br from-slate-100 via-white to-slate-50 shadow-sm">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="block w-full"
+          aria-label="Ampliar galeria do veículo"
+        >
+          <Image
+            src={activeImage}
+            alt={listingImageAlt(title, index + 1)}
+            width={1400}
+            height={980}
+            className="h-[340px] w-full object-contain p-4 sm:h-[400px] sm:p-6 md:h-[480px]"
+            priority={index === 0}
+          />
+        </button>
 
-        <div className="grid grid-cols-4 gap-3 lg:grid-cols-1">
-          {imgList.slice(0, 6).map((src, imageIndex) => {
+        {imgList.length > 1 ? (
+          <>
+            <div className="absolute inset-y-0 left-3 flex items-center">
+              <button
+                type="button"
+                onClick={() => move(-1)}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-base font-bold text-slate-700 shadow-sm hover:bg-white"
+                aria-label="Imagem anterior"
+              >
+                {"<"}
+              </button>
+            </div>
+            <div className="absolute inset-y-0 right-3 flex items-center">
+              <button
+                type="button"
+                onClick={() => move(1)}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-base font-bold text-slate-700 shadow-sm hover:bg-white"
+                aria-label="Próxima imagem"
+              >
+                {">"}
+              </button>
+            </div>
+          </>
+        ) : null}
+
+        <div className="pointer-events-none absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
+          Foto {index + 1} de {imgList.length}
+        </div>
+      </div>
+
+      {imgList.length > 1 ? (
+        <div className="flex gap-3 overflow-x-auto pb-1">
+          {imgList.map((src, imageIndex) => {
             const isActive = imageIndex === index;
             return (
               <button
                 key={`${src}-${imageIndex}`}
                 type="button"
                 onClick={() => setIndex(imageIndex)}
-                className={`overflow-hidden rounded-2xl border bg-white ${
+                className={`min-w-[104px] overflow-hidden rounded-2xl border bg-white ${
                   isActive ? "border-brand-500 ring-2 ring-brand-200" : "border-slate-200"
                 }`}
               >
                 <Image
                   src={src}
                   alt={listingImageAlt(title, imageIndex + 1)}
-                  width={400}
-                  height={300}
-                  className="h-20 w-full object-cover lg:h-[92px]"
+                  width={240}
+                  height={160}
+                  className="h-20 w-[104px] object-cover"
                 />
               </button>
             );
           })}
-        </div>
-      </div>
-
-      {imgList.length > 1 ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-          <div>
-            Foto {index + 1} de {imgList.length}
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => move(-1)}
-              className="rounded-md border border-slate-300 px-3 py-1.5 font-semibold text-slate-700 hover:bg-white"
-            >
-              Anterior
-            </button>
-            <button
-              type="button"
-              onClick={() => move(1)}
-              className="rounded-md border border-slate-300 px-3 py-1.5 font-semibold text-slate-700 hover:bg-white"
-            >
-              Proxima
-            </button>
-          </div>
         </div>
       ) : null}
 
       {open ? (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/75" onClick={() => setOpen(false)} />
+
           <div className="relative z-10 w-full max-w-6xl rounded-3xl bg-white p-4 shadow-2xl">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div className="text-sm font-semibold text-slate-900">
-                {title || "Galeria do veiculo"}
+                {title || "Galeria do veículo"}
               </div>
               <button
                 type="button"
@@ -137,12 +145,13 @@ export default function ListingGallery({ images, title }: Props) {
                 type="button"
                 onClick={() => move(-1)}
                 className="hidden h-12 rounded-full border border-slate-300 text-lg font-semibold text-slate-700 hover:bg-slate-50 lg:block"
+                aria-label="Imagem anterior"
               >
-                ‹
+                {"<"}
               </button>
 
               <img
-                src={imgList[index]}
+                src={activeImage}
                 alt={listingImageAlt(title, index + 1)}
                 className="max-h-[78vh] w-full rounded-2xl object-contain"
               />
@@ -151,13 +160,14 @@ export default function ListingGallery({ images, title }: Props) {
                 type="button"
                 onClick={() => move(1)}
                 className="hidden h-12 rounded-full border border-slate-300 text-lg font-semibold text-slate-700 hover:bg-slate-50 lg:block"
+                aria-label="Próxima imagem"
               >
-                ›
+                {">"}
               </button>
             </div>
 
             {imgList.length > 1 ? (
-              <div className="mt-4 grid grid-cols-4 gap-2 md:grid-cols-6">
+              <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
                 {imgList.map((src, imageIndex) => (
                   <button
                     key={`${src}-${imageIndex}-modal`}
@@ -172,7 +182,7 @@ export default function ListingGallery({ images, title }: Props) {
                     <img
                       src={src}
                       alt={listingImageAlt(title, imageIndex + 1)}
-                      className="h-16 w-full object-cover"
+                      className="h-16 w-24 object-cover"
                     />
                   </button>
                 ))}

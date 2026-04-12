@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 
 import Notice from "@/components/Notice";
 import { getServiceActivityOptions } from "@/lib/serviceActivities";
+import { useAuth } from "@/lib/useAuth";
 
 export type ServiceDirectoryEntry = {
   id: string;
@@ -24,6 +25,7 @@ type Props = {
 };
 
 export default function ServicesDirectoryClient({ services }: Props) {
+  const { user, isLoading } = useAuth();
   const [activityFilter, setActivityFilter] = useState("all");
   const [stateFilter, setStateFilter] = useState("all");
   const [cityFilter, setCityFilter] = useState("all");
@@ -171,6 +173,15 @@ export default function ServicesDirectoryClient({ services }: Props) {
                 >
                   Ver detalhes
                 </Link>
+
+                {!isLoading && user && (user.role === "admin" || user.id === service.id) ? (
+                  <Link
+                    href={`/servicos/gerenciar/${service.id}`}
+                    className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    Gerenciar
+                  </Link>
+                ) : null}
 
                 {service.phone ? (
                   <a

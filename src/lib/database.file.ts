@@ -247,6 +247,18 @@ export const dbFile = {
       storedItems[index] = toStoredUser(next);
       await writeData('users.json', storedItems);
       return next;
+    },
+    delete: async (id: string) => {
+      const { items, storedItems } = await loadProtectedCollection<StoredUser, User>(
+        "users.json",
+        fromStoredUser,
+        toStoredUser
+      );
+      const index = items.findIndex((user) => user.id === id);
+      if (index === -1) return false;
+      storedItems.splice(index, 1);
+      await writeData("users.json", storedItems);
+      return true;
     }
   },
   events: {
