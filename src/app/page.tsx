@@ -501,14 +501,8 @@ export default function HomePage() {
         {/* Próximos eventos */}
         {config.showUpcomingEvents && upcoming.length > 0 && (
           <section className="mb-12">
-            <div className="flex items-center justify-between mb-6">
+            <div className="mb-6">
               <h2 className="text-2xl font-bold text-slate-900">Próximos eventos</h2>
-              <Link
-                href="/eventos"
-                className="text-brand-600 hover:text-brand-800 font-semibold"
-              >
-                Ver eventos
-              </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {upcoming.map(({ event, nextOccurrence }) => (
@@ -541,20 +535,22 @@ export default function HomePage() {
                 </Link>
               ))}
             </div>
+            <div className="mt-4 flex justify-end">
+              <Link
+                href="/eventos"
+                className="text-brand-600 hover:text-brand-800 font-semibold"
+              >
+                Ver eventos
+              </Link>
+            </div>
           </section>
         )}
 
         {/* Veículos em destaque */}
         {config.showFeaturedListings && featured.length > 0 && (
           <section className="mb-12">
-            <div className="flex items-center justify-between mb-6">
+            <div className="mb-6">
               <h2 className="text-2xl font-bold text-slate-900">Veículos em destaque</h2>
-              <Link
-                href="/veiculos"
-                className="text-brand-600 hover:text-brand-800 font-semibold"
-              >
-                Ver todos
-              </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {featured.map((listing) => (
@@ -587,20 +583,22 @@ export default function HomePage() {
                 </Link>
               ))}
             </div>
-          </section>
-        )}
-
-        {/* Últimos veículos */}
-        {config.showLatestListings && latestListings.length > 0 && (
-          <section className="mb-12">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">Últimos veículos</h2>
+            <div className="mt-4 flex justify-end">
               <Link
                 href="/veiculos"
                 className="text-brand-600 hover:text-brand-800 font-semibold"
               >
                 Ver todos
               </Link>
+            </div>
+          </section>
+        )}
+
+        {/* Últimos veículos */}
+        {config.showLatestListings && latestListings.length > 0 && (
+          <section className="mb-12">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-slate-900">Últimos veículos</h2>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {latestListings.map((listing) => (
@@ -635,19 +633,21 @@ export default function HomePage() {
                 </Link>
               ))}
             </div>
+            <div className="mt-4 flex justify-end">
+              <Link
+                href="/veiculos"
+                className="text-brand-600 hover:text-brand-800 font-semibold"
+              >
+                Ver todos
+              </Link>
+            </div>
           </section>
         )}
 
         {latestMotorcycles.length > 0 ? (
           <section className="mb-12">
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-6">
               <h2 className="text-2xl font-bold text-slate-900">Últimas motos</h2>
-              <Link
-                href="/motos"
-                className="font-semibold text-brand-600 hover:text-brand-800"
-              >
-                Ver motos
-              </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {latestMotorcycles.map((listing) => (
@@ -682,19 +682,21 @@ export default function HomePage() {
                 </Link>
               ))}
             </div>
+            <div className="mt-4 flex justify-end">
+              <Link
+                href="/motos"
+                className="font-semibold text-brand-600 hover:text-brand-800"
+              >
+                Ver motos
+              </Link>
+            </div>
           </section>
         ) : null}
 
         {latestServices.length > 0 ? (
           <section className="mb-12">
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-6">
               <h2 className="text-2xl font-bold text-slate-900">Lojas e serviços</h2>
-              <Link
-                href="/servicos"
-                className="font-semibold text-brand-600 hover:text-brand-800"
-              >
-                Ver serviços
-              </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {latestServices.map((service) => (
@@ -741,6 +743,14 @@ export default function HomePage() {
                 </Link>
               ))}
             </div>
+            <div className="mt-4 flex justify-end">
+              <Link
+                href="/servicos"
+                className="font-semibold text-brand-600 hover:text-brand-800"
+              >
+                Ver serviços
+              </Link>
+            </div>
           </section>
         ) : null}
 
@@ -765,14 +775,8 @@ export default function HomePage() {
         {/* Últimas notícias */}
         {config.showLatestNews && latestNews.length > 0 && (
           <section className="mb-12">
-            <div className="flex items-center justify-between mb-6">
+            <div className="mb-6">
               <h2 className="text-2xl font-bold text-slate-900">Últimas notícias</h2>
-              <Link
-                href="/noticias"
-                className="text-brand-600 hover:text-brand-800 font-semibold"
-              >
-                Ver todas
-              </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {latestNews.map((article) => (
@@ -803,6 +807,14 @@ export default function HomePage() {
                   </div>
                 </Link>
               ))}
+            </div>
+            <div className="mt-4 flex justify-end">
+              <Link
+                href="/noticias"
+                className="text-brand-600 hover:text-brand-800 font-semibold"
+              >
+                Ver todas
+              </Link>
             </div>
           </section>
         )}

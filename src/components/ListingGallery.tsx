@@ -47,17 +47,17 @@ export default function ListingGallery({ images, title }: Props) {
 
   return (
     <div className="grid gap-4">
-      <div className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-gradient-to-br from-slate-100 via-white to-slate-50 shadow-sm">
+      <div className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-gradient-to-br from-slate-100 via-white to-slate-50 p-3 shadow-sm sm:p-4">
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="flex w-full items-center justify-center p-4 sm:p-6"
+          className="mx-auto block max-w-full"
           aria-label="Ampliar galeria do veículo"
         >
           <img
             src={activeImage}
             alt={listingImageAlt(title, index + 1)}
-            className="block max-h-[68vh] w-auto max-w-full rounded-2xl object-contain"
+            className="block max-h-[56vh] h-auto w-auto max-w-full rounded-2xl object-contain"
           />
         </button>
 
@@ -92,7 +92,7 @@ export default function ListingGallery({ images, title }: Props) {
       </div>
 
       {imgList.length > 1 ? (
-        <div className="flex items-start gap-3 overflow-x-auto pb-1">
+        <div className="flex items-start gap-2 overflow-x-auto pb-1">
           {imgList.map((src, imageIndex) => {
             const isActive = imageIndex === index;
             return (
@@ -107,7 +107,7 @@ export default function ListingGallery({ images, title }: Props) {
                 <img
                   src={src}
                   alt={listingImageAlt(title, imageIndex + 1)}
-                  className="block h-20 w-[104px] object-cover sm:h-24 sm:w-[120px]"
+                  className="block h-16 w-[96px] object-cover sm:h-20 sm:w-[104px]"
                 />
               </button>
             );
