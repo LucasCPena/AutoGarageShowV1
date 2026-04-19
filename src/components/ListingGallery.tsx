@@ -46,18 +46,18 @@ export default function ListingGallery({ images, title }: Props) {
   const activeImage = imgList[index] || "/placeholders/car.svg";
 
   return (
-    <div className="grid gap-4">
-      <div className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-gradient-to-br from-slate-100 via-white to-slate-50 p-3 shadow-sm sm:p-4">
+    <div className="grid justify-items-center gap-4">
+      <div className="relative w-fit max-w-full overflow-hidden rounded-[28px] border border-slate-200 bg-gradient-to-br from-slate-100 via-white to-slate-50 p-3 shadow-sm sm:p-4">
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="mx-auto block max-w-full"
+          className="block max-w-full"
           aria-label="Ampliar galeria do veículo"
         >
           <img
             src={activeImage}
             alt={listingImageAlt(title, index + 1)}
-            className="block max-h-[56vh] h-auto w-auto max-w-full rounded-2xl object-contain"
+            className="block h-auto w-auto max-w-full rounded-2xl object-contain max-h-[38vh] sm:max-h-[44vh] lg:max-h-[50vh]"
           />
         </button>
 
@@ -92,7 +92,7 @@ export default function ListingGallery({ images, title }: Props) {
       </div>
 
       {imgList.length > 1 ? (
-        <div className="flex items-start gap-2 overflow-x-auto pb-1">
+        <div className="flex w-fit max-w-full items-start gap-2 overflow-x-auto pb-1">
           {imgList.map((src, imageIndex) => {
             const isActive = imageIndex === index;
             return (
