@@ -48,7 +48,7 @@ export default function AdminPrivacyPanel({ token }: Props) {
           throw new Error(
             typeof data?.error === "string" && data.error
               ? data.error
-              : "Nao foi possivel carregar a politica de privacidade."
+              : "Não foi possível carregar a política de privacidade."
           );
         }
 
@@ -59,7 +59,7 @@ export default function AdminPrivacyPanel({ token }: Props) {
         setError(
           loadError instanceof Error
             ? loadError.message
-            : "Nao foi possivel carregar a politica de privacidade."
+            : "Não foi possível carregar a política de privacidade."
         );
       } finally {
         if (active) {
@@ -77,7 +77,7 @@ export default function AdminPrivacyPanel({ token }: Props) {
 
   async function savePrivacyPage() {
     if (!token) {
-      setError("Sessao expirada. Faca login novamente como admin.");
+      setError("Sessão expirada. Faça login novamente como admin.");
       return;
     }
 
@@ -110,7 +110,7 @@ export default function AdminPrivacyPanel({ token }: Props) {
         throw new Error(
           typeof data?.error === "string" && data.error
             ? data.error
-            : "Nao foi possivel salvar a politica de privacidade."
+            : "Não foi possível salvar a política de privacidade."
         );
       }
 
@@ -124,7 +124,7 @@ export default function AdminPrivacyPanel({ token }: Props) {
       setError(
         saveError instanceof Error
           ? saveError.message
-          : "Nao foi possivel salvar a politica de privacidade."
+          : "Não foi possível salvar a política de privacidade."
       );
     } finally {
       setSaving(false);
@@ -135,9 +135,9 @@ export default function AdminPrivacyPanel({ token }: Props) {
     <div id="admin-privacy-panel" className="rounded-2xl border border-slate-200 bg-white p-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="text-sm font-semibold text-slate-900">Politica de Privacidade</div>
+          <div className="text-sm font-semibold text-slate-900">Política de Privacidade</div>
           <div className="mt-1 text-sm text-slate-600">
-            Edite o conteudo publico exibido em /politica-de-privacidade.
+            Edite o conteúdo público exibido em /politica-de-privacidade.
           </div>
         </div>
       </div>
@@ -145,7 +145,7 @@ export default function AdminPrivacyPanel({ token }: Props) {
       {saved ? (
         <div className="mt-4">
           <Notice title="Salvo" variant="success">
-            A politica de privacidade foi atualizada com sucesso.
+            A política de privacidade foi atualizada com sucesso.
           </Notice>
         </div>
       ) : null}
@@ -161,14 +161,14 @@ export default function AdminPrivacyPanel({ token }: Props) {
       {loading ? (
         <div className="mt-4">
           <Notice title="Carregando" variant="info">
-            Lendo o conteudo atual da politica de privacidade.
+            Lendo o conteúdo atual da política de privacidade.
           </Notice>
         </div>
       ) : null}
 
       <div className="mt-4 grid gap-4">
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Titulo</span>
+          <span className="text-sm font-semibold text-slate-900">Título</span>
           <input
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             value={draft.title}
@@ -180,7 +180,7 @@ export default function AdminPrivacyPanel({ token }: Props) {
         </label>
 
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Subtitulo</span>
+          <span className="text-sm font-semibold text-slate-900">Subtítulo</span>
           <input
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             value={draft.subtitle}
@@ -204,7 +204,7 @@ export default function AdminPrivacyPanel({ token }: Props) {
         </label>
 
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Conteudo da pagina</span>
+          <span className="text-sm font-semibold text-slate-900">Conteúdo da página</span>
           <textarea
             className="min-h-56 rounded-md border border-slate-300 px-3 py-2 text-sm"
             value={draft.body}
@@ -226,7 +226,7 @@ export default function AdminPrivacyPanel({ token }: Props) {
           disabled={loading || saving}
           className="inline-flex h-11 items-center justify-center rounded-md bg-slate-900 px-5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
         >
-          {saving ? "Salvando..." : "Salvar politica de privacidade"}
+          {saving ? "Salvando..." : "Salvar política de privacidade"}
         </button>
       </div>
     </div>

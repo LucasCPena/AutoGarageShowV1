@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!event) {
     return {
       title: "Evento realizado",
-      description: "Evento nao encontrado."
+      description: "Evento não encontrado."
     };
   }
 

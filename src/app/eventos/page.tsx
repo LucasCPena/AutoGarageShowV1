@@ -22,7 +22,7 @@ import { normalizeAssetReference } from "@/lib/site-url";
 
 export const metadata: Metadata = {
   title: "Eventos",
-  description: "Eventos aprovados de carros antigos com navegacao mensal por setas."
+  description: "Eventos aprovados de carros antigos com navegação mensal por setas."
 };
 
 export const dynamic = "force-dynamic";
@@ -106,7 +106,7 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
 
   const totalPages = Math.max(1, Math.ceil(eventCards.length / EVENTS_PER_PAGE));
   const currentPage = Math.min(parsePage(searchParams?.page), totalPages);
-  const paginatedEvents = eventCards.slice(
+  const páginatedEvents = eventCards.slice(
     (currentPage - 1) * EVENTS_PER_PAGE,
     currentPage * EVENTS_PER_PAGE
   );
@@ -139,13 +139,13 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
             <EventsModerationSection />
 
             {dbError ? (
-              <Notice title="Banco indisponivel" variant="warning" className="mt-6">
+              <Notice title="Banco indisponível" variant="warning" className="mt-6">
                 Não foi possível carregar os eventos agora. Tente novamente em instantes.
               </Notice>
             ) : null}
 
             <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {paginatedEvents.map(({ event, displayDate, hasUpcomingOccurrence }) => {
+              {páginatedEvents.map(({ event, displayDate, hasUpcomingOccurrence }) => {
                 const spanDays = getSpanDays(event.startAt, event.endAt);
                 const recurrenceLabel = formatRecurrence(event.recurrence, spanDays);
                 const showRecurrenceBadge = event.recurrence.type !== "single" || spanDays > 1;
@@ -218,10 +218,10 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
             {eventCards.length > 0 ? (
               <nav
                 className="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm"
-                aria-label="Paginacao de eventos"
+                aria-label="Páginacao de eventos"
               >
                 <span className="text-slate-600">
-                  Pagina {currentPage} de {totalPages} ({eventCards.length} eventos)
+                  Página {currentPage} de {totalPages} ({eventCards.length} eventos)
                 </span>
                 <div className="flex items-center gap-2">
                   {currentPage > 1 ? (

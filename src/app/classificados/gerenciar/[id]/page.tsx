@@ -81,7 +81,7 @@ export default function ListingManagePage({ params }: Props) {
   useEffect(() => {
     if (authLoading) return;
     if (!token) {
-      setError("Token de autenticacao nao encontrado.");
+      setError("Token de autenticação não encontrado.");
       setLoading(false);
       return;
     }
@@ -175,7 +175,7 @@ export default function ListingManagePage({ params }: Props) {
 
     if (files.length === 0) return;
     if (!token) {
-      setError("Token de autenticacao nao encontrado.");
+      setError("Token de autenticação não encontrado.");
       return;
     }
 
@@ -227,7 +227,7 @@ export default function ListingManagePage({ params }: Props) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token) {
-      setError("Token de autenticacao nao encontrado.");
+      setError("Token de autenticação não encontrado.");
       return;
     }
 
@@ -242,7 +242,7 @@ export default function ListingManagePage({ params }: Props) {
       !Number.isFinite(mileage) ||
       !Number.isFinite(price)
     ) {
-      setError("Preencha os campos numericos com valores validos.");
+      setError("Preencha os campos numericos com valores válidos.");
       return;
     }
 
@@ -313,21 +313,21 @@ export default function ListingManagePage({ params }: Props) {
   return (
     <>
       <PageIntro
-        title="Editar veiculo"
+        title="Editar veículo"
         subtitle="Edite os dados do post diretamente nesta tela."
       >
         <Link
           href="/veiculos"
           className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
         >
-          Voltar para veiculos
+          Voltar para veículos
         </Link>
       </PageIntro>
 
       <Container className="py-10">
         {loading ? (
           <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
-            Carregando veiculo...
+            Carregando veículo...
           </div>
         ) : null}
 
@@ -353,7 +353,7 @@ export default function ListingManagePage({ params }: Props) {
           <form onSubmit={handleSubmit} className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-6">
             <div className="grid gap-4 md:grid-cols-2">
               <label className="grid gap-1 md:col-span-2">
-                <span className="text-xs font-semibold text-slate-600">Titulo</span>
+                <span className="text-xs font-semibold text-slate-600">Título</span>
                 <input
                   className="h-10 rounded-md border border-slate-300 px-3 text-sm"
                   value={formState.title}
@@ -393,7 +393,7 @@ export default function ListingManagePage({ params }: Props) {
               </label>
 
               <label className="grid gap-1">
-                <span className="text-xs font-semibold text-slate-600">Ano fabricacao</span>
+                <span className="text-xs font-semibold text-slate-600">Ano fabricação</span>
                 <input
                   type="number"
                   className="h-10 rounded-md border border-slate-300 px-3 text-sm"
@@ -415,7 +415,7 @@ export default function ListingManagePage({ params }: Props) {
               </label>
 
               <label className="grid gap-1">
-                <span className="text-xs font-semibold text-slate-600">Preco</span>
+                <span className="text-xs font-semibold text-slate-600">Preço</span>
                 <input
                   type="number"
                   step="0.01"
@@ -448,7 +448,7 @@ export default function ListingManagePage({ params }: Props) {
               </label>
 
               <label className="grid gap-1 md:col-span-2">
-                <span className="text-xs font-semibold text-slate-600">Descricao</span>
+                <span className="text-xs font-semibold text-slate-600">Descrição</span>
                 <textarea
                   className="min-h-[90px] rounded-md border border-slate-300 px-3 py-2 text-sm"
                   value={formState.description}
@@ -524,7 +524,7 @@ export default function ListingManagePage({ params }: Props) {
                         }))
                       }
                     />
-                    Destacar veiculo
+                    Destacar veículo
                   </label>
 
                   <label className="grid gap-1">

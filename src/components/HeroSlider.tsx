@@ -186,16 +186,12 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
   }, [current, slides.length]);
 
   const activeSlide = slides[current] ?? slides[0];
-  const hasTitle = Boolean(activeSlide?.title?.trim()) && section === "home";
   const overlayClassName =
     section === "home"
       ? "absolute inset-0 bg-gradient-to-r from-slate-900/50 to-slate-900/12"
       : "absolute inset-0 bg-transparent";
   const imageClassName = "object-cover";
-  const viewportClassName =
-    section === "home"
-      ? "relative h-[320px] w-full sm:h-[380px] lg:h-[440px]"
-      : "relative h-[220px] w-full sm:h-[280px] lg:h-[320px]";
+  const viewportClassName = "relative aspect-video w-full";
 
   if (!activeSlide) return null;
 
@@ -205,18 +201,12 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
         <Image
           src={activeSlide.image}
           alt={getSlideImageAlt(activeSlide.title)}
-          title={activeSlide.title}
           fill
           className={imageClassName}
           sizes="(max-width: 640px) 100vw, (max-width: 1280px) 70vw, 960px"
           priority={section === "home"}
         />
         <div className={overlayClassName} />
-        {hasTitle ? (
-          <div className="absolute bottom-4 left-4 right-4 text-white">
-            <h3 className="text-2xl font-bold">{activeSlide.title}</h3>
-          </div>
-        ) : null}
       </div>
 
       <div className="absolute inset-x-0 bottom-2 flex justify-center gap-2">
@@ -243,7 +233,7 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
         <button
           onClick={() => setCurrent((c) => (c + 1) % slides.length)}
           className="h-8 w-8 rounded-full bg-white/80 text-slate-800 shadow hover:bg-white"
-          aria-label="Proximo"
+          aria-label="Próximo"
         >
           {">"}
         </button>

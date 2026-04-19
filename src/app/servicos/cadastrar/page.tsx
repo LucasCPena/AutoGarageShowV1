@@ -20,12 +20,15 @@ export default function ServiceRegisterPage() {
       />
 
       <Container className="py-10">
-        <div className="page-with-sidebar">
-          <div className="grid gap-8">
-            <ServicesRegistrationForm />
-            <MarketplaceImportantNotice />
+        <div className="grid gap-10">
+          <div className="page-with-sidebar">
+            <div className="grid gap-8">
+              <ServicesRegistrationForm />
+            </div>
+            <SidebarBannerStack />
           </div>
-          <SidebarBannerStack />
+
+          <MarketplaceImportantNotice className="mb-0 max-w-none" />
         </div>
       </Container>
     </>

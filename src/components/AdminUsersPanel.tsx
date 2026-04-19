@@ -288,7 +288,7 @@ export default function AdminUsersPanel({ token }: Props) {
                       >
                         <option value="individual">Pessoa fisica</option>
                         <option value="company">Empresa</option>
-                        <option value="agency">Agencia</option>
+                        <option value="agency">Agência</option>
                       </select>
                     </label>
 

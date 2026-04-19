@@ -61,12 +61,12 @@ export default function AdminNewsPanel({ token }: Props) {
         headers: authHeaders()
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erro ao carregar noticias.");
+      if (!res.ok) throw new Error(data.error || "Erro ao carregar notícias.");
       setItems(data.news || []);
     } catch (error) {
       setMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Erro ao carregar noticias."
+        text: error instanceof Error ? error.message : "Erro ao carregar notícias."
       });
     } finally {
       setLoading(false);
@@ -139,7 +139,7 @@ export default function AdminNewsPanel({ token }: Props) {
       };
 
       if (!payload.title || !payload.content || !payload.coverImage) {
-        throw new Error("Preencha titulo, conteudo e imagem de capa.");
+        throw new Error("Preencha título, conteúdo e imagem de capa.");
       }
 
       const endpoint = editingId ? `/api/noticias/${editingId}` : "/api/noticias";
@@ -152,21 +152,21 @@ export default function AdminNewsPanel({ token }: Props) {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Falha ao salvar noticia.");
+      if (!res.ok) throw new Error(data.error || "Falha ao salvar notícia.");
 
       if (editingId) {
         setItems((current) => current.map((item) => (item.id === editingId ? data.news : item)));
-        setMessage({ type: "success", text: "Noticia atualizada." });
+        setMessage({ type: "success", text: "Notícia atualizada." });
       } else {
         setItems((current) => [data.news, ...current]);
-        setMessage({ type: "success", text: "Noticia criada." });
+        setMessage({ type: "success", text: "Notícia criada." });
       }
 
       resetForm();
     } catch (error) {
       setMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Falha ao salvar noticia."
+        text: error instanceof Error ? error.message : "Falha ao salvar notícia."
       });
     } finally {
       setBusy(false);
@@ -187,7 +187,7 @@ export default function AdminNewsPanel({ token }: Props) {
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm("Deseja excluir esta noticia?")) return;
+    if (!window.confirm("Deseja excluir esta notícia?")) return;
     setBusy(true);
     setMessage(null);
     try {
@@ -196,14 +196,14 @@ export default function AdminNewsPanel({ token }: Props) {
         headers: authHeaders()
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Falha ao excluir noticia.");
+      if (!res.ok) throw new Error(data.error || "Falha ao excluir notícia.");
       setItems((current) => current.filter((item) => item.id !== id));
       if (editingId === id) resetForm();
-      setMessage({ type: "success", text: "Noticia excluida." });
+      setMessage({ type: "success", text: "Notícia excluida." });
     } catch (error) {
       setMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Falha ao excluir noticia."
+        text: error instanceof Error ? error.message : "Falha ao excluir notícia."
       });
     } finally {
       setBusy(false);
@@ -214,9 +214,9 @@ export default function AdminNewsPanel({ token }: Props) {
     <div id="admin-news-panel" className="rounded-2xl border border-slate-200 bg-white p-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <div className="text-sm font-semibold text-slate-900">Noticias</div>
+          <div className="text-sm font-semibold text-slate-900">Notícias</div>
           <div className="mt-1 text-sm text-slate-600">
-            CRUD completo de noticias para administracao.
+            CRUD completo de notícias para administracao.
           </div>
         </div>
         <div className="text-xs text-slate-500">Total: {items.length}</div>
@@ -236,7 +236,7 @@ export default function AdminNewsPanel({ token }: Props) {
 
       <form onSubmit={handleSubmit} className="mt-6 grid gap-4 md:grid-cols-2">
         <label className="grid gap-1 md:col-span-2">
-          <span className="text-sm font-semibold text-slate-900">Titulo</span>
+          <span className="text-sm font-semibold text-slate-900">Título</span>
           <input
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             value={form.title}
@@ -317,7 +317,7 @@ export default function AdminNewsPanel({ token }: Props) {
         </label>
 
         <label className="grid gap-1 md:col-span-2">
-          <span className="text-sm font-semibold text-slate-900">Conteudo</span>
+          <span className="text-sm font-semibold text-slate-900">Conteúdo</span>
           <textarea
             className="min-h-36 rounded-md border border-slate-300 px-3 py-2 text-sm"
             value={form.content}
@@ -337,8 +337,8 @@ export default function AdminNewsPanel({ token }: Props) {
               : uploadingImage
                 ? "Enviando imagem..."
                 : editingId
-                  ? "Atualizar noticia"
-                  : "Criar noticia"}
+                  ? "Atualizar notícia"
+                  : "Criar notícia"}
           </button>
           {editingId ? (
             <button
@@ -355,10 +355,10 @@ export default function AdminNewsPanel({ token }: Props) {
 
       <div className="mt-8 grid gap-3">
         {loading ? (
-          <div className="text-sm text-slate-600">Carregando noticias...</div>
+          <div className="text-sm text-slate-600">Carregando notícias...</div>
         ) : ordered.length === 0 ? (
-          <Notice title="Sem noticias" variant="info">
-            Crie a primeira noticia pelo formulario acima.
+          <Notice title="Sem notícias" variant="info">
+            Crie a primeira notícia pelo formulário acima.
           </Notice>
         ) : (
           ordered.map((item) => (

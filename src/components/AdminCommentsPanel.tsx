@@ -66,7 +66,7 @@ export default function AdminCommentsPanel({ token }: Props) {
   useEffect(() => {
     if (!token) {
       setLoading(false);
-      setMessage({ type: "error", text: "Token de autenticacao nao encontrado." });
+      setMessage({ type: "error", text: "Token de autenticação não encontrado." });
       return;
     }
     loadPendingComments();
@@ -75,7 +75,7 @@ export default function AdminCommentsPanel({ token }: Props) {
 
   async function updateCommentStatus(commentId: string, status: "approved" | "rejected") {
     if (!token) {
-      setMessage({ type: "error", text: "Token de autenticacao nao encontrado." });
+      setMessage({ type: "error", text: "Token de autenticação não encontrado." });
       return;
     }
 
@@ -115,9 +115,9 @@ export default function AdminCommentsPanel({ token }: Props) {
     <div className="rounded-2xl border border-slate-200 bg-white p-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="text-sm font-semibold text-slate-900">Comentarios de anuncios</div>
+          <div className="text-sm font-semibold text-slate-900">Comentarios de anúncios</div>
           <div className="mt-1 text-sm text-slate-600">
-            Comentarios enviados nos anuncios que aguardam moderacao.
+            Comentarios enviados nos anúncios que aguardam moderacao.
           </div>
         </div>
         <div className="text-sm font-semibold text-slate-900">
@@ -142,7 +142,7 @@ export default function AdminCommentsPanel({ token }: Props) {
           <div className="text-sm text-slate-600">Carregando comentarios...</div>
         ) : pending.length === 0 ? (
           <Notice title="Sem pendencias" variant="info">
-            Nenhum comentario aguardando aprovacao.
+            Nenhum comentario aguardando aprovação.
           </Notice>
         ) : (
           pending.map((comment) => (
@@ -153,7 +153,7 @@ export default function AdminCommentsPanel({ token }: Props) {
                   <div className="mt-1 text-xs text-slate-600">{comment.email}</div>
                   <div className="mt-1 text-xs text-slate-500">{formatDateLong(comment.createdAt)}</div>
                   <div className="mt-2 text-xs text-slate-600">
-                    Anuncio ID: {comment.listingId}
+                    Anúncio ID: {comment.listingId}
                   </div>
                   <p className="mt-3 whitespace-pre-wrap text-sm text-slate-700">{comment.message}</p>
                 </div>

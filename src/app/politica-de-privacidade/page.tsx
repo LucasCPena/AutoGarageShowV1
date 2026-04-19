@@ -6,7 +6,7 @@ import { db } from "@/lib/database";
 import { getPrivacyPageContent } from "@/lib/siteContent";
 
 export const metadata: Metadata = {
-  title: "Politica de Privacidade",
+  title: "Política de Privacidade",
   description: "Politica de privacidade do Auto Garage Show."
 };
 

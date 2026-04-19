@@ -43,7 +43,7 @@ export default function AdminEventsPanel({ events, token }: Props) {
   async function handleAction(eventId: string, action: "approve" | "delete") {
     try {
       if (!token) {
-        setMessage({ type: "error", text: "Token de autenticacao nao encontrado." });
+        setMessage({ type: "error", text: "Token de autenticação não encontrado." });
         return;
       }
       setBusyId(`${eventId}-${action}`);
@@ -83,7 +83,7 @@ export default function AdminEventsPanel({ events, token }: Props) {
   async function handleDuplicate(eventId: string) {
     try {
       if (!token) {
-        setMessage({ type: "error", text: "Token de autenticacao nao encontrado." });
+        setMessage({ type: "error", text: "Token de autenticação não encontrado." });
         return;
       }
       setBusyId(`${eventId}-duplicate`);
@@ -184,7 +184,7 @@ export default function AdminEventsPanel({ events, token }: Props) {
       <div className="mb-4">
         <div className="text-sm font-semibold text-slate-900">Eventos</div>
         <div className="mt-1 text-sm text-slate-600">
-          Aprovacao e remocao de eventos.
+          Aprovação e remoção de eventos.
         </div>
       </div>
 

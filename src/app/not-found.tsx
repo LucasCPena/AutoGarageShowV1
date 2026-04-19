@@ -7,10 +7,10 @@ export default function NotFound() {
     <Container className="py-16">
       <div className="mx-auto max-w-2xl">
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-          Pagina nao encontrada
+          Página não encontrada
         </h1>
         <p className="mt-3 text-slate-600">
-          A URL pode estar incorreta ou o conteudo pode nao estar disponivel.
+          A URL pode estar incorreta ou o conteúdo pode não estar disponível.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link

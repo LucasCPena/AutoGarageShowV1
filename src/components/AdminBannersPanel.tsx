@@ -402,7 +402,7 @@ export default function AdminBannersPanel({
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
             value={form.title}
             onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-            placeholder="Deixe em branco para ocultar o texto"
+            placeholder="Nome interno para controle; não aparece no site"
           />
         </label>
 
@@ -427,7 +427,7 @@ export default function AdminBannersPanel({
           />
           <span className="text-xs text-slate-500">
             Aceita jpg, jpeg, png e webp (ate 5MB).
-            {backgroundMode ? " Medida recomendada para o topo da home: 1920 x 640 px." : ""}
+            {backgroundMode ? " Medida recomendada para o topo da home: 1920 x 1080 px." : ""}
           </span>
         </label>
 
@@ -447,14 +447,14 @@ export default function AdminBannersPanel({
             <img
               src={form.image}
               alt={form.title.trim() ? `Previa do banner: ${form.title.trim()}` : "Previa do banner"}
-              className="mt-2 h-28 w-full rounded-md bg-white object-contain md:h-36"
+              className="mt-2 aspect-video w-full rounded-md bg-white object-cover"
             />
           </div>
         ) : null}
 
         {backgroundMode ? (
           <div className="md:col-span-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-            Este modulo altera apenas o banner de fundo do topo da Home.
+            Este módulo altera apenas o banner de fundo do topo da Home.
           </div>
         ) : (
           <>
@@ -513,7 +513,7 @@ export default function AdminBannersPanel({
             </label>
 
             <label className="grid gap-1">
-              <span className="text-sm font-semibold text-slate-900">Inicio (exposicao)</span>
+              <span className="text-sm font-semibold text-slate-900">Início (exposicao)</span>
               <input
                 type="datetime-local"
                 className="h-11 rounded-md border border-slate-300 px-3 text-sm"
@@ -586,7 +586,7 @@ export default function AdminBannersPanel({
             >
               <div className="min-w-[200px]">
                 <div className="text-sm font-semibold text-slate-900">
-                  {banner.title?.trim() || "Sem texto no banner"}
+                  {banner.title?.trim() || "Sem nome interno"}
                 </div>
                 <div className="text-xs text-slate-600">
                   {backgroundMode
@@ -596,10 +596,10 @@ export default function AdminBannersPanel({
                 <div className="text-xs text-slate-500">
                   {banner.startDate
                     ? new Date(banner.startDate).toLocaleString("pt-BR")
-                    : "inicio imediato"}
+                    : "início imediato"}
                   {banner.endDate
                     ? ` ate ${new Date(banner.endDate).toLocaleString("pt-BR")}`
-                    : " (sem termino)"}
+                    : " (sem término)"}
                 </div>
               </div>
 

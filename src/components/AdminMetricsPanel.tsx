@@ -35,7 +35,7 @@ export default function AdminMetricsPanel({ token }: Props) {
   useEffect(() => {
     if (!token) {
       setLoading(false);
-      setError("Sessao expirada. Faca login novamente.");
+      setError("Sessão expirada. Faça login novamente.");
       return;
     }
 
@@ -47,7 +47,7 @@ export default function AdminMetricsPanel({ token }: Props) {
       .then(async (response) => {
         const payload = await response.json();
         if (!response.ok) {
-          throw new Error(payload?.error || "Nao foi possivel carregar as metricas.");
+          throw new Error(payload?.error || "Não foi possível carregar as metricas.");
         }
         if (!cancelled) {
           setData(payload);
@@ -58,7 +58,7 @@ export default function AdminMetricsPanel({ token }: Props) {
           setError(
             fetchError instanceof Error
               ? fetchError.message
-              : "Nao foi possivel carregar as metricas."
+              : "Não foi possível carregar as metricas."
           );
         }
       })
@@ -104,7 +104,7 @@ export default function AdminMetricsPanel({ token }: Props) {
               </div>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div className="text-xs font-semibold text-slate-500">Views de anuncios</div>
+              <div className="text-xs font-semibold text-slate-500">Views de anúncios</div>
               <div className="mt-2 text-2xl font-bold text-slate-900">
                 {data?.metrics?.totals?.listingViews ?? 0}
               </div>

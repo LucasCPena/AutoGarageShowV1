@@ -40,7 +40,7 @@ export default function NewsManagePage({ params }: Props) {
   useEffect(() => {
     if (authLoading) return;
     if (!token) {
-      setError("Token de autenticacao nao encontrado.");
+      setError("Token de autenticação não encontrado.");
       setLoading(false);
       return;
     }
@@ -52,7 +52,7 @@ export default function NewsManagePage({ params }: Props) {
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) {
-          throw new Error(data.error || "Erro ao carregar noticia.");
+          throw new Error(data.error || "Erro ao carregar notícia.");
         }
         if (cancelled) return;
         setFormState({
@@ -70,7 +70,7 @@ export default function NewsManagePage({ params }: Props) {
         setError(
           fetchError instanceof Error
             ? fetchError.message
-            : "Erro ao carregar noticia."
+            : "Erro ao carregar notícia."
         );
         setLoading(false);
       });
@@ -104,7 +104,7 @@ export default function NewsManagePage({ params }: Props) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token) {
-      setError("Token de autenticacao nao encontrado.");
+      setError("Token de autenticação não encontrado.");
       return;
     }
 
@@ -131,11 +131,11 @@ export default function NewsManagePage({ params }: Props) {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao salvar noticia.");
+        throw new Error(data.error || "Erro ao salvar notícia.");
       }
-      setMessage("Noticia atualizada com sucesso.");
+      setMessage("Notícia atualizada com sucesso.");
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Erro ao salvar noticia.");
+      setError(saveError instanceof Error ? saveError.message : "Erro ao salvar notícia.");
     } finally {
       setSaving(false);
     }
@@ -143,7 +143,7 @@ export default function NewsManagePage({ params }: Props) {
 
   async function handleImageUpload(file: File) {
     if (!token) {
-      setError("Token de autenticacao nao encontrado.");
+      setError("Token de autenticação não encontrado.");
       return;
     }
 
@@ -193,21 +193,21 @@ export default function NewsManagePage({ params }: Props) {
   return (
     <>
       <PageIntro
-        title="Editar noticia"
-        subtitle="Edicao completa do post de noticia."
+        title="Editar notícia"
+        subtitle="Edicao completa do post de notícia."
       >
         <Link
           href="/noticias"
           className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
         >
-          Voltar para noticias
+          Voltar para notícias
         </Link>
       </PageIntro>
 
       <Container className="py-10">
         {loading ? (
           <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
-            Carregando noticia...
+            Carregando notícia...
           </div>
         ) : null}
 
@@ -235,7 +235,7 @@ export default function NewsManagePage({ params }: Props) {
             className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-6"
           >
             <label className="grid gap-1">
-              <span className="text-xs font-semibold text-slate-600">Titulo</span>
+              <span className="text-xs font-semibold text-slate-600">Título</span>
               <input
                 className="h-10 rounded-md border border-slate-300 px-3 text-sm"
                 value={formState.title}
@@ -245,7 +245,7 @@ export default function NewsManagePage({ params }: Props) {
             </label>
 
             <label className="grid gap-1">
-              <span className="text-xs font-semibold text-slate-600">Conteudo</span>
+              <span className="text-xs font-semibold text-slate-600">Conteúdo</span>
               <textarea
                 className="min-h-[180px] rounded-md border border-slate-300 px-3 py-2 text-sm"
                 value={formState.content}

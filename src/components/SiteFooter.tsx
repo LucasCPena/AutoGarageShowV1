@@ -34,7 +34,7 @@ function mergeSocialLinks(links: Array<{ platform: string; url: string }>) {
 export default async function SiteFooter() {
   const year = new Date().getFullYear();
   let socialLinks = defaultSocialLinks;
-  let footerSummary = "Calendario, classificados e noticias de carros antigos.";
+  let footerSummary = "Calendário, classificados e notícias de carros antigos.";
 
   try {
     const settings = await db.settings.get();
@@ -42,7 +42,7 @@ export default async function SiteFooter() {
     socialLinks = mergeSocialLinks(filteredSettingsLinks);
     footerSummary = getAboutPageContent(settings).footerSummary || footerSummary;
   } catch (error) {
-    console.error("Erro ao carregar links sociais no rodape:", error);
+    console.error("Erro ao carregar links sociais no rodapé:", error);
   }
 
   return (
@@ -58,7 +58,7 @@ export default async function SiteFooter() {
                 href="/politica-de-privacidade"
                 className="text-slate-700 hover:text-brand-700"
               >
-                Politica de Privacidade
+                Política de Privacidade
               </Link>
             </div>
             <div className="mt-2 text-xs text-slate-500">

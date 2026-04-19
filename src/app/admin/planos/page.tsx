@@ -23,7 +23,7 @@ export default function AdminPlansPage() {
     return (
       <Container className="py-10">
         <Notice title="Acesso Restrito" variant="warning">
-          Voce precisa estar logado como administrador para acessar esta pagina.
+          Você precisa estar logado como administrador para acessar esta página.
         </Notice>
       </Container>
     );
@@ -43,7 +43,7 @@ export default function AdminPlansPage() {
     <>
       <PageIntro
         title="Planos"
-        subtitle="Cadastre e organize os planos exibidos na aba publica de planos."
+        subtitle="Cadastre e organize os planos exibidos na aba pública de planos."
       >
         <Link
           href="/admin"

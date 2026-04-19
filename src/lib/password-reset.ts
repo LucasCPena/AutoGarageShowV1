@@ -17,7 +17,7 @@ type PasswordResetAuditRequest = {
 function getTokenHash(token: string) {
   const hash = fingerprintSensitiveValue(token, "password-reset");
   if (!hash) {
-    throw new Error("Nao foi possivel gerar o token de recuperacao.");
+    throw new Error("Não foi possível gerar o token de recuperação.");
   }
   return hash;
 }
@@ -137,7 +137,7 @@ export async function consumePasswordResetToken(token: string, password: string)
   });
 
   if (!updatedUser) {
-    throw new Error("Usuario nao encontrado.");
+    throw new Error("Usuário não encontrado.");
   }
 
   await db.audit.create({

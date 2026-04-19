@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
@@ -81,7 +81,7 @@ export default function NewsPage() {
   if (loading) {
     return (
       <Container className="py-10">
-        <div>Carregando noticias...</div>
+        <div>Carregando notícias...</div>
       </Container>
     );
   }

@@ -39,7 +39,7 @@ export default function SiteSearchForm({
         className={`h-11 rounded-md border border-slate-300 px-3 text-sm ${compact ? "min-w-0 flex-1" : ""}`}
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="Buscar eventos, veiculos, noticias e empresas"
+        placeholder="Buscar eventos, veículos, notícias e empresas"
       />
       {compact ? (
         <input type="hidden" value={type} readOnly />
@@ -50,9 +50,9 @@ export default function SiteSearchForm({
           onChange={(event) => setType(event.target.value)}
         >
           <option value="all">Tudo</option>
-          <option value="listing">Veiculos</option>
+          <option value="listing">Veículos</option>
           <option value="event">Eventos</option>
-          <option value="news">Noticias</option>
+          <option value="news">Notícias</option>
           <option value="company">Empresas</option>
         </select>
       )}

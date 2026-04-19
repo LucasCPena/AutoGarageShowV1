@@ -29,8 +29,8 @@ export default function ListingFeaturePanel({ listing }: Props) {
 
   if (!user) {
     return (
-      <Notice title="Destaque do anuncio" variant="info">
-        Faca login para destacar o seu classificado e escolher um periodo disponivel.
+      <Notice title="Destaque do anúncio" variant="info">
+        Faça login para destacar o seu classificado e escolher um período disponível.
       </Notice>
     );
   }
@@ -41,7 +41,7 @@ export default function ListingFeaturePanel({ listing }: Props) {
 
   async function handleFeature(days: number) {
     if (!token) {
-      setError("Sua sessao expirou. Faca login novamente.");
+      setError("Sua sessão expirou. Faça login novamente.");
       return;
     }
 
@@ -60,10 +60,10 @@ export default function ListingFeaturePanel({ listing }: Props) {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "Nao foi possivel destacar o anuncio.");
+        throw new Error(data.error || "Não foi possível destacar o anúncio.");
       }
 
-      setMessage(`Anuncio destacado por ${days} dia(s). A pagina sera atualizada.`);
+      setMessage(`Anúncio destacado por ${days} dia(s). A página sera atualizada.`);
       window.setTimeout(() => {
         window.location.reload();
       }, 900);
@@ -71,7 +71,7 @@ export default function ListingFeaturePanel({ listing }: Props) {
       setError(
         featureError instanceof Error
           ? featureError.message
-          : "Nao foi possivel destacar o anuncio."
+          : "Não foi possível destacar o anúncio."
       );
     } finally {
       setBusyDay(null);
@@ -80,9 +80,9 @@ export default function ListingFeaturePanel({ listing }: Props) {
 
   return (
     <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <div className="text-sm font-semibold text-slate-900">Destacar anuncio</div>
+      <div className="text-sm font-semibold text-slate-900">Destacar anúncio</div>
       <p className="mt-2 text-sm text-slate-600">
-        Escolha um periodo de destaque disponivel para este classificado.
+        Escolha um período de destaque disponível para este classificado.
       </p>
 
       {listing.featured ? (

@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ users: sanitizedUsers });
   } catch (error) {
-    logServerError("Erro ao buscar usuarios do admin", error);
+    logServerError("Erro ao buscar usuários do admin", error);
     if (isMysqlRequiredError(error)) {
       return NextResponse.json(
         { error: "Banco de dados indisponivel no momento." },

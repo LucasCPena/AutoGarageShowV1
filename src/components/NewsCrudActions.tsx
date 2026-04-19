@@ -30,7 +30,7 @@ export default function NewsCrudActions({
 
   async function handleDuplicate() {
     if (!token) {
-      setMessage("Token de autenticacao nao encontrado.");
+      setMessage("Token de autenticação não encontrado.");
       return;
     }
     setBusyAction("duplicate");
@@ -44,15 +44,15 @@ export default function NewsCrudActions({
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao duplicar noticia.");
+        throw new Error(data.error || "Erro ao duplicar notícia.");
       }
       if (data.news?.id) {
         router.push(`/noticias/gerenciar/${data.news.id}`);
         return;
       }
-      setMessage("Noticia duplicada com sucesso.");
+      setMessage("Notícia duplicada com sucesso.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Erro ao duplicar noticia.");
+      setMessage(error instanceof Error ? error.message : "Erro ao duplicar notícia.");
     } finally {
       setBusyAction(null);
     }
@@ -60,10 +60,10 @@ export default function NewsCrudActions({
 
   async function handleDelete() {
     if (!token) {
-      setMessage("Token de autenticacao nao encontrado.");
+      setMessage("Token de autenticação não encontrado.");
       return;
     }
-    if (!confirm("Tem certeza que deseja excluir esta noticia?")) return;
+    if (!confirm("Tem certeza que deseja excluir esta notícia?")) return;
 
     setBusyAction("delete");
     setMessage(null);
@@ -76,7 +76,7 @@ export default function NewsCrudActions({
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao excluir noticia.");
+        throw new Error(data.error || "Erro ao excluir notícia.");
       }
 
       if (onDeleted) {
@@ -86,7 +86,7 @@ export default function NewsCrudActions({
         router.refresh();
       }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Erro ao excluir noticia.");
+      setMessage(error instanceof Error ? error.message : "Erro ao excluir notícia.");
     } finally {
       setBusyAction(null);
     }

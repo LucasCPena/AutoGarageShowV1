@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!event) {
     return {
       title: "Evento",
-      description: "Evento nao encontrado."
+      description: "Evento não encontrado."
     };
   }
 
@@ -125,13 +125,13 @@ export default async function EventDetailPage({ params }: Props) {
               <section className="rounded-2xl border border-red-200 bg-red-50 p-6">
                 <h2 className="text-lg font-semibold text-slate-900">Evento ao vivo</h2>
                 <p className="mt-2 text-sm text-slate-700">
-                  Transmissao identificada automaticamente pelo link do YouTube.
+                  Transmissão identificada automaticamente pelo link do YouTube.
                 </p>
                 <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-black">
                   <iframe
                     className="aspect-video w-full"
                     src={liveEmbedUrl}
-                    title={`Transmissao ao vivo: ${event.title}`}
+                    title={`Transmissão ao vivo: ${event.title}`}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     referrerPolicy="strict-origin-when-cross-origin"
                     allowFullScreen
@@ -142,7 +142,7 @@ export default async function EventDetailPage({ params }: Props) {
           </div>
 
           <aside className="rounded-2xl border border-slate-200 bg-white p-6">
-            <div className="text-sm font-semibold text-slate-900">Informacoes</div>
+            <div className="text-sm font-semibold text-slate-900">Informações</div>
 
             <dl className="mt-4 grid gap-4 text-sm">
               <div>
@@ -152,7 +152,7 @@ export default async function EventDetailPage({ params }: Props) {
                 </dd>
               </div>
               <div>
-                <dt className="text-slate-500">Horario</dt>
+                <dt className="text-slate-500">Horário</dt>
                 <dd className="mt-1 font-semibold text-slate-900">
                   {eventTimeLabel}
                 </dd>
@@ -220,7 +220,7 @@ export default async function EventDetailPage({ params }: Props) {
             ) : null}
 
             <div className="mt-6 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
-              Apos a data, o evento pode virar Evento realizado com galeria de fotos.
+              Após a data, o evento pode virar Evento realizado com galeria de fotos.
             </div>
           </aside>
         </div>

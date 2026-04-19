@@ -30,7 +30,7 @@ export default function EventCrudActions({
 
   async function handleDuplicate() {
     if (!token) {
-      setMessage("Token de autenticacao nao encontrado.");
+      setMessage("Token de autenticação não encontrado.");
       return;
     }
     setBusyAction("duplicate");
@@ -60,7 +60,7 @@ export default function EventCrudActions({
 
   async function handleDelete() {
     if (!token) {
-      setMessage("Token de autenticacao nao encontrado.");
+      setMessage("Token de autenticação não encontrado.");
       return;
     }
     if (!confirm("Tem certeza que deseja excluir este evento?")) return;

@@ -60,7 +60,7 @@ export default function NewsDetailPage({ params }: Props) {
         setLoading(false);
       })
       .catch((error) => {
-        console.error("Erro ao buscar noticia:", error);
+        console.error("Erro ao buscar notícia:", error);
         setLoading(false);
       });
   }, [authLoading, params.slug, token, user?.role]);
@@ -68,7 +68,7 @@ export default function NewsDetailPage({ params }: Props) {
   if (loading) {
     return (
       <Container className="py-10">
-        <div>Carregando noticia...</div>
+        <div>Carregando notícia...</div>
       </Container>
     );
   }

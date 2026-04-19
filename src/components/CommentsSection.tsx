@@ -143,7 +143,7 @@ export default function CommentsSection({ listingId }: Props) {
 
   async function updateCommentStatus(commentId: string, status: "approved" | "rejected") {
     if (!token) {
-      setModerationMessage("Token de autenticacao nao encontrado.");
+      setModerationMessage("Token de autenticação não encontrado.");
       return;
     }
 
@@ -193,7 +193,7 @@ export default function CommentsSection({ listingId }: Props) {
             <div>
               <div className="text-sm font-semibold text-slate-900">Liberacao de comentarios</div>
               <div className="mt-1 text-xs text-slate-600">
-                Aprove ou rejeite os comentarios pendentes deste anuncio.
+                Aprove ou rejeite os comentarios pendentes deste anúncio.
               </div>
             </div>
             <div className="text-sm font-semibold text-slate-900">
@@ -211,7 +211,7 @@ export default function CommentsSection({ listingId }: Props) {
             {pendingLoading ? (
               <div className="text-sm text-slate-600">Carregando comentarios pendentes...</div>
             ) : pendingComments.length === 0 ? (
-              <div className="text-sm text-slate-600">Nenhum comentario pendente neste anuncio.</div>
+              <div className="text-sm text-slate-600">Nenhum comentario pendente neste anúncio.</div>
             ) : (
               pendingComments.map((comment) => (
                 <div key={comment.id} className="rounded-xl border border-slate-200 bg-white p-4">
@@ -246,7 +246,7 @@ export default function CommentsSection({ listingId }: Props) {
 
       {submitted ? (
         <Notice title="Enviado" variant="success" className="mt-4">
-          Seu comentario foi enviado e aguarda aprovacao.
+          Seu comentario foi enviado e aguarda aprovação.
         </Notice>
       ) : null}
 
@@ -276,7 +276,7 @@ export default function CommentsSection({ listingId }: Props) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-            placeholder="voce@email.com"
+            placeholder="você@email.com"
           />
         </label>
 

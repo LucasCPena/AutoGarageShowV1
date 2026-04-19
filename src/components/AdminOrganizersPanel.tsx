@@ -141,7 +141,7 @@ export default function AdminOrganizersPanel({ token }: Props) {
     if (!token) {
       setMessage({
         type: "error",
-        text: "Sessao expirada. Faca login novamente como admin."
+        text: "Sessão expirada. Faça login novamente como admin."
       });
       return;
     }
@@ -217,7 +217,7 @@ export default function AdminOrganizersPanel({ token }: Props) {
     if (!token) {
       setMessage({
         type: "error",
-        text: "Sessao expirada. Faca login novamente como admin."
+        text: "Sessão expirada. Faça login novamente como admin."
       });
       return;
     }
@@ -258,7 +258,7 @@ export default function AdminOrganizersPanel({ token }: Props) {
         <div>
           <div className="text-sm font-semibold text-slate-900">Organizadores e Clubes</div>
           <div className="mt-1 text-sm text-slate-600">
-            Cadastro de logo e link opcional para a pagina publica de organizadores e clubes.
+            Cadastro de logo e link opcional para a página pública de organizadores e clubes.
           </div>
         </div>
         <div className="text-sm font-semibold text-slate-900">Total: {items.length}</div>

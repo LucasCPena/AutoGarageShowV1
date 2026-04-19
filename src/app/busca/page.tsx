@@ -14,7 +14,7 @@ export default function SearchPage({ searchParams }: Props) {
     <>
       <PageIntro
         title="Busca"
-        subtitle="Localize veiculos, eventos, noticias e empresas em um unico lugar."
+        subtitle="Localize veículos, eventos, notícias e empresas em um único lugar."
       />
 
       <Container className="py-10">

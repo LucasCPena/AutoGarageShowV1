@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
@@ -722,16 +722,13 @@ export default function HomePage() {
 
                     <div className="min-w-0">
                       <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        {service.activityType || "Servico"}
+                        {service.activityType || "Serviço"}
                       </div>
                       <h3 className="mt-1 text-lg font-semibold text-slate-900 group-hover:text-brand-800">
                         {service.displayName}
                       </h3>
                       <div className="mt-2 text-sm text-slate-600">
                         {[service.city, service.state].filter(Boolean).join(" / ") || "Localização não informada"}
-                      </div>
-                      <div className="mt-2 text-xs font-semibold text-slate-500">
-                        {formatDateTime(service.createdAt)}
                       </div>
                     </div>
                   </div>

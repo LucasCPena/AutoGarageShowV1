@@ -7,7 +7,7 @@ import PageIntro from "@/components/PageIntro";
 
 export const metadata: Metadata = {
   title: "Cadastrar evento",
-  description: "Envie um evento de carros antigos para aprovacao."
+  description: "Envie um evento de carros antigos para aprovação."
 };
 
 export default function EventSubmitPage() {
@@ -15,13 +15,16 @@ export default function EventSubmitPage() {
     <>
       <PageIntro
         title="Cadastrar evento"
-        subtitle="Envie um evento para aprovacao manual."
+        subtitle="Envie um evento para aprovação manual."
       />
 
       <Container className="py-10">
-        <div className="mx-auto grid max-w-2xl gap-8">
-          <EventSubmissionForm />
-          <MarketplaceImportantNotice />
+        <div className="grid gap-10">
+          <div className="mx-auto grid max-w-2xl gap-8">
+            <EventSubmissionForm />
+          </div>
+
+          <MarketplaceImportantNotice className="mb-0 max-w-5xl" />
         </div>
       </Container>
     </>

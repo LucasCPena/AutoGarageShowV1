@@ -6,7 +6,6 @@ import PageIntro from "@/components/PageIntro";
 import SidebarBannerStack from "@/components/SidebarBannerStack";
 import TrackMetric from "@/components/TrackMetric";
 import { db } from "@/lib/database";
-import { formatDateTime } from "@/lib/date";
 import { formatCurrencyBRL } from "@/lib/format";
 import { attachListingOwnerProfiles } from "@/lib/listingOwners";
 import { normalizeAssetReference } from "@/lib/site-url";
@@ -48,7 +47,7 @@ export default async function CompanyPage({ params }: Props) {
     <>
       <PageIntro
         title={displayName}
-        subtitle={`${visibleListings.length} anuncio(s) publicados nesta pagina exclusiva.`}
+        subtitle={`${visibleListings.length} anúncio(s) publicados nesta página exclusiva.`}
       >
         <Link
           href="/classificados"
@@ -86,16 +85,16 @@ export default async function CompanyPage({ params }: Props) {
 
                 <div className="min-w-0 flex-1">
                   <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    {normalizedUser.accountType === "agency" ? "Pagina da agencia" : "Pagina da empresa"}
+                    {normalizedUser.accountType === "agency" ? "Página da agência" : "Página da empresa"}
                   </div>
                   <h2 className="mt-2 text-2xl font-bold text-slate-900">{displayName}</h2>
                   <p className="mt-2 text-sm text-slate-600">
-                    Todos os anuncios deste anunciante ficam reunidos aqui em um unico endereco publico.
+                    Todos os anúncios deste anunciante ficam reunidos aqui em um único endereço público.
                   </p>
 
                   <div className="mt-4 flex flex-wrap gap-2">
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                      {visibleListings.length} anuncio(s) ativos
+                      {visibleListings.length} anúncio(s) ativos
                     </span>
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
                       Carros: {carCount}
@@ -112,10 +111,10 @@ export default async function CompanyPage({ params }: Props) {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h3 className="text-lg font-semibold text-slate-900">
-                    Todos os anuncios deste anunciante
+                    Todos os anúncios deste anunciante
                   </h3>
                   <p className="mt-1 text-sm text-slate-600">
-                    Lista completa com data e hora de cadastro de cada anuncio.
+                    Lista completa dos anúncios ativos deste anunciante.
                   </p>
                 </div>
               </div>
@@ -135,12 +134,9 @@ export default async function CompanyPage({ params }: Props) {
                     </Link>
 
                     <div className="p-4">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                          {formatDateTime(listing.createdAt) || "Data nao informada"}
-                        </div>
+                      <div className="flex flex-wrap items-center justify-end gap-2">
                         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
-                          {listing.vehicleType === "motorcycle" ? "Moto" : "Veiculo"}
+                          {listing.vehicleType === "motorcycle" ? "Moto" : "Veículo"}
                         </span>
                       </div>
 
@@ -164,7 +160,7 @@ export default async function CompanyPage({ params }: Props) {
 
                 {visibleListings.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">
-                    Este anunciante ainda nao possui anuncios visiveis.
+                    Este anunciante ainda não possui anúncios visiveis.
                   </div>
                 ) : null}
               </div>

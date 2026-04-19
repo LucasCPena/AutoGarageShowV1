@@ -35,7 +35,7 @@ export default function ListingCrudActions({
 
   async function handleModeration(action: "approve" | "reject") {
     if (!token) {
-      setMessage("Token de autenticacao nao encontrado.");
+      setMessage("Token de autenticação não encontrado.");
       return;
     }
 
@@ -73,7 +73,7 @@ export default function ListingCrudActions({
 
   async function handleDelete() {
     if (!token) {
-      setMessage("Token de autenticacao nao encontrado.");
+      setMessage("Token de autenticação não encontrado.");
       return;
     }
     if (!confirm("Tem certeza que deseja excluir este classificado?")) return;

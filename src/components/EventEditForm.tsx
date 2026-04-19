@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -158,17 +158,17 @@ export default function EventEditForm({ eventId }: Props) {
 
       let endAt: string | undefined;
       if (!endTime) {
-        throw new Error("Informe o horario de termino.");
+        throw new Error("Informe o horário de término.");
       }
 
       const endDate = startDate;
       if (endDate) {
         const end = new Date(`${endDate}T${endTime}`);
         if (Number.isNaN(end.getTime())) {
-          throw new Error("Data ou horario de termino invalidos.");
+          throw new Error("Data ou horário de término inválidos.");
         }
         if (end.getTime() < startAt.getTime()) {
-          throw new Error("A data de termino nao pode ser anterior ao inicio.");
+          throw new Error("A data de término não pode ser anterior ao início.");
         }
         endAt = end.toISOString();
       }

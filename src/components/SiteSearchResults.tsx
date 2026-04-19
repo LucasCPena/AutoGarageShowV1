@@ -24,9 +24,9 @@ type Props = {
 };
 
 function typeLabel(type: SearchResultItem["type"]) {
-  if (type === "listing") return "Veiculo";
+  if (type === "listing") return "Veículo";
   if (type === "event") return "Evento";
-  if (type === "news") return "Noticia";
+  if (type === "news") return "Notícia";
   return "Empresa";
 }
 
@@ -59,7 +59,7 @@ export default function SiteSearchResults({
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) {
-          throw new Error(data?.error || "Nao foi possivel executar a busca.");
+          throw new Error(data?.error || "Não foi possível executar a busca.");
         }
         setResults(Array.isArray(data.results) ? data.results : []);
       })
@@ -86,7 +86,7 @@ export default function SiteSearchResults({
       ) : null}
       {!initialQuery.trim() ? (
         <Notice title="Busca interna" variant="info">
-          Digite um termo para localizar eventos, veiculos, noticias e empresas anunciantes.
+          Digite um termo para localizar eventos, veículos, notícias e empresas anunciantes.
         </Notice>
       ) : null}
 

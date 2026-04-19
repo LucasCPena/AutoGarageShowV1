@@ -12,10 +12,10 @@ import { resolvePublicOrigin, siteUrl, toAbsoluteUrl } from "@/lib/site-url";
 const DEFAULT_LOGO_URL = "/uploads/site/logo-site.png";
 
 const PRELAUNCH_QR_CODE = {
-  eyebrow: "Anuncio de carro",
-  title: "Cadastre seu anuncio",
+  eyebrow: "Anúncio de carro",
+  title: "Cadastre seu anúncio",
   description:
-    "Escaneie o QR Code para ir direto ao cadastro do carro. Esse acesso libera somente essa area durante o pre-lancamento.",
+    "Escaneie o QR Code para ir direto ao cadastro do carro. Esse acesso libera somente essa área durante o pré-lançamento.",
   targetPath: PUBLIC_LISTING_ACCESS_ROUTE
 } as const;
 
@@ -113,7 +113,7 @@ export default function SitePrelaunchScreen() {
 
             <div className="mt-8 w-full max-w-xl">
               <p className="mx-auto max-w-2xl text-sm leading-6 text-white/65 sm:text-base">
-                Durante o pre-lancamento, o QR Code abaixo leva direto ao
+                Durante o pré-lançamento, o QR Code abaixo leva direto ao
                 cadastro de carro, sem abrir o restante do portal.
               </p>
 
@@ -134,7 +134,7 @@ export default function SitePrelaunchScreen() {
                 <div className="mt-5 rounded-[24px] bg-white px-4 py-5 text-center text-slate-900">
                   <img
                     src={getQrCodeImageSrc(PRELAUNCH_QR_CODE.targetPath, qrOrigin)}
-                    alt="QR Code para cadastro de anuncio de carro"
+                    alt="QR Code para cadastro de anúncio de carro"
                     className="mx-auto h-40 w-40 rounded-2xl object-contain sm:h-44 sm:w-44"
                     loading="lazy"
                   />

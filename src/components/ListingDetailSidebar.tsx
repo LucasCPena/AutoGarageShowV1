@@ -48,7 +48,7 @@ export default function ListingDetailSidebar({ listing, companyListingCount = 0 
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) {
-          throw new Error(data?.error || "Nao foi possivel carregar o contato.");
+          throw new Error(data?.error || "Não foi possível carregar o contato.");
         }
         setPrivateContact(data?.listing?.contact || { name: "", email: "", phone: "" });
       })
@@ -58,15 +58,15 @@ export default function ListingDetailSidebar({ listing, companyListingCount = 0 
   if (isLoading && !hasPrivateContact) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
-        Carregando informacoes privadas...
+        Carregando informações privadas...
       </div>
     );
   }
 
   if (!user && !hasPrivateContact) {
     return (
-      <Notice title="Area para usuarios logados" variant="info">
-        Faca login para ver contato completo.
+      <Notice title="Area para usuários logados" variant="info">
+        Faça login para ver contato completo.
       </Notice>
     );
   }
@@ -80,7 +80,7 @@ export default function ListingDetailSidebar({ listing, companyListingCount = 0 
       listing.ownerProfile.accountType === "agency")
       ? `/empresas/${listing.ownerProfile.id}`
       : null;
-  const sellerLabel = listing.ownerProfile?.accountType === "agency" ? "agencia" : "anunciante";
+  const sellerLabel = listing.ownerProfile?.accountType === "agency" ? "agência" : "anunciante";
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6">
@@ -112,7 +112,7 @@ export default function ListingDetailSidebar({ listing, companyListingCount = 0 
           </a>
         ) : (
           <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-slate-500">
-            Telefone nao informado.
+            Telefone não informado.
           </div>
         )}
 
@@ -138,7 +138,7 @@ export default function ListingDetailSidebar({ listing, companyListingCount = 0 
           </a>
         ) : (
           <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-slate-500">
-            E-mail nao informado.
+            E-mail não informado.
           </div>
         )}
       </div>
@@ -149,8 +149,8 @@ export default function ListingDetailSidebar({ listing, companyListingCount = 0 
           className="mt-4 inline-flex w-full items-center justify-center rounded-md border border-brand-200 bg-brand-50 px-3 py-2 text-sm font-semibold text-brand-800 hover:bg-brand-100"
         >
           {companyListingCount > 0
-            ? `Ver todos os ${companyListingCount} anuncio(s) deste ${sellerLabel}`
-            : `Ver todos os anuncios deste ${sellerLabel}`}
+            ? `Ver todos os ${companyListingCount} anúncio(s) deste ${sellerLabel}`
+            : `Ver todos os anúncios deste ${sellerLabel}`}
         </Link>
       ) : null}
 

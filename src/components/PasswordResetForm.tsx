@@ -33,7 +33,7 @@ export default function PasswordResetForm({ token }: Props) {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || "Token invalido ou expirado.");
+          throw new Error(data.error || "Token inválido ou expirado.");
         }
 
         if (!active) return;
@@ -45,7 +45,7 @@ export default function PasswordResetForm({ token }: Props) {
         setError(
           verificationError instanceof Error
             ? verificationError.message
-            : "Token invalido ou expirado."
+            : "Token inválido ou expirado."
         );
       } finally {
         if (active) {
@@ -74,7 +74,7 @@ export default function PasswordResetForm({ token }: Props) {
     }
 
     if (password !== confirmPassword) {
-      setError("As senhas nao conferem.");
+      setError("As senhas não conferem.");
       setLoading(false);
       return;
     }
@@ -94,7 +94,7 @@ export default function PasswordResetForm({ token }: Props) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Nao foi possivel redefinir a senha.");
+        throw new Error(data.error || "Não foi possível redefinir a senha.");
       }
 
       setMessage(data.message || "Senha redefinida com sucesso.");
@@ -105,7 +105,7 @@ export default function PasswordResetForm({ token }: Props) {
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "Nao foi possivel redefinir a senha."
+          : "Não foi possível redefinir a senha."
       );
     } finally {
       setLoading(false);
@@ -116,7 +116,7 @@ export default function PasswordResetForm({ token }: Props) {
     return (
       <div className="mx-auto max-w-xl">
         <Notice title="Validando link" variant="info">
-          Conferindo o token de recuperacao.
+          Conferindo o token de recuperação.
         </Notice>
       </div>
     );
@@ -125,8 +125,8 @@ export default function PasswordResetForm({ token }: Props) {
   if (!valid) {
     return (
       <div className="mx-auto max-w-xl">
-        <Notice title="Link invalido" variant="warning">
-          {error || "O link de recuperacao nao e mais valido."}
+        <Notice title="Link inválido" variant="warning">
+          {error || "O link de recuperação não é mais válido."}
         </Notice>
       </div>
     );
@@ -136,7 +136,7 @@ export default function PasswordResetForm({ token }: Props) {
     <form onSubmit={onSubmit} className="mx-auto grid max-w-xl gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <p className="text-sm leading-6 text-slate-600">
         {accountEmail ? `Conta identificada: ${accountEmail}. ` : ""}
-        Defina a nova senha para concluir a recuperacao.
+        Defina a nova senha para concluir a recuperação.
       </p>
 
       {message ? (

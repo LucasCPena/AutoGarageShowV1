@@ -49,11 +49,11 @@ function getVehicleTypeValue(listing: Listing) {
 }
 
 function getVehicleLabel(vehicleType: ListingVehicleType | undefined) {
-  return vehicleType === "motorcycle" ? "Moto" : "Veiculo";
+  return vehicleType === "motorcycle" ? "Moto" : "Veículo";
 }
 
 function getVehiclePluralLabel(vehicleType: ListingVehicleType | undefined) {
-  return vehicleType === "motorcycle" ? "motos" : "veiculos";
+  return vehicleType === "motorcycle" ? "motos" : "veículos";
 }
 
 function formatLocation(city?: string, state?: string) {
@@ -129,7 +129,7 @@ function ListingCard({
       : typeof listing.year === "number" && Number.isFinite(listing.year)
         ? String(listing.year)
         : "";
-  const publishedAtLabel = formatDateTime(listing.createdAt) || "Data nao informada";
+  const publishedAtLabel = formatDateTime(listing.createdAt) || "Data não informada";
   const sellerName = listing.ownerProfile?.displayName?.trim() || "";
   const showCompanyLink =
     listing.ownerProfile &&
@@ -184,7 +184,7 @@ function ListingCard({
 
           <div className="shrink-0 text-right">
             <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-              Preco
+              Preço
             </div>
             <div className="mt-1 text-lg font-bold text-slate-900">
               {formatCurrencyBRL(listing.price)}
@@ -220,7 +220,7 @@ function ListingCard({
               href={`/empresas/${listing.ownerProfile?.id}`}
               className="inline-flex items-center rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-800 hover:bg-brand-200"
             >
-              Mais anuncios de {sellerName || "este anunciante"}
+              Mais anúncios de {sellerName || "este anunciante"}
             </Link>
           </div>
         ) : null}
@@ -278,22 +278,22 @@ export default function ClassifiedsClientSections({
   const now = Date.now();
 
   const entityPluralLabel = getVehiclePluralLabel(forcedVehicleType);
-  const entitySingularLabel = forcedVehicleType === "motorcycle" ? "moto" : "veiculo";
+  const entitySingularLabel = forcedVehicleType === "motorcycle" ? "moto" : "veículo";
   const resolvedFeaturedTitle =
     featuredSectionTitle ?? (forcedVehicleType === "motorcycle" ? "Motos em destaque" : "Em destaque");
   const resolvedFeaturedSubtitle =
     featuredSectionSubtitle ??
     (forcedVehicleType === "motorcycle"
       ? "Motos destacadas aparecem em uma vitrine exclusiva."
-      : "Veiculos destacados aparecem nesta vitrine.");
+      : "Veículos destacados aparecem nesta vitrine.");
   const resolvedLatestTitle =
     latestSectionTitle ??
-    (forcedVehicleType === "motorcycle" ? "Ultimas motos" : "Ultimos veiculos");
+    (forcedVehicleType === "motorcycle" ? "Ultimas motos" : "Ultimos veículos");
   const resolvedLatestSubtitle =
     latestSectionSubtitle ??
     (forcedVehicleType === "motorcycle"
       ? "Lista das motos mais recentes aprovadas pela plataforma."
-      : "Lista dos veiculos mais recentes, incluindo carros e motos.");
+      : "Lista dos veículos mais recentes, incluindo carros e motos.");
 
   useEffect(() => {
     setVehicleTypeFilter(forcedVehicleType ?? "all");
@@ -400,7 +400,7 @@ export default function ClassifiedsClientSections({
       return false;
     }
     if (blackPlateFilter === "sim" && !listing.specifications?.blackPlate) return false;
-    if (blackPlateFilter === "nao" && listing.specifications?.blackPlate) return false;
+    if (blackPlateFilter === "não" && listing.specifications?.blackPlate) return false;
     return true;
   });
 
@@ -410,7 +410,7 @@ export default function ClassifiedsClientSections({
       : 12;
   const totalPages = Math.max(1, Math.ceil(filteredLatest.length / configuredPageSize));
   const safePage = Math.min(page, totalPages);
-  const paginatedLatest = filteredLatest.slice(
+  const páginatedLatest = filteredLatest.slice(
     (safePage - 1) * configuredPageSize,
     safePage * configuredPageSize
   );
@@ -418,7 +418,7 @@ export default function ClassifiedsClientSections({
   const pendingPageSize = 9;
   const pendingTotalPages = Math.max(1, Math.ceil(pending.length / pendingPageSize));
   const safePendingPage = Math.min(pendingPage, pendingTotalPages);
-  const paginatedPending = pending.slice(
+  const páginatedPending = pending.slice(
     (safePendingPage - 1) * pendingPageSize,
     safePendingPage * pendingPageSize
   );
@@ -437,13 +437,13 @@ export default function ClassifiedsClientSections({
             <div>
               <h2 className="text-xl font-bold text-slate-900">Pendentes (admin)</h2>
               <p className="mt-1 text-sm text-slate-600">
-                Cada anuncio pendente pode ser aprovado, rejeitado, editado ou excluido no proprio card.
+                Cada anúncio pendente pode ser aprovado, rejeitado, editado ou excluido no proprio card.
               </p>
             </div>
           </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {paginatedPending.map((listing) => (
+            {páginatedPending.map((listing) => (
               <ListingCard
                 key={listing.id}
                 listing={listing}
@@ -457,7 +457,7 @@ export default function ClassifiedsClientSections({
           {pending.length > 0 ? (
             <div className="mt-5 flex items-center justify-between gap-3 text-sm">
               <span className="text-slate-600">
-                Pagina {safePendingPage} de {pendingTotalPages} ({pending.length} cadastro(s))
+                Página {safePendingPage} de {pendingTotalPages} ({pending.length} cadastro(s))
               </span>
               <div className="flex gap-2">
                 <button
@@ -474,7 +474,7 @@ export default function ClassifiedsClientSections({
                   disabled={safePendingPage >= pendingTotalPages}
                   onClick={() => setPendingPage((current) => Math.min(pendingTotalPages, current + 1))}
                 >
-                  Proxima
+                  Próxima
                 </button>
               </div>
             </div>
@@ -509,7 +509,7 @@ export default function ClassifiedsClientSections({
                   setFeaturedCursor((current) => (current + 1) % featuredRotated.length)
                 }
                 className="h-9 w-9 rounded-md border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-100"
-                aria-label="Ver proximos destaques"
+                aria-label="Ver próximos destaques"
               >
                 {">"}
               </button>
@@ -625,18 +625,18 @@ export default function ClassifiedsClientSections({
           >
             <option value="all">Placa preta: todos</option>
             <option value="sim">Placa preta: sim</option>
-            <option value="nao">Placa preta: nao</option>
+            <option value="não">Placa preta: não</option>
           </select>
         </div>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {paginatedLatest.map((listing) => (
+          {páginatedLatest.map((listing) => (
             <ListingCard key={listing.id} listing={listing} showContact={Boolean(user)} />
           ))}
 
-          {paginatedLatest.length === 0 ? (
+          {páginatedLatest.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-600">
-              Nenhum {entitySingularLabel} disponivel no momento.
+              Nenhum {entitySingularLabel} disponível no momento.
             </div>
           ) : null}
         </div>
@@ -644,7 +644,7 @@ export default function ClassifiedsClientSections({
         {filteredLatest.length > 0 ? (
           <div className="mt-5 flex items-center justify-between gap-3 text-sm">
             <span className="text-slate-600">
-              Pagina {safePage} de {totalPages} ({filteredLatest.length} {entityPluralLabel})
+              Página {safePage} de {totalPages} ({filteredLatest.length} {entityPluralLabel})
             </span>
             <div className="flex gap-2">
               <button
@@ -661,7 +661,7 @@ export default function ClassifiedsClientSections({
                 disabled={safePage >= totalPages}
                 onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
               >
-                Proxima
+                Próxima
               </button>
             </div>
           </div>

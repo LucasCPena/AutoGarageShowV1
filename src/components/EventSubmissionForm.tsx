@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { ChangeEvent, FormEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -76,7 +76,7 @@ export default function EventSubmissionForm() {
 
   const infoMessage = useMemo(
     () =>
-      "Envie seu encontro com data unica ou selecione varias datas no calendario anual.",
+      "Envie seu encontro com data única ou selecione várias datas no calendário anual.",
     []
   );
 
@@ -161,26 +161,26 @@ export default function EventSubmissionForm() {
       }
 
       if (useAnnualCalendar && selectedDatesSorted.length === 0) {
-        throw new Error("Selecione pelo menos uma data no calendario anual.");
+        throw new Error("Selecione pelo menos uma data no calendário anual.");
       }
 
       if (!useAnnualCalendar && !startDate) {
-        throw new Error("Informe a data de inicio.");
+        throw new Error("Informe a data de início.");
       }
 
       const effectiveStartDate = useAnnualCalendar ? selectedDatesSorted[0] : startDate;
 
       if (!effectiveStartDate) {
-        throw new Error("Data de inicio invalida.");
+        throw new Error("Data de início inválida.");
       }
 
       const startAt = new Date(`${effectiveStartDate}T${startTime}`);
       if (Number.isNaN(startAt.getTime())) {
-        throw new Error("Data ou horario de inicio invalidos.");
+        throw new Error("Data ou horário de início inválidos.");
       }
 
       if (!endTime) {
-        throw new Error("Informe o horario de termino.");
+        throw new Error("Informe o horário de término.");
       }
 
       const endDate = effectiveStartDate;
@@ -188,10 +188,10 @@ export default function EventSubmissionForm() {
       if (endDate) {
         const end = new Date(`${endDate}T${endTime}`);
         if (Number.isNaN(end.getTime())) {
-          throw new Error("Data ou horario de termino invalidos.");
+          throw new Error("Data ou horário de término inválidos.");
         }
         if (end.getTime() < startAt.getTime()) {
-          throw new Error("A data de termino nao pode ser anterior ao inicio.");
+          throw new Error("A data de término não pode ser anterior ao início.");
         }
         endAt = end.toISOString();
       }
@@ -299,7 +299,7 @@ export default function EventSubmissionForm() {
   return (
     <form onSubmit={onSubmit} className="grid gap-6">
       {message ? (
-        <Notice title={message.type === "success" ? "Envio concluido" : "Erro"} variant={message.type === "success" ? "success" : "warning"}>
+        <Notice title={message.type === "success" ? "Envio concluído" : "Erro"} variant={message.type === "success" ? "success" : "warning"}>
           {message.text}
         </Notice>
       ) : (
@@ -310,7 +310,7 @@ export default function EventSubmissionForm() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Titulo do evento</span>
+          <span className="text-sm font-semibold text-slate-900">Título do evento</span>
           <input
             required
             name="title"
@@ -378,7 +378,7 @@ export default function EventSubmissionForm() {
             required
             name="location"
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
-            placeholder="Nome do local / endereco"
+            placeholder="Nome do local / endereço"
           />
         </label>
 
@@ -423,7 +423,7 @@ export default function EventSubmissionForm() {
         </label>
 
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Data de inicio</span>
+          <span className="text-sm font-semibold text-slate-900">Data de início</span>
           <input
             required={!useAnnualCalendar}
             name="startDate"
@@ -434,7 +434,7 @@ export default function EventSubmissionForm() {
         </label>
 
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Horario de inicio</span>
+          <span className="text-sm font-semibold text-slate-900">Horário de início</span>
           <input
             required
             name="startTime"
@@ -444,7 +444,7 @@ export default function EventSubmissionForm() {
         </label>
 
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Horario de termino</span>
+          <span className="text-sm font-semibold text-slate-900">Horário de término</span>
           <input
             required
             name="endTime"
@@ -475,12 +475,12 @@ export default function EventSubmissionForm() {
                   : "rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
               }
             >
-              Calendario anual
+              Calendário anual
             </button>
           </div>
           <p className="mt-2 text-xs text-slate-600">
             {useAnnualCalendar
-              ? "Selecione varias datas do ano no calendario abaixo sem precisar duplicar o evento."
+              ? "Selecione várias datas do ano no calendário abaixo sem precisar duplicar o evento."
               : "Use data unica para encontros que acontecem uma vez so."}
           </p>
         </div>
@@ -489,7 +489,7 @@ export default function EventSubmissionForm() {
           <div className="md:col-span-2 rounded-xl border border-slate-200 bg-white p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm font-semibold text-slate-900">
-                Calendario anual {calendarYear} - selecione as datas desejadas
+                Calendário anual {calendarYear} - selecione as datas desejadas
               </p>
               <div className="flex items-center gap-2">
                 <button
@@ -504,7 +504,7 @@ export default function EventSubmissionForm() {
                   onClick={() => setCalendarYear((current) => current + 1)}
                   className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                 >
-                  Proximo ano
+                  Próximo ano
                 </button>
                 <button
                   type="button"
@@ -670,7 +670,7 @@ export default function EventSubmissionForm() {
         </label>
 
         <label className="grid gap-1 md:col-span-2">
-          <span className="text-sm font-semibold text-slate-900">Descricao</span>
+          <span className="text-sm font-semibold text-slate-900">Descrição</span>
           <textarea
             required
             name="description"
@@ -689,13 +689,13 @@ export default function EventSubmissionForm() {
           ? "Enviando..."
           : user?.role === "admin"
             ? "Publicar (admin)"
-            : "Enviar para aprovacao"}
+            : "Enviar para aprovação"}
       </button>
 
       <div ref={feedbackRef}>
         {message ? (
           <Notice
-            title={message.type === "success" ? "Envio concluido" : "Erro"}
+            title={message.type === "success" ? "Envio concluído" : "Erro"}
             variant={message.type === "success" ? "success" : "warning"}
           >
             {message.text}

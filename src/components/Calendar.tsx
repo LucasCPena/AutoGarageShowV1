@@ -106,7 +106,7 @@ export default function Calendar({ events }: Props) {
 
   async function handleDeleteSelectedEvent() {
     if (!selectedEvent || !token) {
-      setActionError("Sessao expirada. Faca login novamente.");
+      setActionError("Sessão expirada. Faça login novamente.");
       return;
     }
     if (!confirm("Tem certeza que deseja excluir este evento?")) return;
@@ -123,7 +123,7 @@ export default function Calendar({ events }: Props) {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data?.error || "Nao foi possivel excluir o evento.");
+        throw new Error(data?.error || "Não foi possível excluir o evento.");
       }
 
       setSelectedEvent(null);
@@ -131,7 +131,7 @@ export default function Calendar({ events }: Props) {
       router.refresh();
     } catch (error) {
       setActionError(
-        error instanceof Error ? error.message : "Nao foi possivel excluir o evento."
+        error instanceof Error ? error.message : "Não foi possível excluir o evento."
       );
     } finally {
       setDeleting(false);
@@ -164,7 +164,7 @@ export default function Calendar({ events }: Props) {
             type="button"
             onClick={() => changeMonth(1)}
             className="h-8 w-8 rounded-md border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            aria-label="Proximo mes"
+            aria-label="Próximo mes"
           >
             ›
           </button>
@@ -268,7 +268,7 @@ export default function Calendar({ events }: Props) {
 
             <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
               <div>
-                Inicio: <strong>{formatDateTime(selectedEvent.startAt)}</strong>
+                Início: <strong>{formatDateTime(selectedEvent.startAt)}</strong>
               </div>
               {selectedEvent.endAt ? (
                 <div className="mt-1">

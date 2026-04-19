@@ -11,5 +11,5 @@ export function isSecurityConfigurationError(error: unknown) {
 }
 
 export function getPublicSecurityConfigurationMessage() {
-  return "A autenticacao do ambiente ainda nao esta configurada corretamente.";
+  return "A autenticação do ambiente ainda não está configurada corretamente.";
 }

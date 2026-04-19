@@ -32,7 +32,7 @@ export default function ListingSubmissionGate({
   if (isLoading) {
     return (
       <Notice title="Carregando" variant="info">
-        Verificando sessao do usuario.
+        Verificando sessão do usuário.
       </Notice>
     );
   }
@@ -42,7 +42,7 @@ export default function ListingSubmissionGate({
       <>
         <div className="grid gap-4">
           <Notice title="Acesso pelo QR Code" variant="info">
-            Este link libera somente o cadastro de carro no pre-lancamento. Faca seu cadastro ou entre para continuar.
+            Este link libera somente o cadastro de carro no pré-lançamento. Faça seu cadastro ou entre para continuar.
           </Notice>
 
           <div className="flex flex-wrap gap-3">
@@ -83,8 +83,8 @@ export default function ListingSubmissionGate({
     return (
       <>
         <div className="grid gap-4">
-      <Notice title="Login obrigatorio" variant="info">
-        Para anunciar um veiculo, faca login ou cadastre-se antes de preencher o formulario.
+      <Notice title="Login obrigatório" variant="info">
+        Para anunciar um veículo, faça login ou cadastre-se antes de preencher o formulário.
       </Notice>
 
           <div className="flex flex-wrap gap-3">
@@ -131,7 +131,7 @@ export default function ListingSubmissionGate({
     return (
       <div className="grid gap-4">
         <Notice title="Cadastro liberado" variant="info">
-          Seu acesso por QR Code esta limitado a esta area de cadastro de carro.
+          Seu acesso por QR Code está limitado a esta área de cadastro de carro.
         </Notice>
         <ListingSubmissionForm publicAccess={false} initialVehicleType={initialVehicleType} />
       </div>

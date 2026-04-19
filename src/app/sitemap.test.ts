@@ -20,7 +20,7 @@ describe("sitemap", () => {
     mocks.db.events.getAll.mockResolvedValue([]);
   });
 
-  it("inclui as novas rotas publicas do marketplace", async () => {
+  it("inclui as novas rotas públicas do marketplace", async () => {
     const entries = await sitemap();
     const urls = entries.map((entry) => entry.url);
 

@@ -368,7 +368,7 @@ export default function ListingSubmissionForm({
           : validateCNPJ(documentValue);
 
       if (!validDocument) {
-        setError(documentType === "cpf" ? "CPF invalido." : "CNPJ invalido.");
+        setError(documentType === "cpf" ? "CPF inválido." : "CNPJ inválido.");
         return;
       }
     }
@@ -439,7 +439,7 @@ export default function ListingSubmissionForm({
     }
 
     if (typeof yearManufacture !== "number" || typeof yearModel !== "number") {
-      setError("Informe anos de fabricacao e modelo.");
+      setError("Informe anos de fabricação e modelo.");
       setSubmitted(false);
       return;
     }
@@ -456,14 +456,14 @@ export default function ListingSubmissionForm({
       yearManufacture < settings.vehicleModelYearMin ||
       yearModel < settings.vehicleModelYearMin
     ) {
-      setError(`Ano minimo permitido: ${settings.vehicleModelYearMin}.`);
+      setError(`Ano mínimo permitido: ${settings.vehicleModelYearMin}.`);
       setSubmitted(false);
       return;
     }
 
     const mileageValue = parseFormattedInteger(mileage);
     if (!Number.isFinite(mileageValue) || mileageValue < 0) {
-      setError("Informe uma quilometragem valida.");
+      setError("Informe uma quilometragem válida.");
       setSubmitted(false);
       return;
     }
@@ -605,14 +605,14 @@ export default function ListingSubmissionForm({
       )}
 
       {error ? (
-        <Notice title="Validacao" variant="warning">
+        <Notice title="Validação" variant="warning">
           {error}
         </Notice>
       ) : null}
 
       {!isReady ? (
         <Notice title="Carregando" variant="info">
-          Lendo configuracoes salvas.
+          Lendo configurações salvas.
         </Notice>
       ) : null}
 
@@ -828,7 +828,7 @@ export default function ListingSubmissionForm({
         ) : null}
 
         <label className="grid gap-1">
-          <span className="text-sm font-semibold text-slate-900">Ano de fabricacao</span>
+          <span className="text-sm font-semibold text-slate-900">Ano de fabricação</span>
           <input
             required
             className="h-11 rounded-md border border-slate-300 px-3 text-sm"
@@ -985,7 +985,7 @@ export default function ListingSubmissionForm({
           <textarea
             required
             className="min-h-32 rounded-md border border-slate-300 px-3 py-2 text-sm"
-            placeholder="Descreva estado geral, historico e documentacao."
+            placeholder="Descreva estado geral, histórico e documentação."
             value={description}
             onChange={(event) => {
               setDescription(event.target.value);
@@ -1082,7 +1082,7 @@ export default function ListingSubmissionForm({
         className="inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
       >
         {submitting
-          ? "Publicando..."
+          ? "Públicando..."
           : user?.role === "admin"
             ? "Publicar classificado (admin)"
             : "Enviar classificado"}
@@ -1090,7 +1090,7 @@ export default function ListingSubmissionForm({
 
       <div ref={feedbackRef}>
         {successMessage ? (
-          <Notice title="Envio concluido" variant="success">
+          <Notice title="Envio concluído" variant="success">
             {user?.role === "admin"
               ? successMessage
               : `${successMessage} Aguarde a liberação para o anúncio entrar no ar.`}

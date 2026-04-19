@@ -72,8 +72,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!listing) {
     return {
-      title: "Anuncio",
-      description: "Anuncio nao encontrado."
+      title: "Anúncio",
+      description: "Anúncio não encontrado."
     };
   }
 
@@ -102,21 +102,21 @@ export default async function ListingDetailPage({ params }: Props) {
 
   const listingYear =
     safeListing.modelYear ?? safeListing.year ?? safeListing.manufactureYear;
-  const listingYearLabel = listingYear ? String(listingYear) : "Ano nao informado";
+  const listingYearLabel = listingYear ? String(listingYear) : "Ano não informado";
   const images = (safeListing.images?.length
     ? safeListing.images
     : ["/placeholders/car.svg"]
   ).map((image) => normalizeAssetReference(image) || "/placeholders/car.svg");
 
   const locationLabel = formatLocation(safeListing.city, safeListing.state);
-  const publishedAtLabel = formatDateTime(safeListing.createdAt) || "Data nao informada";
+  const publishedAtLabel = formatDateTime(safeListing.createdAt) || "Data não informada";
   const subtitleParts = [
     locationLabel,
     listingYearLabel,
     formatCurrencyBRL(safeListing.price)
   ].filter(Boolean);
   const sellerPageLabel =
-    safeListing.ownerProfile?.accountType === "agency" ? "agencia" : "anunciante";
+    safeListing.ownerProfile?.accountType === "agency" ? "agência" : "anunciante";
 
   let companyListingCount = 0;
   let moreFromSeller: Listing[] = [];
@@ -183,7 +183,7 @@ export default async function ListingDetailPage({ params }: Props) {
             <section className="rounded-2xl border border-slate-200 bg-white p-6">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900">Descricao</h2>
+                  <h2 className="text-lg font-semibold text-slate-900">Descrição</h2>
                   <p className="mt-3 text-sm leading-relaxed text-slate-700">
                     {safeListing.description}
                   </p>
@@ -196,10 +196,10 @@ export default async function ListingDetailPage({ params }: Props) {
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
                     <h2 className="text-lg font-semibold text-slate-900">
-                      Mais anuncios deste {sellerPageLabel}
+                      Mais anúncios deste {sellerPageLabel}
                     </h2>
                     <p className="mt-1 text-sm text-slate-600">
-                      Veja outros veiculos publicados por {safeListing.ownerProfile.displayName}.
+                      Veja outros veículos publicados por {safeListing.ownerProfile.displayName}.
                     </p>
                   </div>
 
@@ -207,7 +207,7 @@ export default async function ListingDetailPage({ params }: Props) {
                     href={`/empresas/${safeListing.ownerProfile.id}`}
                     className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                   >
-                    Ver pagina completa
+                    Ver página completa
                   </Link>
                 </div>
 
@@ -230,7 +230,7 @@ export default async function ListingDetailPage({ params }: Props) {
 
                       <div className="p-4">
                         <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                          {formatDateTime(sellerListing.createdAt) || "Data nao informada"}
+                          {formatDateTime(sellerListing.createdAt) || "Data não informada"}
                         </div>
                         <Link
                           href={`/veiculos/${sellerListing.slug}`}
@@ -273,7 +273,7 @@ export default async function ListingDetailPage({ params }: Props) {
                 <div>
                   <dt className="text-slate-500">Cidade / UF</dt>
                   <dd className="mt-1 font-semibold text-slate-900">
-                    {locationLabel || "Nao informado"}
+                    {locationLabel || "Não informado"}
                   </dd>
                 </div>
                 <div>
@@ -283,7 +283,7 @@ export default async function ListingDetailPage({ params }: Props) {
                 {safeListing.ownerProfile ? (
                   <div>
                     <dt className="text-slate-500">
-                      {safeListing.ownerProfile.accountType === "agency" ? "Agencia" : "Anunciante"}
+                      {safeListing.ownerProfile.accountType === "agency" ? "Agência" : "Anunciante"}
                     </dt>
                     <dd className="mt-1 font-semibold text-slate-900">
                       {safeListing.ownerProfile.displayName}
@@ -291,7 +291,7 @@ export default async function ListingDetailPage({ params }: Props) {
                   </div>
                 ) : null}
                 <div>
-                  <dt className="text-slate-500">Preco</dt>
+                  <dt className="text-slate-500">Preço</dt>
                   <dd className="mt-1 text-2xl font-bold text-slate-900">
                     {formatCurrencyBRL(safeListing.price)}
                   </dd>

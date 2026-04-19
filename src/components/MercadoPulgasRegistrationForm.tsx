@@ -32,7 +32,7 @@ export default function MercadoPulgasRegistrationForm() {
     setSuccess(null);
 
     if (!validateCNPJ(cnpj)) {
-      setError("Informe um CNPJ valido para o cadastro empresarial.");
+      setError("Informe um CNPJ válido para o cadastro empresarial.");
       return;
     }
 
@@ -54,7 +54,7 @@ export default function MercadoPulgasRegistrationForm() {
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "Nao foi possivel concluir o cadastro."
+          : "Não foi possível concluir o cadastro."
       );
     } finally {
       setSubmitting(false);
@@ -64,7 +64,7 @@ export default function MercadoPulgasRegistrationForm() {
   if (user) {
     return (
       <Notice title="Cadastro ja iniciado" variant="info">
-        Sua conta ja esta autenticada. Se precisar completar a operacao comercial, siga pelo painel do cliente.
+        Sua conta ja esta autenticada. Se precisar completar a operação comercial, siga pelo painel do cliente.
       </Notice>
     );
   }
@@ -72,11 +72,11 @@ export default function MercadoPulgasRegistrationForm() {
   return (
     <form onSubmit={onSubmit} className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-6">
       <Notice title="Cadastro empresarial" variant="info">
-        Esta area aceita empresas de pecas, ferramentas, materiais, funilaria e servicos relacionados. O documento permitido aqui e exclusivamente CNPJ.
+        Esta area aceita empresas de pecas, ferramentas, materiais, funilaria e serviços relacionados. O documento permitido aqui e exclusivamente CNPJ.
       </Notice>
 
       {error ? (
-        <Notice title="Validacao" variant="warning">
+        <Notice title="Validação" variant="warning">
           {error}
         </Notice>
       ) : null}
@@ -94,7 +94,7 @@ export default function MercadoPulgasRegistrationForm() {
           className="h-11 rounded-md border border-slate-300 px-3 text-sm"
           value={companyName}
           onChange={(event) => setCompanyName(event.target.value)}
-          placeholder="Nome fantasia ou razao social"
+          placeholder="Nome fantasia ou razão social"
         />
       </label>
 

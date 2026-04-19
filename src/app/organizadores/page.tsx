@@ -64,7 +64,7 @@ export default async function OrganizersPage() {
             ) : null}
             {loadError ? (
               <Notice title="Erro" variant="warning">
-                Nao foi possivel carregar os organizadores agora.
+                Não foi possível carregar os organizadores agora.
               </Notice>
             ) : null}
 

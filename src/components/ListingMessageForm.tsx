@@ -35,7 +35,7 @@ export default function ListingMessageForm({ listingId }: Props) {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data?.error || "Nao foi possivel enviar a mensagem.");
+        throw new Error(data?.error || "Não foi possível enviar a mensagem.");
       }
 
       setSubject("");

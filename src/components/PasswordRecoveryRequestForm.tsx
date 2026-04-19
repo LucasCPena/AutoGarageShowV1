@@ -30,7 +30,7 @@ export default function PasswordRecoveryRequestForm() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Nao foi possivel enviar a recuperacao.");
+        throw new Error(data.error || "Não foi possível enviar a recuperação.");
       }
 
       setMessage(data.message || "Confira seu e-mail para continuar.");
@@ -41,7 +41,7 @@ export default function PasswordRecoveryRequestForm() {
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "Nao foi possivel enviar a recuperacao."
+          : "Não foi possível enviar a recuperação."
       );
     } finally {
       setLoading(false);
@@ -51,12 +51,12 @@ export default function PasswordRecoveryRequestForm() {
   return (
     <form onSubmit={onSubmit} className="mx-auto grid max-w-xl gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <p className="text-sm leading-6 text-slate-600">
-        Informe o e-mail da sua conta. Se ele estiver cadastrado, enviaremos um link para voce
+        Informe o e-mail da sua conta. Se ele estiver cadastrado, enviaremos um link para você
         criar uma nova senha.
       </p>
 
       {message ? (
-        <Notice title="Solicitacao enviada" variant="success">
+        <Notice title="Solicitação enviada" variant="success">
           {message}
         </Notice>
       ) : null}
@@ -67,7 +67,7 @@ export default function PasswordRecoveryRequestForm() {
             href={previewResetUrl}
             className="font-semibold text-brand-700 hover:text-brand-800"
           >
-            Abrir link de recuperacao
+            Abrir link de recuperação
           </a>
         </Notice>
       ) : null}

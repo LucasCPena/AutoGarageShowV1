@@ -23,7 +23,7 @@ export default function AdminBannersPage() {
     return (
       <Container className="py-10">
         <Notice title="Acesso Restrito" variant="warning">
-          Voce precisa estar logado como administrador para acessar esta pagina.
+          Você precisa estar logado como administrador para acessar esta página.
         </Notice>
       </Container>
     );
@@ -43,7 +43,7 @@ export default function AdminBannersPage() {
     <>
       <PageIntro
         title="Banners"
-        subtitle="Cadastre banners e escolha a pagina onde deseja exibir cada um."
+        subtitle="Cadastre banners e escolha a página onde deseja exibir cada um."
       >
         <Link
           href="/admin"
@@ -57,7 +57,7 @@ export default function AdminBannersPage() {
         <AdminBannersPanel
           token={token}
           title="Cadastro de banners"
-          description="Defina titulo, imagem, link e a pagina de destino."
+          description="Defina titulo, imagem, link e a página de destino."
         />
       </Container>
     </>

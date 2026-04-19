@@ -100,7 +100,7 @@ export default function SidebarBannerStack({
   return (
     <aside
       data-sidebar-banners={hasBanners ? "true" : "false"}
-      className={hasBanners ? "grid gap-3 xl:self-start xl:sticky xl:top-24" : "hidden"}
+      className={hasBanners ? "grid gap-3 xl:self-start" : "hidden"}
       aria-hidden={!hasBanners}
     >
       <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
@@ -110,21 +110,16 @@ export default function SidebarBannerStack({
       {visibleBanners.map((banner) => {
         const image = normalizeAssetReference(banner.image);
         if (!image) return null;
-        const hasTitle = Boolean(banner.title?.trim());
-
         const content = (
-          <>
-            <div className="bg-slate-50 p-2">
+          <div className="aspect-video w-full bg-slate-50 p-2">
+            <div className="h-full w-full overflow-hidden rounded-xl bg-white">
               <img
                 src={image}
                 alt={banner.title?.trim() || "Banner publicitário"}
-                className="h-auto max-h-[32rem] w-full object-contain"
+                className="h-full w-full object-cover"
               />
             </div>
-            {hasTitle ? (
-              <div className="p-3 text-sm font-semibold text-slate-900">{banner.title}</div>
-            ) : null}
-          </>
+          </div>
         );
 
         if (!banner.link) {

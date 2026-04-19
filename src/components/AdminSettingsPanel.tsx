@@ -112,7 +112,7 @@ export default function AdminSettingsPanel() {
           throw new Error(
             typeof data?.error === "string" && data.error
               ? data.error
-              : "Nao foi possivel carregar configuracoes do admin."
+              : "Não foi possível carregar configurações do admin."
           );
         }
 
@@ -126,7 +126,7 @@ export default function AdminSettingsPanel() {
         const message =
           loadError instanceof Error
             ? loadError.message
-            : "Nao foi possivel carregar configuracoes do admin.";
+            : "Não foi possível carregar configurações do admin.";
         setBrandingError(message);
         setAboutError(message);
       } finally {
@@ -184,7 +184,7 @@ export default function AdminSettingsPanel() {
       }
 
       if (typeof data?.url !== "string" || !data.url.trim()) {
-        throw new Error("Upload concluido sem URL valida.");
+        throw new Error("Upload concluído sem URL válida.");
       }
 
       setBrandingDraft((current) => ({
@@ -212,7 +212,7 @@ export default function AdminSettingsPanel() {
 
   async function saveBranding() {
     if (!token) {
-      setBrandingError("Sessao expirada. Faca login novamente como admin.");
+      setBrandingError("Sessão expirada. Faça login novamente como admin.");
       return;
     }
 
@@ -240,7 +240,7 @@ export default function AdminSettingsPanel() {
         throw new Error(
           typeof data?.error === "string" && data.error
             ? data.error
-            : "Nao foi possivel salvar identidade visual."
+            : "Não foi possível salvar identidade visual."
         );
       }
 
@@ -255,7 +255,7 @@ export default function AdminSettingsPanel() {
       setBrandingError(
         brandingSaveError instanceof Error
           ? brandingSaveError.message
-          : "Nao foi possivel salvar identidade visual."
+          : "Não foi possível salvar identidade visual."
       );
     } finally {
       setBrandingSaving(false);
@@ -264,7 +264,7 @@ export default function AdminSettingsPanel() {
 
   async function saveAboutPage() {
     if (!token) {
-      setAboutError("Sessao expirada. Faca login novamente como admin.");
+      setAboutError("Sessão expirada. Faça login novamente como admin.");
       return;
     }
 
@@ -297,7 +297,7 @@ export default function AdminSettingsPanel() {
         throw new Error(
           typeof data?.error === "string" && data.error
             ? data.error
-            : "Nao foi possivel salvar a pagina Auto Garage Show."
+            : "Não foi possível salvar a página Auto Garage Show."
         );
       }
 
@@ -311,7 +311,7 @@ export default function AdminSettingsPanel() {
       setAboutError(
         aboutSaveError instanceof Error
           ? aboutSaveError.message
-          : "Nao foi possivel salvar a pagina Auto Garage Show."
+          : "Não foi possível salvar a página Auto Garage Show."
       );
     } finally {
       setAboutSaving(false);
@@ -339,7 +339,7 @@ export default function AdminSettingsPanel() {
       setSaveError(
         settingsError instanceof Error
           ? settingsError.message
-          : "Nao foi possivel salvar configuracoes."
+          : "Não foi possível salvar configurações."
       );
     } finally {
       setSavingSettings(false);
@@ -360,7 +360,7 @@ export default function AdminSettingsPanel() {
       setSaveError(
         resetError instanceof Error
           ? resetError.message
-          : "Nao foi possivel restaurar configuracoes."
+          : "Não foi possível restaurar configurações."
       );
     } finally {
       setSavingSettings(false);
@@ -373,7 +373,7 @@ export default function AdminSettingsPanel() {
         <div>
           <div className="text-sm font-semibold text-slate-900">Configuracao do sistema</div>
           <div className="mt-1 text-sm text-slate-600">
-            As regras abaixo agora sao salvas no backend e lidas pelo site publico.
+            As regras abaixo agora são salvas no backend e lidas pelo site público.
           </div>
         </div>
         <button
@@ -389,7 +389,7 @@ export default function AdminSettingsPanel() {
       <form onSubmit={onSubmit} className="mt-6 grid gap-5">
         {saved ? (
           <Notice title="Salvo" variant="success">
-            As configuracoes de veiculos e operacao foram atualizadas no backend.
+            As configurações de veículos e operação foram atualizadas no backend.
           </Notice>
         ) : null}
 
@@ -407,14 +407,14 @@ export default function AdminSettingsPanel() {
 
         {!isReady ? (
           <Notice title="Carregando" variant="info">
-            Lendo configuracoes salvas.
+            Lendo configurações salvas.
           </Notice>
         ) : null}
 
         <div className="grid gap-4 md:grid-cols-2">
           <label className="grid gap-1">
             <span className="text-sm font-semibold text-slate-900">
-              Idade minima do veiculo (anos)
+              Idade minima do veículo (anos)
             </span>
             <input
               className="h-11 rounded-md border border-slate-300 px-3 text-sm"
@@ -432,13 +432,13 @@ export default function AdminSettingsPanel() {
               }}
             />
             <span className="text-xs text-slate-500">
-              Ano maximo permitido hoje: {maxAllowedYear}
+              Ano máximo permitido hoje: {maxAllowedYear}
             </span>
           </label>
 
           <label className="grid gap-1">
             <span className="text-sm font-semibold text-slate-900">
-              Ano minimo (ano-modelo)
+              Ano mínimo (ano-modelo)
             </span>
             <input
               className="h-11 rounded-md border border-slate-300 px-3 text-sm"
@@ -521,7 +521,7 @@ export default function AdminSettingsPanel() {
 
           <label className="grid gap-1">
             <span className="text-sm font-semibold text-slate-900">
-              Inativar anuncio apos (dias)
+              Inativar anúncio após (dias)
             </span>
             <input
               className="h-11 rounded-md border border-slate-300 px-3 text-sm"
@@ -567,7 +567,7 @@ export default function AdminSettingsPanel() {
 
           <label className="grid gap-1">
             <span className="text-sm font-semibold text-slate-900">
-              Itens por pagina publica
+              Itens por página pública
             </span>
             <input
               className="h-11 rounded-md border border-slate-300 px-3 text-sm"
@@ -633,7 +633,7 @@ export default function AdminSettingsPanel() {
               placeholder="G-XXXXXXXXXX"
             />
             <span className="text-xs text-slate-500">
-              Deixe em branco para nao carregar o script do Google Analytics.
+              Deixe em branco para não carregar o script do Google Analytics.
             </span>
           </label>
 
@@ -662,21 +662,21 @@ export default function AdminSettingsPanel() {
             disabled={savingSettings}
             className="inline-flex h-11 items-center justify-center rounded-md bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
           >
-            {savingSettings ? "Salvando..." : "Salvar configuracoes"}
+            {savingSettings ? "Salvando..." : "Salvar configurações"}
           </button>
         </div>
       </form>
 
       <div className="mt-8 border-t border-slate-200 pt-6">
-        <div className="text-sm font-semibold text-slate-900">Pagina Auto Garage Show</div>
+        <div className="text-sm font-semibold text-slate-900">Página Auto Garage Show</div>
         <div className="mt-1 text-sm text-slate-600">
-          Conteudo usado no link do rodape para apresentar o canal e o projeto.
+          Conteúdo usado no link do rodapé para apresentar o canal e o projeto.
         </div>
 
         {aboutSaved ? (
           <div className="mt-4">
             <Notice title="Salvo" variant="success">
-              A pagina Auto Garage Show foi atualizada com sucesso.
+              A página Auto Garage Show foi atualizada com sucesso.
             </Notice>
           </div>
         ) : null}
@@ -692,14 +692,14 @@ export default function AdminSettingsPanel() {
         {aboutLoading ? (
           <div className="mt-4">
             <Notice title="Carregando" variant="info">
-              Lendo conteudo atual da pagina Auto Garage Show.
+              Lendo conteúdo atual da página Auto Garage Show.
             </Notice>
           </div>
         ) : null}
 
         <div className="mt-4 grid gap-4">
           <label className="grid gap-1">
-            <span className="text-sm font-semibold text-slate-900">Titulo</span>
+            <span className="text-sm font-semibold text-slate-900">Título</span>
             <input
               className="h-11 rounded-md border border-slate-300 px-3 text-sm"
               value={aboutDraft.title}
@@ -711,7 +711,7 @@ export default function AdminSettingsPanel() {
           </label>
 
           <label className="grid gap-1">
-            <span className="text-sm font-semibold text-slate-900">Subtitulo</span>
+            <span className="text-sm font-semibold text-slate-900">Subtítulo</span>
             <input
               className="h-11 rounded-md border border-slate-300 px-3 text-sm"
               value={aboutDraft.subtitle}
@@ -723,7 +723,7 @@ export default function AdminSettingsPanel() {
           </label>
 
           <label className="grid gap-1">
-            <span className="text-sm font-semibold text-slate-900">Resumo curto do rodape</span>
+            <span className="text-sm font-semibold text-slate-900">Resumo curto do rodapé</span>
             <input
               className="h-11 rounded-md border border-slate-300 px-3 text-sm"
               value={aboutDraft.footerSummary}
@@ -738,7 +738,7 @@ export default function AdminSettingsPanel() {
           </label>
 
           <label className="grid gap-1">
-            <span className="text-sm font-semibold text-slate-900">Conteudo da pagina</span>
+            <span className="text-sm font-semibold text-slate-900">Conteúdo da página</span>
             <textarea
               className="min-h-40 rounded-md border border-slate-300 px-3 py-2 text-sm"
               value={aboutDraft.body}
@@ -760,7 +760,7 @@ export default function AdminSettingsPanel() {
             disabled={aboutLoading || aboutSaving}
             className="inline-flex h-11 items-center justify-center rounded-md bg-slate-900 px-5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
           >
-            {aboutSaving ? "Salvando..." : "Salvar pagina Auto Garage Show"}
+            {aboutSaving ? "Salvando..." : "Salvar página Auto Garage Show"}
           </button>
         </div>
       </div>
@@ -884,7 +884,7 @@ export default function AdminSettingsPanel() {
               }}
             />
             <span className="text-xs text-slate-500">
-              Opcional: se preenchido, o video sera exibido na home quando nao houver evento ao vivo.
+              Opcional: se preenchido, o video sera exibido na home quando não houver evento ao vivo.
             </span>
           </label>
 

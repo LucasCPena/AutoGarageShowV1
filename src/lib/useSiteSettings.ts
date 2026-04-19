@@ -21,7 +21,7 @@ async function fetchSettingsFromApi() {
     throw new Error(
       typeof data?.error === "string" && data.error
         ? data.error
-        : "Nao foi possivel carregar configuracoes."
+        : "Não foi possível carregar configurações."
     );
   }
 
@@ -45,7 +45,7 @@ export function useSiteSettings() {
       setError(
         loadError instanceof Error
           ? loadError.message
-          : "Nao foi possivel carregar configuracoes."
+          : "Não foi possível carregar configurações."
       );
     } finally {
       setIsReady(true);
@@ -66,7 +66,7 @@ export function useSiteSettings() {
   const saveSettings = useCallback(
     async (next: SiteSettings, token?: string | null) => {
       if (!token) {
-        throw new Error("Sessao expirada. Faca login novamente como admin.");
+        throw new Error("Sessão expirada. Faça login novamente como admin.");
       }
 
       const normalized = normalizeSiteSettings(next);
@@ -84,7 +84,7 @@ export function useSiteSettings() {
         throw new Error(
           typeof data?.error === "string" && data.error
             ? data.error
-            : "Nao foi possivel salvar configuracoes."
+            : "Não foi possível salvar configurações."
         );
       }
 

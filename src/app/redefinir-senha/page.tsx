@@ -23,7 +23,7 @@ export default function ResetPasswordPage({ searchParams }: Props) {
     <>
       <PageIntro
         title="Redefinir senha"
-        subtitle="Use o link de recuperacao para cadastrar uma nova senha com seguranca."
+        subtitle="Use o link de recuperação para cadastrar uma nova senha com segurança."
       />
 
       <Container className="py-10">
@@ -32,7 +32,7 @@ export default function ResetPasswordPage({ searchParams }: Props) {
         ) : (
           <div className="mx-auto max-w-xl">
             <Notice title="Token ausente" variant="warning">
-              O link de recuperacao esta incompleto. Solicite uma nova recuperacao de senha.
+              O link de recuperação está incompleto. Solicite uma nova recuperação de senha.
             </Notice>
           </div>
         )}

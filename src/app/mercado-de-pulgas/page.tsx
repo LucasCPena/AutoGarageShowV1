@@ -15,12 +15,15 @@ export default function MercadoPulgasPage() {
       />
 
       <Container className="py-10">
-        <div className="page-with-sidebar">
-          <div className="grid gap-8">
-            <MercadoPulgasRegistrationForm />
-            <MarketplaceImportantNotice />
+        <div className="grid gap-10">
+          <div className="page-with-sidebar">
+            <div className="grid gap-8">
+              <MercadoPulgasRegistrationForm />
+            </div>
+            <SidebarBannerStack section="mercado-de-pulgas" title="Destaques do Mercado" />
           </div>
-          <SidebarBannerStack section="mercado-de-pulgas" title="Destaques do Mercado" />
+
+          <MarketplaceImportantNotice className="mb-0 max-w-none" />
         </div>
       </Container>
     </>
