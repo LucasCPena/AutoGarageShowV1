@@ -176,8 +176,8 @@ export default async function ListingDetailPage({ params }: Props) {
           label={safeListing.title}
         />
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-3">
-          <div className="grid gap-6 lg:col-span-2">
+        <div className="mt-8 grid items-start gap-8 lg:grid-cols-3">
+          <div className="grid content-start gap-6 lg:col-span-2">
             <ListingGallery images={images} title={safeListing.title} />
 
             <section className="rounded-2xl border border-slate-200 bg-white p-6">
