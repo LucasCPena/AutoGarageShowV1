@@ -76,6 +76,14 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
                     Localização: {[normalized.city, normalized.state].filter(Boolean).join(" / ") || "Não informada"}
                   </div>
                   {normalized.phone ? <div>Telefone: {normalized.phone}</div> : null}
+                  {normalized.email ? (
+                    <a
+                      href={`mailto:${normalized.email}`}
+                      className="break-all font-semibold text-brand-700 hover:text-brand-800"
+                    >
+                      E-mail: {normalized.email}
+                    </a>
+                  ) : null}
                   {normalized.websiteUrl ? (
                     <a
                       href={normalized.websiteUrl}

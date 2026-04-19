@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import Image from "next/image";
-
 import { listingImageAlt } from "@/lib/image-alt";
 
 type Props = {
@@ -53,16 +51,13 @@ export default function ListingGallery({ images, title }: Props) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="block w-full"
+          className="flex w-full items-center justify-center p-4 sm:p-6"
           aria-label="Ampliar galeria do veículo"
         >
-          <Image
+          <img
             src={activeImage}
             alt={listingImageAlt(title, index + 1)}
-            width={1400}
-            height={980}
-            className="h-[340px] w-full object-contain p-4 sm:h-[400px] sm:p-6 md:h-[480px]"
-            priority={index === 0}
+            className="block max-h-[68vh] w-auto max-w-full rounded-2xl object-contain"
           />
         </button>
 
@@ -97,7 +92,7 @@ export default function ListingGallery({ images, title }: Props) {
       </div>
 
       {imgList.length > 1 ? (
-        <div className="flex gap-3 overflow-x-auto pb-1">
+        <div className="flex items-start gap-3 overflow-x-auto pb-1">
           {imgList.map((src, imageIndex) => {
             const isActive = imageIndex === index;
             return (
@@ -105,16 +100,14 @@ export default function ListingGallery({ images, title }: Props) {
                 key={`${src}-${imageIndex}`}
                 type="button"
                 onClick={() => setIndex(imageIndex)}
-                className={`min-w-[104px] overflow-hidden rounded-2xl border bg-white ${
+                className={`shrink-0 overflow-hidden rounded-2xl border bg-white ${
                   isActive ? "border-brand-500 ring-2 ring-brand-200" : "border-slate-200"
                 }`}
               >
-                <Image
+                <img
                   src={src}
                   alt={listingImageAlt(title, imageIndex + 1)}
-                  width={240}
-                  height={160}
-                  className="h-20 w-[104px] object-cover"
+                  className="block h-20 w-[104px] object-cover sm:h-24 sm:w-[120px]"
                 />
               </button>
             );
@@ -150,11 +143,13 @@ export default function ListingGallery({ images, title }: Props) {
                 {"<"}
               </button>
 
-              <img
-                src={activeImage}
-                alt={listingImageAlt(title, index + 1)}
-                className="max-h-[78vh] w-full rounded-2xl object-contain"
-              />
+              <div className="flex justify-center">
+                <img
+                  src={activeImage}
+                  alt={listingImageAlt(title, index + 1)}
+                  className="block max-h-[78vh] w-auto max-w-full rounded-2xl object-contain"
+                />
+              </div>
 
               <button
                 type="button"
@@ -167,13 +162,13 @@ export default function ListingGallery({ images, title }: Props) {
             </div>
 
             {imgList.length > 1 ? (
-              <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+              <div className="mt-4 flex items-start gap-2 overflow-x-auto pb-1">
                 {imgList.map((src, imageIndex) => (
                   <button
                     key={`${src}-${imageIndex}-modal`}
                     type="button"
                     onClick={() => setIndex(imageIndex)}
-                    className={`overflow-hidden rounded-xl border ${
+                    className={`shrink-0 overflow-hidden rounded-xl border ${
                       imageIndex === index
                         ? "border-brand-500 ring-2 ring-brand-200"
                         : "border-slate-200"
@@ -182,7 +177,7 @@ export default function ListingGallery({ images, title }: Props) {
                     <img
                       src={src}
                       alt={listingImageAlt(title, imageIndex + 1)}
-                      className="h-16 w-24 object-cover"
+                      className="block h-16 w-24 object-cover"
                     />
                   </button>
                 ))}

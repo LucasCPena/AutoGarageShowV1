@@ -60,11 +60,31 @@ describe("api/services route", () => {
 
   it("lista apenas servicos empresariais aprovados e ordena pelos mais recentes", async () => {
     mocks.db.users.getAll.mockResolvedValue([
-      createUser({ id: "service-old", companyName: "Oficina Antiga", createdAt: "2026-03-01T10:00:00.000Z" }),
-      createUser({ id: "service-new", companyName: "Oficina Nova", createdAt: "2026-04-11T10:00:00.000Z" }),
-      createUser({ id: "pending-service", approvalStatus: "pending", companyName: "Pendente" }),
-      createUser({ id: "not-service", marketplaceProfile: "mercado-de-pulgas", companyName: "Mercado" }),
-      createUser({ id: "individual", accountType: "individual", companyName: undefined })
+      createUser({
+        id: "service-old",
+        companyName: "Oficina Antiga",
+        createdAt: "2026-03-01T10:00:00.000Z"
+      }),
+      createUser({
+        id: "service-new",
+        companyName: "Oficina Nova",
+        createdAt: "2026-04-11T10:00:00.000Z"
+      }),
+      createUser({
+        id: "pending-service",
+        approvalStatus: "pending",
+        companyName: "Pendente"
+      }),
+      createUser({
+        id: "not-service",
+        marketplaceProfile: "mercado-de-pulgas",
+        companyName: "Mercado"
+      }),
+      createUser({
+        id: "individual",
+        accountType: "individual",
+        companyName: undefined
+      })
     ]);
 
     const response = await GET();
@@ -79,6 +99,7 @@ describe("api/services route", () => {
     expect(data.services[0]).toEqual(
       expect.objectContaining({
         displayName: "Oficina Nova",
+        email: "lucas@teste.com",
         activityType: "Funilaria",
         city: "Sao Paulo",
         state: "SP"

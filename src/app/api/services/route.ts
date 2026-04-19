@@ -21,6 +21,7 @@ export async function GET() {
       .map((user) => ({
         id: user.id,
         displayName: getUserDisplayName(user),
+        email: user.email,
         companyName: user.companyName,
         activityType: user.activityType,
         shortDescription: user.shortDescription,

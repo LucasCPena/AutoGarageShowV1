@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/useAuth";
 export type ServiceDirectoryEntry = {
   id: string;
   displayName: string;
+  email?: string;
   activityType?: string;
   shortDescription?: string;
   websiteUrl?: string;
@@ -163,6 +164,7 @@ export default function ServicesDirectoryClient({ services }: Props) {
               <div className="mt-4 grid gap-2 text-sm text-slate-600">
                 {service.address ? <div>Endereço: {service.address}</div> : null}
                 {service.phone ? <div>Telefone: {service.phone}</div> : null}
+                {service.email ? <div className="break-all">E-mail: {service.email}</div> : null}
                 {service.websiteUrl ? <div className="break-all">Site: {service.websiteUrl}</div> : null}
               </div>
 
@@ -189,6 +191,15 @@ export default function ServicesDirectoryClient({ services }: Props) {
                     className="inline-flex h-10 items-center justify-center rounded-md bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-800"
                   >
                     Ligar
+                  </a>
+                ) : null}
+
+                {service.email ? (
+                  <a
+                    href={`mailto:${service.email}`}
+                    className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    Enviar e-mail
                   </a>
                 ) : null}
 

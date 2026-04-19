@@ -36,6 +36,7 @@ export default async function ServicesPage() {
       .map((user) => ({
         id: user.id,
         displayName: getUserDisplayName(user),
+        email: user.email,
         activityType: user.activityType,
         shortDescription: user.shortDescription,
         websiteUrl: user.websiteUrl,

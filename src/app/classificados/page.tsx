@@ -88,12 +88,6 @@ export default function ClassifiedsPage() {
 
             <section className="mb-6 flex flex-wrap gap-3 rounded-2xl border border-slate-200 bg-white p-3">
               <a
-                href="#classificados-banner"
-                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-800"
-              >
-                Banner principal
-              </a>
-              <a
                 href="#classificados-destaques"
                 className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-800"
               >
