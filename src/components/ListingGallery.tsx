@@ -46,18 +46,18 @@ export default function ListingGallery({ images, title }: Props) {
   const activeImage = imgList[index] || "/placeholders/car.svg";
 
   return (
-    <div className="grid justify-items-center gap-4">
-      <div className="relative w-fit max-w-full overflow-hidden rounded-[28px] border border-slate-200 bg-gradient-to-br from-slate-100 via-white to-slate-50 p-3 shadow-sm sm:p-4">
+    <div className="grid justify-items-center gap-3">
+      <div className="relative inline-flex max-w-full overflow-hidden rounded-[28px] border border-slate-200 bg-gradient-to-br from-slate-100 via-white to-slate-50 p-2 shadow-sm sm:p-3">
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="block max-w-full"
+          className="inline-flex max-w-full items-center justify-center"
           aria-label="Ampliar galeria do veículo"
         >
           <img
             src={activeImage}
             alt={listingImageAlt(title, index + 1)}
-            className="block h-auto w-auto max-w-full rounded-2xl object-contain max-h-[38vh] sm:max-h-[44vh] lg:max-h-[50vh]"
+            className="block h-auto w-auto max-w-[min(100%,760px)] rounded-2xl object-contain max-h-[30vh] sm:max-h-[36vh] lg:max-h-[40vh]"
           />
         </button>
 
@@ -67,7 +67,7 @@ export default function ListingGallery({ images, title }: Props) {
               <button
                 type="button"
                 onClick={() => move(-1)}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-base font-bold text-slate-700 shadow-sm hover:bg-white"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-base font-bold text-slate-700 shadow-sm hover:bg-white"
                 aria-label="Imagem anterior"
               >
                 {"<"}
@@ -77,7 +77,7 @@ export default function ListingGallery({ images, title }: Props) {
               <button
                 type="button"
                 onClick={() => move(1)}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-base font-bold text-slate-700 shadow-sm hover:bg-white"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-base font-bold text-slate-700 shadow-sm hover:bg-white"
                 aria-label="Próxima imagem"
               >
                 {">"}
@@ -100,14 +100,14 @@ export default function ListingGallery({ images, title }: Props) {
                 key={`${src}-${imageIndex}`}
                 type="button"
                 onClick={() => setIndex(imageIndex)}
-                className={`shrink-0 overflow-hidden rounded-2xl border bg-white ${
+                className={`shrink-0 overflow-hidden rounded-xl border bg-white ${
                   isActive ? "border-brand-500 ring-2 ring-brand-200" : "border-slate-200"
                 }`}
               >
                 <img
                   src={src}
                   alt={listingImageAlt(title, imageIndex + 1)}
-                  className="block h-16 w-[96px] object-cover sm:h-20 sm:w-[104px]"
+                  className="block h-14 w-[82px] object-cover sm:h-16 sm:w-[92px]"
                 />
               </button>
             );
