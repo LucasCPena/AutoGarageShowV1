@@ -46,18 +46,18 @@ export default function ListingGallery({ images, title }: Props) {
   const activeImage = imgList[index] || "/placeholders/car.svg";
 
   return (
-    <div className="grid justify-items-center gap-3">
-      <div className="relative inline-flex max-w-full overflow-hidden rounded-[28px] border border-slate-200 bg-gradient-to-br from-slate-100 via-white to-slate-50 p-2 shadow-sm sm:p-3">
+    <div className="grid gap-2">
+      <div className="relative mx-auto w-full max-w-[680px] overflow-hidden rounded-[28px] border border-slate-200 bg-gradient-to-br from-slate-100 via-white to-slate-50 p-2 shadow-sm sm:p-3">
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="inline-flex max-w-full items-center justify-center"
+          className="block w-full"
           aria-label="Ampliar galeria do veículo"
         >
           <img
             src={activeImage}
             alt={listingImageAlt(title, index + 1)}
-            className="block h-auto w-auto max-w-[min(100%,760px)] rounded-2xl object-contain max-h-[30vh] sm:max-h-[36vh] lg:max-h-[40vh]"
+            className="mx-auto block h-auto w-auto max-w-full rounded-2xl object-contain max-h-[26vh] sm:max-h-[30vh] lg:max-h-[34vh]"
           />
         </button>
 
@@ -92,7 +92,7 @@ export default function ListingGallery({ images, title }: Props) {
       </div>
 
       {imgList.length > 1 ? (
-        <div className="flex w-fit max-w-full items-start gap-2 overflow-x-auto pb-1">
+        <div className="flex w-fit max-w-full items-start gap-1.5 overflow-x-auto pb-1">
           {imgList.map((src, imageIndex) => {
             const isActive = imageIndex === index;
             return (
@@ -107,7 +107,7 @@ export default function ListingGallery({ images, title }: Props) {
                 <img
                   src={src}
                   alt={listingImageAlt(title, imageIndex + 1)}
-                  className="block h-14 w-[82px] object-cover sm:h-16 sm:w-[92px]"
+                  className="block h-12 w-[72px] object-cover sm:h-14 sm:w-[82px]"
                 />
               </button>
             );
