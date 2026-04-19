@@ -107,7 +107,7 @@ export default function ListingGallery({ images, title }: Props) {
                 <img
                   src={src}
                   alt={listingImageAlt(title, imageIndex + 1)}
-                  className="block h-12 w-[72px] object-cover sm:h-14 sm:w-[82px]"
+                  className="block h-10 w-[60px] object-cover sm:h-12 sm:w-[72px]"
                 />
               </button>
             );
@@ -177,7 +177,7 @@ export default function ListingGallery({ images, title }: Props) {
                     <img
                       src={src}
                       alt={listingImageAlt(title, imageIndex + 1)}
-                      className="block h-16 w-24 object-cover"
+                      className="block h-12 w-[78px] object-cover"
                     />
                   </button>
                 ))}
