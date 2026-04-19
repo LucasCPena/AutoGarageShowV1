@@ -47,7 +47,7 @@ export default function ListingGallery({ images, title }: Props) {
 
   return (
     <div className="grid gap-2">
-      <div className="relative mx-auto w-full max-w-[680px] overflow-hidden rounded-[28px] border border-slate-200 bg-gradient-to-br from-slate-100 via-white to-slate-50 p-2 shadow-sm sm:p-3">
+      <div className="relative mx-auto w-full max-w-[640px] overflow-hidden rounded-[28px] border border-slate-200 bg-gradient-to-br from-slate-100 via-white to-slate-50 p-2 shadow-sm sm:p-3">
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -57,7 +57,7 @@ export default function ListingGallery({ images, title }: Props) {
           <img
             src={activeImage}
             alt={listingImageAlt(title, index + 1)}
-            className="mx-auto block h-auto w-auto max-w-full rounded-2xl object-contain max-h-[26vh] sm:max-h-[30vh] lg:max-h-[34vh]"
+            className="mx-auto block h-auto w-auto max-w-full rounded-2xl object-contain max-h-[22vh] sm:max-h-[26vh] lg:max-h-[30vh]"
           />
         </button>
 
@@ -92,7 +92,7 @@ export default function ListingGallery({ images, title }: Props) {
       </div>
 
       {imgList.length > 1 ? (
-        <div className="flex w-fit max-w-full items-start gap-1.5 overflow-x-auto pb-1">
+        <div className="flex h-14 w-fit max-w-full items-start gap-1.5 overflow-x-auto pb-1 sm:h-16">
           {imgList.map((src, imageIndex) => {
             const isActive = imageIndex === index;
             return (
@@ -100,14 +100,14 @@ export default function ListingGallery({ images, title }: Props) {
                 key={`${src}-${imageIndex}`}
                 type="button"
                 onClick={() => setIndex(imageIndex)}
-                className={`shrink-0 overflow-hidden rounded-xl border bg-white ${
+                className={`h-full shrink-0 overflow-hidden rounded-xl border bg-white ${
                   isActive ? "border-brand-500 ring-2 ring-brand-200" : "border-slate-200"
                 }`}
               >
                 <img
                   src={src}
                   alt={listingImageAlt(title, imageIndex + 1)}
-                  className="block h-10 w-[60px] object-cover sm:h-12 sm:w-[72px]"
+                  className="block h-full w-[92px] object-cover sm:w-[108px]"
                 />
               </button>
             );
