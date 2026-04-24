@@ -96,6 +96,7 @@ async function queryOne<T = Row>(sql: string, params: any[] = []): Promise<T | n
 
 const tableColumnsCache = new Map<string, Set<string> | null>();
 let usersTableEnsured = false;
+let eventsTableEnsured = false;
 let organizersTableEnsured = false;
 let listingsTableEnsured = false;
 let messagesTableEnsured = false;
@@ -132,6 +133,32 @@ async function getTableColumnsSafe(table: string): Promise<Set<string> | null> {
 
 function clearTableColumnsCache(table: string) {
   tableColumnsCache.delete(table);
+}
+
+type TableColumnDetails = {
+  type: string;
+  nullable: boolean;
+};
+
+async function getTableColumnDetailsSafe(table: string): Promise<Map<string, TableColumnDetails> | null> {
+  try {
+    const rows = await query<Row>(`SHOW COLUMNS FROM \`${table}\``);
+    return new Map(
+      rows
+        .map((row) => [
+          String(row.Field || row.COLUMN_NAME || "").toLowerCase(),
+          {
+            type: String(row.Type || row.COLUMN_TYPE || "").toLowerCase(),
+            nullable: String(row.Null || row.IS_NULLABLE || "").toUpperCase() === "YES"
+          }
+        ] as const)
+        .filter(([column]) => Boolean(column))
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`[db] Falha ao mapear tipos da tabela ${table}: ${message}`);
+    return null;
+  }
 }
 
 async function ensureUsersTable() {
@@ -402,6 +429,101 @@ async function ensureAuditTable() {
   );
 
   auditTableEnsured = true;
+}
+
+async function ensureEventsTable() {
+  if (eventsTableEnsured) return;
+
+  await query(
+    `CREATE TABLE IF NOT EXISTS events (
+      id VARCHAR(36) PRIMARY KEY,
+      slug VARCHAR(180) NOT NULL UNIQUE,
+      title VARCHAR(200) NOT NULL,
+      description TEXT NOT NULL,
+      city VARCHAR(120) NOT NULL,
+      state VARCHAR(8) NOT NULL,
+      location VARCHAR(200) NOT NULL,
+      contact_name VARCHAR(160) NOT NULL,
+      contact_document TEXT NOT NULL,
+      contact_phone TEXT NULL,
+      contact_phone_secondary TEXT NULL,
+      contact_email TEXT NULL,
+      start_at VARCHAR(32) NOT NULL,
+      end_at VARCHAR(32),
+      status ENUM('pending','approved','completed') NOT NULL,
+      recurrence JSON NOT NULL,
+      website_url VARCHAR(255),
+      live_url VARCHAR(255),
+      organizer_logo VARCHAR(255),
+      cover_image VARCHAR(255),
+      images JSON,
+      featured TINYINT(1) NOT NULL DEFAULT 0,
+      featured_until VARCHAR(32),
+      created_by VARCHAR(36) NOT NULL,
+      created_at VARCHAR(32) NOT NULL,
+      updated_at VARCHAR(32) NOT NULL
+    )`
+  );
+
+  let columns = await getTableColumnsSafe("events");
+  if (!columns) {
+    eventsTableEnsured = true;
+    return;
+  }
+
+  const addColumn = async (column: string, definition: string, afterColumn: string) => {
+    if (columns?.has(column)) return;
+    try {
+      const afterClause = columns?.has(afterColumn) ? ` AFTER ${afterColumn}` : "";
+      await query(`ALTER TABLE events ADD COLUMN ${column} ${definition}${afterClause}`);
+      clearTableColumnsCache("events");
+      columns = await getTableColumnsSafe("events");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[db] Nao foi possivel adicionar events.${column}: ${message}`);
+      clearTableColumnsCache("events");
+      columns = await getTableColumnsSafe("events");
+    }
+  };
+
+  await addColumn("contact_document", "TEXT NULL", "contact_name");
+  await addColumn("contact_phone", "TEXT NULL", "contact_document");
+  await addColumn("contact_phone_secondary", "TEXT NULL", "contact_phone");
+  await addColumn("contact_email", "TEXT NULL", "contact_phone_secondary");
+  await addColumn("organizer_logo", "VARCHAR(255) NULL", "live_url");
+
+  columns = await getTableColumnsSafe("events");
+  if (columns?.has("contact_document")) {
+    try {
+      await query(
+        "UPDATE events SET contact_document = 'nao informado' WHERE contact_document IS NULL OR contact_document = ''"
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[db] Nao foi possivel normalizar events.contact_document: ${message}`);
+    }
+  }
+
+  const columnDetails = await getTableColumnDetailsSafe("events");
+  const ensureTextColumn = async (column: string, definition: string, requireNotNull = false) => {
+    const details = columnDetails?.get(column);
+    if (!details) return;
+    if (details.type.includes("text") && (!requireNotNull || !details.nullable)) return;
+    try {
+      await query(`ALTER TABLE events MODIFY COLUMN ${column} ${definition}`);
+      clearTableColumnsCache("events");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[db] Nao foi possivel ajustar events.${column}: ${message}`);
+    }
+  };
+
+  await ensureTextColumn("contact_document", "TEXT NOT NULL", true);
+  await ensureTextColumn("contact_phone", "TEXT NULL");
+  await ensureTextColumn("contact_phone_secondary", "TEXT NULL");
+  await ensureTextColumn("contact_email", "TEXT NULL");
+
+  eventsTableEnsured = true;
 }
 
 function parseJson<T>(value: unknown, fallback: T): T {
@@ -876,16 +998,22 @@ export const dbMysql = {
     }
   },
   events: {
-    getAll: async () => (await query("SELECT * FROM events")).map(mapEvent),
+    getAll: async () => {
+      await ensureEventsTable();
+      return (await query("SELECT * FROM events")).map(mapEvent);
+    },
     findById: async (id: string) => {
+      await ensureEventsTable();
       const row = await queryOne("SELECT * FROM events WHERE id = ?", [id]);
       return row ? mapEvent(row) : null;
     },
     findBySlug: async (slug: string) => {
+      await ensureEventsTable();
       const row = await queryOne("SELECT * FROM events WHERE slug = ?", [slug]);
       return row ? mapEvent(row) : null;
     },
     create: async (event: Omit<Event, "id" | "createdAt" | "updatedAt">) => {
+      await ensureEventsTable();
       const now = nowIso();
       const newEvent = buildStoredEvent({
         ...event,
@@ -1008,6 +1136,7 @@ export const dbMysql = {
       });
     },
     update: async (id: string, updates: Partial<Event>) => {
+      await ensureEventsTable();
       const current = await dbMysql.events.findById(id);
       if (!current) return null;
       const next = buildStoredEvent({
@@ -1124,6 +1253,7 @@ export const dbMysql = {
       });
     },
     delete: async (id: string) => {
+      await ensureEventsTable();
       await query("DELETE FROM events WHERE id = ?", [id]);
       return true;
     }

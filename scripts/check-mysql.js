@@ -31,6 +31,60 @@ function masked(value) {
   return `${value.slice(0, 2)}***${value.slice(-2)}`;
 }
 
+function getColumnMap(rows) {
+  return new Map(
+    rows
+      .map((row) => [
+        String(row.Field || row.COLUMN_NAME || "").toLowerCase(),
+        row
+      ])
+      .filter(([column]) => Boolean(column))
+  );
+}
+
+function getColumnType(row) {
+  return String(row?.Type || row?.COLUMN_TYPE || "").toLowerCase();
+}
+
+function checkEventsSchema(columnRows) {
+  const columns = getColumnMap(columnRows);
+  const problems = [];
+
+  if (!columns.has("organizer_logo")) {
+    problems.push("events.organizer_logo ausente; o codigo ja salva logo de organizador nessa coluna.");
+  }
+
+  for (const column of [
+    "contact_document",
+    "contact_phone",
+    "contact_phone_secondary",
+    "contact_email"
+  ]) {
+    const row = columns.get(column);
+    const type = getColumnType(row);
+    if (!row) {
+      problems.push(`events.${column} ausente.`);
+    } else if (!type.includes("text")) {
+      problems.push(`events.${column} esta como ${type || "(tipo desconhecido)"}; use TEXT para campos criptografados.`);
+    }
+  }
+
+  const contactDocument = columns.get("contact_document");
+  if (contactDocument && String(contactDocument.Null || "").toUpperCase() === "YES") {
+    problems.push("events.contact_document permite NULL; use TEXT NOT NULL.");
+  }
+
+  if (problems.length === 0) {
+    console.log("[db:check] events schema OK para cadastro com campos criptografados.");
+    return;
+  }
+
+  console.warn("[db:check] events schema incompativel com cadastro em producao:");
+  for (const problem of problems) {
+    console.warn(`- ${problem}`);
+  }
+}
+
 async function main() {
   loadEnv();
 
@@ -79,6 +133,11 @@ async function main() {
         console.table(sampleRows);
       } else {
         console.log("[db:check] eventos (amostra): tabela vazia.");
+      }
+
+      const [columnRows] = await conn.query("SHOW COLUMNS FROM events");
+      if (Array.isArray(columnRows)) {
+        checkEventsSchema(columnRows);
       }
     } catch (eventsError) {
       console.warn("[db:check] Nao foi possivel consultar tabela events.");
