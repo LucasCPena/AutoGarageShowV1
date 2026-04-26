@@ -436,8 +436,8 @@ export default function HomePage() {
         style={{
           backgroundImage:
             `linear-gradient(110deg, rgba(10, 12, 10, 0.58), rgba(67, 64, 3, 0.3)), url('${heroBackgroundImage}')`,
-          backgroundSize: "cover, contain",
-          backgroundPosition: "center, center",
+          backgroundSize: "cover, cover",
+          backgroundPosition: "center, center 35%",
           backgroundRepeat: "no-repeat, no-repeat"
         }}
       >
