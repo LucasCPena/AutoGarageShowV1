@@ -436,8 +436,9 @@ export default function HomePage() {
         style={{
           backgroundImage:
             `linear-gradient(110deg, rgba(10, 12, 10, 0.58), rgba(67, 64, 3, 0.3)), url('${heroBackgroundImage}')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center 35%"
+          backgroundSize: "cover, contain",
+          backgroundPosition: "center, center",
+          backgroundRepeat: "no-repeat, no-repeat"
         }}
       >
         <Container className="py-16 md:py-20">

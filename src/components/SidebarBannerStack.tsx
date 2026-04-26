@@ -111,12 +111,12 @@ export default function SidebarBannerStack({
         const image = normalizeAssetReference(banner.image);
         if (!image) return null;
         const content = (
-          <div className="aspect-video w-full bg-slate-50 p-2">
-            <div className="h-full w-full overflow-hidden rounded-xl bg-white">
+          <div className="w-full bg-slate-50 p-2">
+            <div className="overflow-hidden rounded-xl bg-white">
               <img
                 src={image}
                 alt={banner.title?.trim() || "Banner publicitário"}
-                className="h-full w-full object-cover"
+                className="block h-auto w-full object-contain"
               />
             </div>
           </div>

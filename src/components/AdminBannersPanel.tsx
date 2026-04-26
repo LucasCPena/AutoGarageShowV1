@@ -444,11 +444,13 @@ export default function AdminBannersPanel({
         {form.image ? (
           <div className="md:col-span-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
             <div className="text-xs font-semibold text-slate-600">Pre-visualizacao</div>
-            <img
-              src={form.image}
-              alt={form.title.trim() ? `Previa do banner: ${form.title.trim()}` : "Previa do banner"}
-              className="mt-2 aspect-video w-full rounded-md bg-white object-cover"
-            />
+            <div className="mt-2 flex justify-center rounded-md bg-white p-2">
+              <img
+                src={form.image}
+                alt={form.title.trim() ? `Previa do banner: ${form.title.trim()}` : "Previa do banner"}
+                className="max-h-[420px] w-auto max-w-full rounded object-contain"
+              />
+            </div>
           </div>
         ) : null}
 

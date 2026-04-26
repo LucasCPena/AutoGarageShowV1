@@ -89,6 +89,7 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
   const [events, setEvents] = useState<EventItem[]>([]);
   const [banners, setBanners] = useState<BannerItem[]>([]);
   const [current, setCurrent] = useState(0);
+  const [slideRatios, setSlideRatios] = useState<Record<string, number>>({});
 
   useEffect(() => {
     fetch(`/api/banners?section=${encodeURIComponent(section)}`, { cache: "no-store" })
@@ -190,14 +191,25 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
     section === "home"
       ? "absolute inset-0 bg-gradient-to-r from-slate-900/50 to-slate-900/12"
       : "absolute inset-0 bg-transparent";
-  const imageClassName = "object-cover";
-  const viewportClassName = "relative aspect-video w-full";
+  const imageClassName = "object-contain";
+  const viewportClassName = "relative w-full bg-slate-50";
+  const activeSlideRatio = activeSlide ? slideRatios[activeSlide.id] ?? 16 / 9 : 16 / 9;
+
+  function rememberSlideRatio(slideId: string, image: HTMLImageElement) {
+    const ratio = image.naturalWidth / image.naturalHeight;
+    if (!Number.isFinite(ratio) || ratio <= 0) return;
+
+    setSlideRatios((currentRatios) => {
+      if (currentRatios[slideId] === ratio) return currentRatios;
+      return { ...currentRatios, [slideId]: ratio };
+    });
+  }
 
   if (!activeSlide) return null;
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
-      <div className={viewportClassName}>
+      <div className={viewportClassName} style={{ aspectRatio: activeSlideRatio }}>
         <Image
           src={activeSlide.image}
           alt={getSlideImageAlt(activeSlide.title)}
@@ -205,6 +217,7 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
           className={imageClassName}
           sizes="(max-width: 640px) 100vw, (max-width: 1280px) 70vw, 960px"
           priority={section === "home"}
+          onLoad={(event) => rememberSlideRatio(activeSlide.id, event.currentTarget)}
         />
         <div className={overlayClassName} />
       </div>
