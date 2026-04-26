@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, isMysqlRequiredError } from '@/lib/database';
 import { requireAdmin } from '@/lib/auth-middleware';
+import { normalizeBannerDisplay } from '@/lib/banner-display';
 import { toPublicAssetUrl } from '@/lib/site-url';
 
 export const dynamic = 'force-dynamic';
@@ -102,6 +103,7 @@ export async function POST(request: NextRequest) {
         ? bannerData.title.trim()
         : '';
     const normalizedLink = normalizeBannerLink(bannerData.link ?? bannerData.targetUrl);
+    const normalizedDisplay = normalizeBannerDisplay(bannerData);
 
     if (!normalizedSection) {
       return NextResponse.json(
@@ -123,6 +125,7 @@ export async function POST(request: NextRequest) {
       image: normalizedImage,
       link: normalizedLink,
       section: normalizedSection,
+      ...normalizedDisplay,
       status: 'active',
       startDate: bannerData.startDate || new Date().toISOString()
     });

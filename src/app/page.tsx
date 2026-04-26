@@ -7,6 +7,11 @@ import Link from "next/link";
 import Container from "@/components/Container";
 import SidebarBannerStack from "@/components/SidebarBannerStack";
 import TrackMetric from "@/components/TrackMetric";
+import {
+  bannerObjectPosition,
+  normalizeBannerPosition,
+  normalizeBannerScale
+} from "@/lib/banner-display";
 import type { EventRecurrence } from "@/lib/database";
 import { formatDateLong, formatDateShort, formatDateTime } from "@/lib/date";
 import { formatCurrencyBRL } from "@/lib/format";
@@ -26,6 +31,9 @@ interface HomeConfig {
   showLatestListings: boolean;
   showLatestNews: boolean;
   bannerImage?: string;
+  bannerImageScale?: number;
+  bannerImagePositionX?: number;
+  bannerImagePositionY?: number;
 }
 
 interface Event {
@@ -107,6 +115,9 @@ interface Banner {
   link?: string;
   section: string;
   position: number;
+  imageScale?: number;
+  imagePositionX?: number;
+  imagePositionY?: number;
   status: 'active' | 'inactive';
   startDate: string;
   endDate?: string;
@@ -279,7 +290,10 @@ export default function HomePage() {
         if (bannerHome) {
           setConfig((current) => ({
             ...current,
-            bannerImage: bannerHome.image
+            bannerImage: bannerHome.image,
+            bannerImageScale: normalizeBannerScale(bannerHome.imageScale),
+            bannerImagePositionX: normalizeBannerPosition(bannerHome.imagePositionX),
+            bannerImagePositionY: normalizeBannerPosition(bannerHome.imagePositionY)
           }));
         }
 
@@ -427,21 +441,31 @@ export default function HomePage() {
     config.bannerImage,
     "/placeholders/hero-top-custom.svg"
   );
+  const heroBannerPosition = bannerObjectPosition({
+    imagePositionX: config.bannerImagePositionX,
+    imagePositionY: config.bannerImagePositionY
+  });
+  const heroBannerScale = normalizeBannerScale(config.bannerImageScale) / 100;
   const canViewHomeStats = user?.role === "admin";
 
   return (
     <>
-      <section
-        className="min-h-[420px] border-b border-brand-900/30 bg-slate-900/80"
-        style={{
-          backgroundImage:
-            `linear-gradient(110deg, rgba(10, 12, 10, 0.58), rgba(67, 64, 3, 0.3)), url('${heroBackgroundImage}')`,
-          backgroundSize: "cover, cover",
-          backgroundPosition: "center, center 35%",
-          backgroundRepeat: "no-repeat, no-repeat"
-        }}
-      >
-        <Container className="py-16 md:py-20">
+      <section className="relative min-h-[420px] overflow-hidden border-b border-brand-900/30 bg-slate-900/80">
+        <Image
+          src={heroBackgroundImage}
+          alt=""
+          fill
+          priority
+          className="object-cover"
+          sizes="100vw"
+          style={{
+            objectPosition: heroBannerPosition,
+            transform: `scale(${heroBannerScale})`,
+            transformOrigin: heroBannerPosition
+          }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(110deg,rgba(10,12,10,0.58),rgba(67,64,3,0.3))]" />
+        <Container className="relative py-16 md:py-20">
           <div className="grid gap-10">
             <div>
               

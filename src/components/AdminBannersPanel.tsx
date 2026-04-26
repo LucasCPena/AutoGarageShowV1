@@ -3,6 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 
 import Notice from "@/components/Notice";
+import {
+  DEFAULT_BANNER_POSITION,
+  DEFAULT_BANNER_SCALE,
+  MAX_BANNER_SCALE,
+  MIN_BANNER_SCALE,
+  bannerObjectPosition,
+  normalizeBannerPosition,
+  normalizeBannerScale
+} from "@/lib/banner-display";
 
 type BannerSection =
   | "home"
@@ -32,6 +41,9 @@ type Banner = {
   link?: string;
   section: string;
   position: number;
+  imageScale?: number;
+  imagePositionX?: number;
+  imagePositionY?: number;
   status: "active" | "inactive";
   startDate: string;
   endDate?: string;
@@ -53,6 +65,9 @@ type BannerFormState = {
   section: BannerSection;
   customSection: string;
   position: number;
+  imageScale: number;
+  imagePositionX: number;
+  imagePositionY: number;
   startDate: string;
   endDate: string;
   status: "active" | "inactive";
@@ -107,6 +122,9 @@ function createInitialForm(fixedSection?: string): BannerFormState {
     section: (fixedSection ?? "events") as BannerSection,
     customSection: "",
     position: 1,
+    imageScale: DEFAULT_BANNER_SCALE,
+    imagePositionX: DEFAULT_BANNER_POSITION,
+    imagePositionY: DEFAULT_BANNER_POSITION,
     startDate: "",
     endDate: "",
     status: "active"
@@ -149,6 +167,9 @@ export default function AdminBannersPanel({
     (backgroundMode
       ? "Use esta área para trocar somente o banner de fundo do topo da home."
       : "Cadastre banners e escolha em qual página eles devem aparecer.");
+
+  const previewPosition = bannerObjectPosition(form);
+  const previewScale = form.imageScale / 100;
 
   function resetForm() {
     setEditingBannerId(null);
@@ -202,6 +223,9 @@ export default function AdminBannersPanel({
           : "custom",
       customSection: fixedSection || knownSection ? "" : banner.section,
       position: banner.position || 1,
+      imageScale: normalizeBannerScale(banner.imageScale),
+      imagePositionX: normalizeBannerPosition(banner.imagePositionX),
+      imagePositionY: normalizeBannerPosition(banner.imagePositionY),
       startDate: toDateTimeLocalValue(banner.startDate),
       endDate: toDateTimeLocalValue(banner.endDate),
       status: banner.status
@@ -444,15 +468,99 @@ export default function AdminBannersPanel({
         {form.image ? (
           <div className="md:col-span-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
             <div className="text-xs font-semibold text-slate-600">Pre-visualizacao</div>
-            <div className="mt-2 flex justify-center rounded-md bg-white p-2">
+            <div className="relative mt-2 aspect-video overflow-hidden rounded-md bg-white">
               <img
                 src={form.image}
                 alt={form.title.trim() ? `Previa do banner: ${form.title.trim()}` : "Previa do banner"}
-                className="max-h-[420px] w-auto max-w-full rounded object-contain"
+                className="h-full w-full object-cover"
+                style={{
+                  objectPosition: previewPosition,
+                  transform: `scale(${previewScale})`,
+                  transformOrigin: previewPosition
+                }}
               />
             </div>
           </div>
         ) : null}
+
+        <div className="md:col-span-2 grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="text-sm font-semibold text-slate-900">Ajuste do banner</span>
+            <button
+              type="button"
+              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+              onClick={() =>
+                setForm((current) => ({
+                  ...current,
+                  imageScale: DEFAULT_BANNER_SCALE,
+                  imagePositionX: DEFAULT_BANNER_POSITION,
+                  imagePositionY: DEFAULT_BANNER_POSITION
+                }))
+              }
+            >
+              Resetar ajuste
+            </button>
+          </div>
+
+          <label className="grid gap-1">
+            <span className="text-xs font-semibold text-slate-700">
+              Tamanho: {form.imageScale}%
+            </span>
+            <input
+              type="range"
+              min={MIN_BANNER_SCALE}
+              max={MAX_BANNER_SCALE}
+              step={1}
+              value={form.imageScale}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  imageScale: normalizeBannerScale(event.target.value)
+                }))
+              }
+            />
+          </label>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="grid gap-1">
+              <span className="text-xs font-semibold text-slate-700">
+                Posicao horizontal: {form.imagePositionX}%
+              </span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={form.imagePositionX}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    imagePositionX: normalizeBannerPosition(event.target.value)
+                  }))
+                }
+              />
+            </label>
+
+            <label className="grid gap-1">
+              <span className="text-xs font-semibold text-slate-700">
+                Posicao vertical: {form.imagePositionY}%
+              </span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={form.imagePositionY}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    imagePositionY: normalizeBannerPosition(event.target.value)
+                  }))
+                }
+              />
+            </label>
+          </div>
+        </div>
 
         {backgroundMode ? (
           <div className="md:col-span-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">

@@ -162,6 +162,9 @@ export interface Banner {
   link?: string;
   section: string;
   position: number;
+  imageScale?: number;
+  imagePositionX?: number;
+  imagePositionY?: number;
   status: "active" | "inactive";
   startDate: string;
   endDate?: string;

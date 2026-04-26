@@ -15,6 +15,7 @@ import type {
   User,
   VehicleBrand
 } from "./database.types";
+import { normalizeBannerDisplay } from "./banner-display";
 import { deepMerge } from "./deep-merge";
 import {
   decryptSensitiveString,
@@ -97,6 +98,7 @@ async function queryOne<T = Row>(sql: string, params: any[] = []): Promise<T | n
 const tableColumnsCache = new Map<string, Set<string> | null>();
 let usersTableEnsured = false;
 let eventsTableEnsured = false;
+let bannersTableEnsured = false;
 let organizersTableEnsured = false;
 let listingsTableEnsured = false;
 let messagesTableEnsured = false;
@@ -526,6 +528,56 @@ async function ensureEventsTable() {
   eventsTableEnsured = true;
 }
 
+async function ensureBannersTable() {
+  if (bannersTableEnsured) return;
+
+  await query(
+    `CREATE TABLE IF NOT EXISTS banners (
+      id VARCHAR(36) PRIMARY KEY,
+      title VARCHAR(200) NOT NULL,
+      image VARCHAR(255) NOT NULL,
+      link VARCHAR(255),
+      section VARCHAR(80) NOT NULL,
+      position INT NOT NULL,
+      image_scale INT NOT NULL DEFAULT 100,
+      image_position_x INT NOT NULL DEFAULT 50,
+      image_position_y INT NOT NULL DEFAULT 50,
+      status ENUM('active','inactive') NOT NULL,
+      start_date VARCHAR(32) NOT NULL,
+      end_date VARCHAR(32),
+      created_at VARCHAR(32) NOT NULL,
+      updated_at VARCHAR(32) NOT NULL
+    )`
+  );
+
+  let columns = await getTableColumnsSafe("banners");
+  if (!columns) {
+    bannersTableEnsured = true;
+    return;
+  }
+
+  const addColumn = async (column: string, definition: string, afterColumn: string) => {
+    if (columns?.has(column)) return;
+    try {
+      const afterClause = columns?.has(afterColumn) ? ` AFTER ${afterColumn}` : "";
+      await query(`ALTER TABLE banners ADD COLUMN ${column} ${definition}${afterClause}`);
+      clearTableColumnsCache("banners");
+      columns = await getTableColumnsSafe("banners");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[db] Nao foi possivel adicionar banners.${column}: ${message}`);
+      clearTableColumnsCache("banners");
+      columns = await getTableColumnsSafe("banners");
+    }
+  };
+
+  await addColumn("image_scale", "INT NOT NULL DEFAULT 100", "position");
+  await addColumn("image_position_x", "INT NOT NULL DEFAULT 50", "image_scale");
+  await addColumn("image_position_y", "INT NOT NULL DEFAULT 50", "image_position_x");
+
+  bannersTableEnsured = true;
+}
+
 function parseJson<T>(value: unknown, fallback: T): T {
   if (value == null) return fallback;
   if (typeof value === "object") return value as T;
@@ -787,6 +839,12 @@ function mapComment(row: Row): Comment {
 }
 
 function mapBanner(row: Row): Banner {
+  const display = normalizeBannerDisplay({
+    imageScale: row.image_scale,
+    imagePositionX: row.image_position_x,
+    imagePositionY: row.image_position_y
+  });
+
   return {
     id: row.id,
     title: row.title ?? "",
@@ -794,6 +852,7 @@ function mapBanner(row: Row): Banner {
     link: row.link ?? undefined,
     section: row.section,
     position: Number(row.position),
+    ...display,
     status: row.status,
     startDate: row.start_date,
     endDate: row.end_date ?? undefined,
@@ -1577,24 +1636,31 @@ export const dbMysql = {
     }
   },
   banners: {
-    getAll: async () => (await query("SELECT * FROM banners")).map(mapBanner),
+    getAll: async () => {
+      await ensureBannersTable();
+      return (await query("SELECT * FROM banners")).map(mapBanner);
+    },
     findBySection: async (section: string) => {
+      await ensureBannersTable();
       const rows = await query("SELECT * FROM banners WHERE section = ? AND status = 'active'", [
         section
       ]);
       return rows.map(mapBanner);
     },
     create: async (banner: Omit<Banner, "id" | "createdAt" | "updatedAt">) => {
+      await ensureBannersTable();
       const now = nowIso();
+      const display = normalizeBannerDisplay(banner);
       const newBanner: Banner = {
         ...banner,
+        ...display,
         id: crypto.randomUUID(),
         createdAt: now,
         updatedAt: now
       };
       await query(
-        `INSERT INTO banners (id, title, image, link, section, position, status, start_date, end_date, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO banners (id, title, image, link, section, position, image_scale, image_position_x, image_position_y, status, start_date, end_date, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           newBanner.id,
           newBanner.title,
@@ -1602,6 +1668,9 @@ export const dbMysql = {
           newBanner.link ?? null,
           newBanner.section,
           newBanner.position,
+          newBanner.imageScale,
+          newBanner.imagePositionX,
+          newBanner.imagePositionY,
           newBanner.status,
           newBanner.startDate,
           newBanner.endDate ?? null,
@@ -1612,22 +1681,32 @@ export const dbMysql = {
       return newBanner;
     },
     update: async (id: string, updates: Partial<Banner>) => {
+      await ensureBannersTable();
       const current = await queryOne("SELECT * FROM banners WHERE id = ?", [id]);
       if (!current) return null;
       const mapped = mapBanner(current);
+      const display = normalizeBannerDisplay({
+        imageScale: updates.imageScale ?? mapped.imageScale,
+        imagePositionX: updates.imagePositionX ?? mapped.imagePositionX,
+        imagePositionY: updates.imagePositionY ?? mapped.imagePositionY
+      });
       const next: Banner = {
         ...mapped,
         ...updates,
+        ...display,
         updatedAt: nowIso()
       };
       await query(
-        `UPDATE banners SET title=?, image=?, link=?, section=?, position=?, status=?, start_date=?, end_date=?, updated_at=? WHERE id=?`,
+        `UPDATE banners SET title=?, image=?, link=?, section=?, position=?, image_scale=?, image_position_x=?, image_position_y=?, status=?, start_date=?, end_date=?, updated_at=? WHERE id=?`,
         [
           next.title,
           next.image,
           next.link ?? null,
           next.section,
           next.position,
+          next.imageScale,
+          next.imagePositionX,
+          next.imagePositionY,
           next.status,
           next.startDate,
           next.endDate ?? null,
@@ -1638,6 +1717,7 @@ export const dbMysql = {
       return next;
     },
     delete: async (id: string) => {
+      await ensureBannersTable();
       await query("DELETE FROM banners WHERE id = ?", [id]);
       return true;
     }

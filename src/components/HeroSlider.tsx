@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { bannerObjectPosition, normalizeBannerScale } from "@/lib/banner-display";
 import type { EventRecurrence } from "@/lib/database";
 import { findNextOccurrenceInWindow } from "@/lib/eventRecurrence";
 import { normalizeAssetReference } from "@/lib/site-url";
@@ -28,6 +29,9 @@ type BannerItem = {
   link?: string;
   section: string;
   position: number;
+  imageScale?: number;
+  imagePositionX?: number;
+  imagePositionY?: number;
   status: "active" | "inactive";
   startDate: string;
   endDate?: string;
@@ -40,6 +44,9 @@ type Slide = {
   link?: string;
   startAt?: string;
   position?: number;
+  imageScale?: number;
+  imagePositionX?: number;
+  imagePositionY?: number;
   featuredRank?: number;
 };
 
@@ -133,7 +140,10 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
           image,
           link: banner.link,
           startAt: banner.startDate,
-          position: banner.position
+          position: banner.position,
+          imageScale: banner.imageScale,
+          imagePositionX: banner.imagePositionX,
+          imagePositionY: banner.imagePositionY
         } as Slide;
       })
       .filter((slide): slide is Slide => Boolean(slide))
@@ -194,6 +204,8 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
   const imageClassName = "object-contain";
   const viewportClassName = "relative w-full bg-slate-50";
   const activeSlideRatio = activeSlide ? slideRatios[activeSlide.id] ?? 16 / 9 : 16 / 9;
+  const activeSlidePosition = activeSlide ? bannerObjectPosition(activeSlide) : "50% 50%";
+  const activeSlideScale = activeSlide ? normalizeBannerScale(activeSlide.imageScale) / 100 : 1;
 
   function rememberSlideRatio(slideId: string, image: HTMLImageElement) {
     const ratio = image.naturalWidth / image.naturalHeight;
@@ -215,6 +227,11 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
           alt={getSlideImageAlt(activeSlide.title)}
           fill
           className={imageClassName}
+          style={{
+            objectPosition: activeSlidePosition,
+            transform: `scale(${activeSlideScale})`,
+            transformOrigin: activeSlidePosition
+          }}
           sizes="(max-width: 640px) 100vw, (max-width: 1280px) 70vw, 960px"
           priority={section === "home"}
           onLoad={(event) => rememberSlideRatio(activeSlide.id, event.currentTarget)}

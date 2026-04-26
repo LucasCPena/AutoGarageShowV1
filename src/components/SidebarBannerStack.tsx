@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { sendMetric } from "@/components/TrackMetric";
+import { bannerObjectPosition, normalizeBannerScale } from "@/lib/banner-display";
 import { normalizeAssetReference } from "@/lib/site-url";
 
 type Banner = {
@@ -12,6 +13,9 @@ type Banner = {
   link?: string;
   section: string;
   position: number;
+  imageScale?: number;
+  imagePositionX?: number;
+  imagePositionY?: number;
   status: "active" | "inactive";
   startDate: string;
   endDate?: string;
@@ -110,6 +114,8 @@ export default function SidebarBannerStack({
       {visibleBanners.map((banner) => {
         const image = normalizeAssetReference(banner.image);
         if (!image) return null;
+        const imagePosition = bannerObjectPosition(banner);
+        const imageScale = normalizeBannerScale(banner.imageScale) / 100;
         const content = (
           <div className="w-full bg-slate-50 p-2">
             <div className="overflow-hidden rounded-xl bg-white">
@@ -117,6 +123,11 @@ export default function SidebarBannerStack({
                 src={image}
                 alt={banner.title?.trim() || "Banner publicitário"}
                 className="block h-auto w-full object-contain"
+                style={{
+                  objectPosition: imagePosition,
+                  transform: `scale(${imageScale})`,
+                  transformOrigin: imagePosition
+                }}
               />
             </div>
           </div>

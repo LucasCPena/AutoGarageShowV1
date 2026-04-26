@@ -301,9 +301,9 @@ async function seed() {
     const createdAt = banner.createdAt || nowIso();
     const updatedAt = banner.updatedAt || createdAt;
     await pool.query(
-      `INSERT INTO banners (id, title, image, link, section, position, status, start_date, end_date, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE title=VALUES(title), image=VALUES(image), link=VALUES(link), section=VALUES(section), position=VALUES(position), status=VALUES(status), start_date=VALUES(start_date), end_date=VALUES(end_date), updated_at=VALUES(updated_at)`,
+      `INSERT INTO banners (id, title, image, link, section, position, image_scale, image_position_x, image_position_y, status, start_date, end_date, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE title=VALUES(title), image=VALUES(image), link=VALUES(link), section=VALUES(section), position=VALUES(position), image_scale=VALUES(image_scale), image_position_x=VALUES(image_position_x), image_position_y=VALUES(image_position_y), status=VALUES(status), start_date=VALUES(start_date), end_date=VALUES(end_date), updated_at=VALUES(updated_at)`,
       [
         banner.id,
         banner.title,
@@ -311,6 +311,9 @@ async function seed() {
         banner.link || null,
         banner.section,
         banner.position || 0,
+        banner.imageScale || 100,
+        banner.imagePositionX ?? 50,
+        banner.imagePositionY ?? 50,
         banner.status || "active",
         banner.startDate,
         banner.endDate || null,

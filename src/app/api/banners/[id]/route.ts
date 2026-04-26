@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database';
 import { requireAdmin } from '@/lib/auth-middleware';
+import { normalizeBannerDisplay } from '@/lib/banner-display';
 import { toPublicAssetUrl } from '@/lib/site-url';
 
 function normalizeBannerLink(input: unknown) {
@@ -51,6 +52,14 @@ export async function PUT(
 
     if (typeof updates?.link === 'string' || typeof updates?.targetUrl === 'string') {
       normalizedUpdates.link = normalizeBannerLink(updates.link ?? updates.targetUrl);
+    }
+
+    if (
+      Object.prototype.hasOwnProperty.call(updates, "imageScale") ||
+      Object.prototype.hasOwnProperty.call(updates, "imagePositionX") ||
+      Object.prototype.hasOwnProperty.call(updates, "imagePositionY")
+    ) {
+      Object.assign(normalizedUpdates, normalizeBannerDisplay(updates));
     }
 
     const banner = await db.banners.update(params.id, normalizedUpdates);
