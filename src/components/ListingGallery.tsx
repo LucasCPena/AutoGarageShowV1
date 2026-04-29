@@ -47,17 +47,17 @@ export default function ListingGallery({ images, title }: Props) {
 
   return (
     <div className="grid self-start content-start gap-0.5">
-      <div className="relative mx-auto w-full self-start max-w-[640px] overflow-hidden rounded-[28px] border border-slate-200 bg-gradient-to-br from-slate-100 via-white to-slate-50 p-2 shadow-sm sm:p-3">
+      <div className="relative mx-auto w-full self-start overflow-hidden rounded-[28px] border border-slate-200 bg-gradient-to-br from-slate-100 via-white to-slate-50 p-2 shadow-sm sm:p-3">
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="block w-full"
+          className="block aspect-[4/3] w-full overflow-hidden rounded-2xl bg-slate-100 sm:aspect-[16/10] lg:aspect-[16/9]"
           aria-label="Ampliar galeria do veículo"
         >
           <img
             src={activeImage}
             alt={listingImageAlt(title, index + 1)}
-            className="mx-auto block h-auto w-auto max-w-full rounded-2xl object-contain max-h-[22vh] sm:max-h-[26vh] lg:max-h-[30vh]"
+            className="block h-full w-full object-cover"
           />
         </button>
 
@@ -86,9 +86,6 @@ export default function ListingGallery({ images, title }: Props) {
           </>
         ) : null}
 
-        <div className="pointer-events-none absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
-          Foto {index + 1} de {imgList.length}
-        </div>
       </div>
 
       {imgList.length > 1 ? (

@@ -18,6 +18,7 @@ type BannerSection =
   | "events"
   | "listings"
   | "news"
+  | "organizers"
   | "plans"
   | "sidebar"
   | "mercado-de-pulgas"
@@ -27,6 +28,7 @@ const SECTION_OPTIONS: Array<{ value: BannerSection; label: string }> = [
   { value: "home", label: "Home (topo principal)" },
   { value: "events", label: "Eventos" },
   { value: "listings", label: "Classificados" },
+  { value: "organizers", label: "Organizadores e Clubes" },
   { value: "news", label: "Notícias" },
   { value: "plans", label: "Planos" },
   { value: "sidebar", label: "Banner lateral" },
@@ -85,6 +87,9 @@ function sectionLabel(section: string) {
   if (normalized === "home") return "Home";
   if (normalized === "events") return "Eventos";
   if (normalized === "listings") return "Classificados";
+  if (normalized === "organizers" || normalized === "organizadores") {
+    return "Organizadores e Clubes";
+  }
   if (normalized === "news") return "Notícias";
   if (normalized === "plans") return "Planos";
   if (normalized === "sidebar") return "Banner lateral";

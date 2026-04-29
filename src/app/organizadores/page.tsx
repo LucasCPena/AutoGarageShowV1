@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 
 import Container from "@/components/Container";
+import HeroSlider from "@/components/HeroSlider";
 import Notice from "@/components/Notice";
 import PageIntro from "@/components/PageIntro";
 import SidebarBannerStack from "@/components/SidebarBannerStack";
-import { db, type Organizer } from "@/lib/database";
+import { db, type Banner, type Organizer } from "@/lib/database";
 import { normalizeAssetReference } from "@/lib/site-url";
 
 export const metadata: Metadata = {
@@ -26,8 +27,17 @@ function normalizeOrganizerLink(value: string | undefined) {
   return undefined;
 }
 
+function isBannerActiveNow(banner: Banner) {
+  const now = Date.now();
+  const start = new Date(banner.startDate).getTime();
+  const end = banner.endDate ? new Date(banner.endDate).getTime() : Number.POSITIVE_INFINITY;
+
+  return banner.status === "active" && now >= start && now <= end;
+}
+
 export default async function OrganizersPage() {
   let organizers: Organizer[] = [];
+  let managedBanners: Banner[] = [];
   let loadError = false;
 
   try {
@@ -38,10 +48,17 @@ export default async function OrganizersPage() {
     console.error("Erro ao carregar organizadores:", error);
   }
 
+  try {
+    managedBanners = await db.banners.findBySection("organizers");
+  } catch (error) {
+    console.error("Erro ao carregar banner de organizadores:", error);
+  }
+
   const bannerOrganizer = organizers.find((organizer) =>
     Boolean(normalizeAssetReference(organizer.bannerTop))
   );
   const organizerBanner = normalizeAssetReference(bannerOrganizer?.bannerTop);
+  const hasManagedBanner = managedBanners.some(isBannerActiveNow);
 
   return (
     <>
@@ -53,7 +70,11 @@ export default async function OrganizersPage() {
       <Container className="py-10">
         <div className="page-with-sidebar">
           <div>
-            {organizerBanner ? (
+            {hasManagedBanner ? (
+              <section className="mb-8">
+                <HeroSlider section="organizers" />
+              </section>
+            ) : organizerBanner ? (
               <section className="mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white">
                 <img
                   src={organizerBanner}
