@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import Notice from "@/components/Notice";
 import { useAuth } from "@/lib/useAuth";
@@ -44,6 +44,20 @@ type DraftState = Pick<
   | "listingLimitOverride"
 >;
 
+type NewAdminFormState = {
+  name: string;
+  email: string;
+  password: string;
+  role: AdminUser["role"];
+};
+
+const emptyNewAdminForm: NewAdminFormState = {
+  name: "",
+  email: "",
+  password: "",
+  role: "admin"
+};
+
 function toDraft(user: AdminUser): DraftState {
   return {
     role: user.role,
@@ -62,19 +76,21 @@ export default function AdminUsersPanel({ token }: Props) {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [creatingAdmin, setCreatingAdmin] = useState(false);
   const [message, setMessage] = useState<Message>(null);
   const [drafts, setDrafts] = useState<Record<string, DraftState>>({});
+  const [newAdminForm, setNewAdminForm] = useState<NewAdminFormState>(emptyNewAdminForm);
 
   const adminCount = useMemo(
     () => users.filter((item) => item.role === "admin").length,
     [users]
   );
 
-  function authHeaders(): HeadersInit | undefined {
+  const authHeaders = useCallback((): HeadersInit | undefined => {
     return token ? { Authorization: `Bearer ${token}` } : undefined;
-  }
+  }, [token]);
 
-  async function loadUsers() {
+  const loadUsers = useCallback(async () => {
     setLoading(true);
     setMessage(null);
 
@@ -108,7 +124,7 @@ export default function AdminUsersPanel({ token }: Props) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [authHeaders]);
 
   useEffect(() => {
     if (!token) {
@@ -121,7 +137,7 @@ export default function AdminUsersPanel({ token }: Props) {
     }
 
     void loadUsers();
-  }, [token]);
+  }, [loadUsers, token]);
 
   async function saveUser(targetUser: AdminUser) {
     const draft = drafts[targetUser.id];
@@ -175,6 +191,53 @@ export default function AdminUsersPanel({ token }: Props) {
     }
   }
 
+  async function createAdminUser(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setCreatingAdmin(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders()
+        },
+        body: JSON.stringify(newAdminForm)
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Nao foi possivel criar o usuario.");
+      }
+
+      const createdUser = data.user as AdminUser;
+      setUsers((current) => [createdUser, ...current]);
+      setDrafts((current) => ({
+        ...current,
+        [createdUser.id]: toDraft(createdUser)
+      }));
+      setNewAdminForm(emptyNewAdminForm);
+      setMessage({
+        type: "success",
+        text:
+          createdUser.role === "admin"
+            ? "Administrador criado com sucesso."
+            : "Usuario criado com sucesso."
+      });
+    } catch (createError) {
+      setMessage({
+        type: "error",
+        text:
+          createError instanceof Error
+            ? createError.message
+            : "Nao foi possivel criar o usuario."
+      });
+    } finally {
+      setCreatingAdmin(false);
+    }
+  }
+
   function updateDraft(userId: string, updates: Partial<DraftState>) {
     setDrafts((current) => ({
       ...current,
@@ -209,6 +272,96 @@ export default function AdminUsersPanel({ token }: Props) {
           </Notice>
         </div>
       ) : null}
+
+      <form
+        onSubmit={createAdminUser}
+        className="mt-6 grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-4"
+      >
+        <div className="md:col-span-4">
+          <div className="text-sm font-semibold text-slate-900">Novo acesso administrativo</div>
+          <div className="mt-1 text-xs text-slate-500">
+            Cadastro criado pelo admin com senha protegida pelo mesmo padrao do login.
+          </div>
+        </div>
+
+        <label className="grid gap-1">
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Nome
+          </span>
+          <input
+            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+            value={newAdminForm.name}
+            disabled={creatingAdmin}
+            onChange={(event) =>
+              setNewAdminForm((current) => ({ ...current, name: event.target.value }))
+            }
+            required
+          />
+        </label>
+
+        <label className="grid gap-1">
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            E-mail / login
+          </span>
+          <input
+            type="email"
+            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+            value={newAdminForm.email}
+            disabled={creatingAdmin}
+            onChange={(event) =>
+              setNewAdminForm((current) => ({ ...current, email: event.target.value }))
+            }
+            required
+          />
+        </label>
+
+        <label className="grid gap-1">
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Senha
+          </span>
+          <input
+            type="password"
+            minLength={6}
+            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+            value={newAdminForm.password}
+            disabled={creatingAdmin}
+            onChange={(event) =>
+              setNewAdminForm((current) => ({ ...current, password: event.target.value }))
+            }
+            required
+          />
+        </label>
+
+        <label className="grid gap-1">
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Permissao
+          </span>
+          <select
+            className="h-11 rounded-md border border-slate-300 px-3 text-sm"
+            value={newAdminForm.role}
+            disabled={creatingAdmin}
+            onChange={(event) =>
+              setNewAdminForm((current) => ({
+                ...current,
+                role: event.target.value as AdminUser["role"]
+              }))
+            }
+          >
+            <option value="admin">Administrador</option>
+            <option value="user">Usuario comum</option>
+          </select>
+        </label>
+
+        <div className="md:col-span-4 flex justify-end">
+          <button
+            type="submit"
+            disabled={creatingAdmin}
+            className="inline-flex h-11 items-center justify-center rounded-md bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+          >
+            {creatingAdmin ? "Criando..." : "Criar acesso"}
+          </button>
+        </div>
+      </form>
 
       <div className="mt-6 grid gap-4">
         {loading ? (
@@ -361,9 +514,9 @@ export default function AdminUsersPanel({ token }: Props) {
                       />
                     </label>
 
-                    <label className="grid gap-1">
+                    <label className="grid gap-1 md:col-span-2">
                       <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        Limite individual
+                        Limite de veiculos
                       </span>
                       <input
                         type="number"
@@ -378,8 +531,17 @@ export default function AdminUsersPanel({ token }: Props) {
                               : null
                           })
                         }
-                        placeholder="Usar padrao do sistema"
+                        placeholder={
+                          draft.accountType === "company" || draft.accountType === "agency"
+                            ? "Padrao da loja: 20"
+                            : "Padrao CPF: 1"
+                        }
                       />
+                      {/* Vazio mantem o limite global; numero preenchido libera um limite por loja/cliente. */}
+                      <span className="text-xs text-slate-500">
+                        Vazio usa o padrao do sistema; informe acima de 20 para liberar mais
+                        veiculos para uma loja.
+                      </span>
                     </label>
 
                     <div className="flex items-end">

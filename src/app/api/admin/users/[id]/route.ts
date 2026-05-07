@@ -16,6 +16,18 @@ function sanitizeText(value: unknown, maxLength: number) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
 }
 
+function parseListingLimitOverride(value: unknown) {
+  if (value === null || value === "") {
+    return { valid: true, value: null };
+  }
+
+  if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
+    return { valid: true, value: Math.round(value) };
+  }
+
+  return { valid: false, value: undefined };
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -37,18 +49,18 @@ export async function PUT(
       body?.approvalStatus === "pending" ? "pending" : "approved";
     const nextVerificationStatus =
       body?.verificationStatus === "unverified" ? "unverified" : "verified";
-    const listingLimitOverride =
-      body?.listingLimitOverride === null || body?.listingLimitOverride === ""
-        ? null
-        : typeof body?.listingLimitOverride === "number" &&
-            Number.isFinite(body.listingLimitOverride) &&
-            body.listingLimitOverride >= 0
-          ? Math.round(body.listingLimitOverride)
-          : undefined;
+    const listingLimitOverride = parseListingLimitOverride(body?.listingLimitOverride);
 
     if (!nextRole) {
       return NextResponse.json(
         { error: "Role invalida. Use admin ou user." },
+        { status: 400 }
+      );
+    }
+
+    if (!listingLimitOverride.valid) {
+      return NextResponse.json(
+        { error: "Limite de veiculos invalido. Informe um numero maior ou igual a zero." },
         { status: 400 }
       );
     }
@@ -84,7 +96,8 @@ export async function PUT(
       logoUrl: sanitizeText(body?.logoUrl, 255) || undefined,
       approvalStatus: nextApprovalStatus,
       verificationStatus: nextVerificationStatus,
-      listingLimitOverride
+      // Valor vazio mantém o limite padrao do sistema; numero definido vira limite por loja/cliente.
+      listingLimitOverride: listingLimitOverride.value
     });
 
     await db.audit.create({
@@ -98,7 +111,8 @@ export async function PUT(
         role: nextRole,
         accountType: nextAccountType,
         approvalStatus: nextApprovalStatus,
-        verificationStatus: nextVerificationStatus
+        verificationStatus: nextVerificationStatus,
+        listingLimitOverride: listingLimitOverride.value ?? "default"
       }
     });
 

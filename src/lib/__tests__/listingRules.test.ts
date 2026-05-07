@@ -3,7 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   LISTING_DOCUMENT_MAX_LENGTH,
   getAdminListingDocumentFallback,
-  getListingDocumentForStorage
+  getListingDocumentForStorage,
+  resolveEffectiveListingLimit
 } from "../listingRules";
 
 describe("listingRules document storage", () => {
@@ -27,5 +28,27 @@ describe("listingRules document storage", () => {
 
     expect(value).toBe("admin-550e8400e29b41d4a7164466");
     expect(value.length).toBeLessThanOrEqual(LISTING_DOCUMENT_MAX_LENGTH);
+  });
+});
+
+describe("listingRules listing limits", () => {
+  it("usa limite especial da loja quando configurado", () => {
+    const limit = resolveEffectiveListingLimit(
+      { listingLimits: { cpf: 1, cnpj: 20 } },
+      { listingLimitOverride: 50 },
+      "cnpj"
+    );
+
+    expect(limit).toBe(50);
+  });
+
+  it("mantem limite padrao quando a loja nao tem configuracao especial", () => {
+    const limit = resolveEffectiveListingLimit(
+      { listingLimits: { cpf: 1, cnpj: 20 } },
+      { listingLimitOverride: null },
+      "cnpj"
+    );
+
+    expect(limit).toBe(20);
   });
 });
