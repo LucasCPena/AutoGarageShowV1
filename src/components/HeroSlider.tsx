@@ -54,6 +54,7 @@ type Props = {
   section?: string;
   maxSlides?: number;
   autoPlayMs?: number;
+  aspectRatio?: number | string;
 };
 
 function isBannerActiveNow(banner: BannerItem, now: number) {
@@ -92,7 +93,12 @@ function getSlideImageAlt(title: string | undefined) {
   return cleanTitle && cleanTitle.length > 0 ? cleanTitle : "Banner em destaque";
 }
 
-export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs = 5000 }: Props) {
+export default function HeroSlider({
+  section = "home",
+  maxSlides = 3,
+  autoPlayMs = 5000,
+  aspectRatio
+}: Props) {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [banners, setBanners] = useState<BannerItem[]>([]);
   const [current, setCurrent] = useState(0);
@@ -203,7 +209,8 @@ export default function HeroSlider({ section = "home", maxSlides = 3, autoPlayMs
       : "absolute inset-0 bg-transparent";
   const imageClassName = "object-contain";
   const viewportClassName = "relative w-full bg-slate-50";
-  const activeSlideRatio = activeSlide ? slideRatios[activeSlide.id] ?? 16 / 9 : 16 / 9;
+  const activeSlideRatio =
+    aspectRatio ?? (activeSlide ? slideRatios[activeSlide.id] ?? 16 / 9 : 16 / 9);
   const activeSlidePosition = activeSlide ? bannerObjectPosition(activeSlide) : "50% 50%";
   const activeSlideScale = activeSlide ? normalizeBannerScale(activeSlide.imageScale) / 100 : 1;
 

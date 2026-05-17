@@ -15,6 +15,8 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
+const ORGANIZERS_BANNER_ASPECT_RATIO = 3.5;
+
 function normalizeOrganizerLink(value: string | undefined) {
   if (!value) return undefined;
   const trimmed = value.trim();
@@ -68,21 +70,30 @@ export default async function OrganizersPage() {
       />
 
       <Container className="py-10">
+        {hasManagedBanner ? (
+          <section id="organizadores-banner" className="mb-8">
+            <HeroSlider section="organizers" aspectRatio={ORGANIZERS_BANNER_ASPECT_RATIO} />
+          </section>
+        ) : organizerBanner ? (
+          <section
+            id="organizadores-banner"
+            className="mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg"
+          >
+            <div
+              className="w-full bg-slate-50 p-2"
+              style={{ aspectRatio: ORGANIZERS_BANNER_ASPECT_RATIO }}
+            >
+              <img
+                src={organizerBanner}
+                alt="Banner dos organizadores e clubes"
+                className="h-full w-full object-contain"
+              />
+            </div>
+          </section>
+        ) : null}
+
         <div className="page-with-sidebar">
           <div>
-            {hasManagedBanner ? (
-              <section className="mb-8">
-                <HeroSlider section="organizers" />
-              </section>
-            ) : organizerBanner ? (
-              <section className="mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                <img
-                  src={organizerBanner}
-                  alt="Banner dos organizadores e clubes"
-                  className="h-48 w-full bg-slate-950 object-contain p-2 sm:h-64"
-                />
-              </section>
-            ) : null}
             {loadError ? (
               <Notice title="Erro" variant="warning">
                 Não foi possível carregar os organizadores agora.
