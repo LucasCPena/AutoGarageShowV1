@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, isMysqlRequiredError } from '@/lib/database';
 import { onlyDigits, validateCNPJ, validateCPF } from '@/lib/document';
+import { sendRegistrationSuccessEmail } from '@/lib/mailer';
 import { sanitizeUserForSession } from '@/lib/privacy';
 import { hashPassword } from '@/lib/password';
 import {
@@ -192,6 +193,11 @@ export async function POST(request: NextRequest) {
         marketplaceProfile: normalizedMarketplaceProfile || "default",
         source: normalizedSource
       }
+    });
+
+    await sendRegistrationSuccessEmail({
+      to: user.email,
+      name: user.name
     });
 
     return NextResponse.json(

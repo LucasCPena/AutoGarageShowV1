@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { sendPasswordChangedEmail } from "@/lib/mailer";
 import { consumePasswordResetToken } from "@/lib/password-reset";
 import { logServerError } from "@/lib/server-log";
 
@@ -23,7 +24,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await consumePasswordResetToken(normalizedToken, normalizedPassword);
+    const resetResult = await consumePasswordResetToken(normalizedToken, normalizedPassword);
+
+    await sendPasswordChangedEmail({
+      to: resetResult.email,
+      name: resetResult.name
+    });
 
     return NextResponse.json({
       message: "Senha redefinida com sucesso. Agora voce ja pode entrar."

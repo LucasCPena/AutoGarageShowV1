@@ -154,6 +154,7 @@ export async function consumePasswordResetToken(token: string, password: string)
 
   return {
     userId: updatedUser.id,
-    email: updatedUser.email
+    email: updatedUser.email,
+    name: updatedUser.name
   };
 }
